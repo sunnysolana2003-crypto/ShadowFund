@@ -1,7 +1,14 @@
 
+import { Buffer } from 'buffer';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+
+// Browser runtime polyfill for libraries that assume Node's Buffer exists.
+// (Solana/web3 + some wallet tooling still use Buffer internally.)
+if (!(globalThis as any).Buffer) {
+  (globalThis as any).Buffer = Buffer;
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
