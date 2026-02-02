@@ -77,9 +77,9 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   const vaultsData = treasury.data?.vaults ?? [];
 
   const vaultDisplayInfo: Record<string, { color: string; icon: React.ReactNode }> = {
-    'reserve': { color: '[#FF7A00]', icon: <Shield className="w-4 h-4" /> },
+    'reserve': { color: 'shadow-green', icon: <Shield className="w-4 h-4" /> },
     'yield': { color: 'shadow-gold', icon: <Zap className="w-4 h-4" /> },
-    'growth': { color: 'blue-400', icon: <TrendingUp className="w-4 h-4" /> },
+    'growth': { color: 'white', icon: <TrendingUp className="w-4 h-4" /> },
     'degen': { color: 'shadow-error', icon: <Activity className="w-4 h-4" /> },
   };
 
@@ -148,29 +148,29 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
             <div>
               <ShadowTypography variant="h1" className="text-white mb-2">My Portfolio</ShadowTypography>
               <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#FF7A00] shadow-[0_0_8px_#FF7A00]" />
+                <div className="w-2 h-2 rounded-full bg-shadow-green shadow-[0_0_8px_#00FFA3]" />
                 <span className="text-[10px] uppercase tracking-widest text-shadow-500 font-bold">Secure ZK-Node Connected</span>
-                <span className="px-2 py-0.5 rounded-full bg-[#FF7A00]/10 border border-[#FF7A00] text-[8px] uppercase font-black text-[#FF7A00] tracking-tighter">Mainnet Beta</span>
+                <span className="px-2 py-0.5 rounded-full bg-shadow-green/10 border border-shadow-green text-[8px] uppercase font-black text-shadow-green tracking-tighter">Mainnet Beta</span>
               </div>
             </div>
 
-          <div className="flex gap-md flex-wrap items-center">
-            <ShadowButton
-              variant="secondary"
-              icon={balanceVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              onClick={() => setBalanceVisible(!balanceVisible)}
-            >
-              {balanceVisible ? 'Privacy Mode' : 'Show Balance'}
-            </ShadowButton>
-            <ShadowButton
-              variant="primary"
-              icon={isRebalancing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              onClick={handleRebalance}
-              disabled={isRebalancing || !wallet.address || totalBalance === 0}
-            >
-              {isRebalancing ? 'Optimizing...' : 'Optimize Yields'}
-            </ShadowButton>
-          </div>
+            <div className="flex gap-md flex-wrap items-center">
+              <ShadowButton
+                variant="secondary"
+                icon={balanceVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                onClick={() => setBalanceVisible(!balanceVisible)}
+              >
+                {balanceVisible ? 'Privacy Mode' : 'Show Balance'}
+              </ShadowButton>
+              <ShadowButton
+                variant="primary"
+                icon={isRebalancing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                onClick={handleRebalance}
+                disabled={isRebalancing || !wallet.address || totalBalance === 0}
+              >
+                {isRebalancing ? 'Optimizing...' : 'Optimize Portfolio'}
+              </ShadowButton>
+            </div>
           </header>
 
           {/* Core Grid */}
@@ -250,20 +250,20 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                 </ShadowCard>
 
                 {/* Shielded Balance - Right Card */}
-                <ShadowCard className="p-xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-[#FF7A00]/20 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF7A00]/5 to-transparent pointer-events-none" />
+                <ShadowCard className="p-xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-shadow-green/20 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-shadow-green/5 to-transparent pointer-events-none" />
                   <div className="relative z-10 space-y-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-[#FF7A00]/20">
-                          <Shield className="w-4 h-4 text-[#FF7A00]" />
+                        <div className="p-2 rounded-lg bg-shadow-green/20">
+                          <Shield className="w-4 h-4 text-shadow-green" />
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest">Shielded Balance</p>
-                          <p className="text-[8px] text-[#FF7A00] uppercase tracking-tight">Private Portfolio</p>
+                          <p className="text-[8px] text-shadow-green uppercase tracking-tight">Private Portfolio</p>
                         </div>
                       </div>
-                      <div className="px-2 py-0.5 rounded-full bg-[#FF7A00]/10 border border-[#FF7A00]/20 text-[8px] font-bold text-[#FF7A00] uppercase">
+                      <div className="px-2 py-0.5 rounded-full bg-shadow-green/10 border border-shadow-green/20 text-[8px] font-bold text-shadow-green uppercase">
                         Protected
                       </div>
                     </div>
@@ -272,13 +272,13 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                       {balanceVisible ? <AnimatedValue value={totalBalance} prefix="$" /> : '••••••'}
                     </ShadowTypography>
 
-                    {treasury.loading && <p className="text-xs text-[#FF7A00] animate-pulse">Updating from ShadowWire...</p>}
+                    {treasury.loading && <p className="text-xs text-shadow-green animate-pulse">Updating from ShadowWire...</p>}
 
                     {/* Yield Stats */}
                     <div className="grid grid-cols-2 gap-md pt-md border-t border-white/5">
                       <div>
                         <p className="text-[10px] font-bold text-shadow-600 uppercase mb-1">Yield Earned</p>
-                        <p className={`text-lg font-display ${(vaultStats.data?.yield?.earnedYield ?? 0) > 0 ? 'text-[#FF7A00]' : 'text-shadow-400'}`}>
+                        <p className={`text-lg font-display ${(vaultStats.data?.yield?.earnedYield ?? 0) > 0 ? 'text-shadow-green' : 'text-shadow-400'}`}>
                           {balanceVisible
                             ? `+$${(vaultStats.data?.yield?.earnedYield ?? 0).toFixed(2)}`
                             : '•••••'}
@@ -372,11 +372,11 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-xs">
                                 <span className="text-shadow-400">Yield Accruing</span>
-                                <span className="text-[#FF7A00] font-mono font-bold animate-pulse">Live</span>
+                                <span className="text-shadow-green font-mono font-bold animate-pulse">Live</span>
                               </div>
                               <div className="bg-black/40 rounded p-2 flex items-center justify-between">
                                 <span className="text-[10px] text-shadow-500 uppercase">Unclaimed</span>
-                                <span className="text-[#FF7A00] font-mono">
+                                <span className="text-shadow-green font-mono">
                                   +${((vaultStats.data?.yield?.earnedYield || 0) + yieldTicker).toFixed(8)}
                                 </span>
                               </div>
@@ -397,7 +397,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                                 ]).map((pos: any, i: number) => (
                                   <div key={i} className="flex items-center gap-1.5 bg-white/5 rounded px-2 py-1 shrink-0 border border-white/5">
                                     <span className="text-[10px] font-bold text-white">{pos.token.symbol}</span>
-                                    <span className={`text-[9px] font-mono ${pos.pnlPercent >= 0 ? 'text-[#FF7A00]' : 'text-shadow-error'}`}>
+                                    <span className={`text-[9px] font-mono ${pos.pnlPercent >= 0 ? 'text-shadow-green' : 'text-shadow-error'}`}>
                                       {pos.pnlPercent > 0 ? '+' : ''}{pos.pnlPercent}%
                                     </span>
                                   </div>
@@ -429,8 +429,8 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                           {/* RESERVE VAULT: Status */}
                           {vault.id === 'reserve' && (
                             <div className="flex items-center justify-between h-full pt-1">
-                              <div className="bg-[#FF7A00]/10 px-2 py-1 rounded border border-[#FF7A00]/20">
-                                <span className="text-[10px] text-[#FF7A00] uppercase tracking-wide font-bold">● Ready to Deploy</span>
+                              <div className="bg-shadow-green/10 px-2 py-1 rounded border border-shadow-green/20">
+                                <span className="text-[10px] text-shadow-green uppercase tracking-wide font-bold">● Ready to Deploy</span>
                               </div>
                               <span className="text-[10px] text-shadow-400">{vault.allocation}% Cash</span>
                             </div>
@@ -472,7 +472,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                     <div className="space-y-sm">
                       {strategy.data?.keyInsights?.map((insight, i) => (
                         <div key={i} className="flex gap-3 text-xs">
-                          <span className="text-[#FF7A00] font-mono">{i + 1}.</span>
+                          <span className="text-shadow-green font-mono">{i + 1}.</span>
                           <span className="text-shadow-400">{insight}</span>
                         </div>
                       )) || <p className="text-xs text-shadow-600 italic">Acquiring market signals...</p>}
@@ -482,7 +482,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                   <div className="pt-xl border-t border-white/5">
                     <div className="flex items-center justify-between mb-md">
                       <p className="text-[10px] font-bold text-shadow-500 uppercase">Market Mood</p>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${strategy.data?.mood === 'risk-on' ? 'bg-[#FF7A00]/20 text-[#FF7A00]' :
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${strategy.data?.mood === 'risk-on' ? 'bg-shadow-green/20 text-shadow-green' :
                         strategy.data?.mood === 'risk-off' ? 'bg-shadow-error/20 text-shadow-error' :
                           'bg-white/10 text-shadow-400'
                         }`}>
@@ -500,14 +500,14 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
               <ShadowCard className="p-xl border-white/5 bg-shadow-black">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white/5 rounded-full">
-                    <Shield className="w-6 h-6 text-[#FF7A00]" />
+                    <Shield className="w-6 h-6 text-shadow-green" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white tracking-widest uppercase">ShadowWire ZK</p>
                     <p className="text-[10px] text-shadow-600 font-mono">Proof: 0x4f...ZK72</p>
                   </div>
                   <div className="ml-auto">
-                    <div className="px-3 py-1 bg-[#FF7A00]/10 border border-[#FF7A00]/20 rounded text-[10px] font-mono text-[#FF7A00]">
+                    <div className="px-3 py-1 bg-shadow-green/10 border border-shadow-green/20 rounded text-[10px] font-mono text-shadow-green">
                       VERIFIED
                     </div>
                   </div>

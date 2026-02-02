@@ -57,9 +57,6 @@ interface ShadowFundContextType {
 
     // Wallet signing
     signMessage: (message: string) => Promise<{ signature: string; timestamp: number } | null>;
-
-    // Simulation mode (for demo/judges)
-    isSimulationMode: boolean;
 }
 
 const ShadowFundContext = createContext<ShadowFundContextType | null>(null);
@@ -194,11 +191,11 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        console.log('[Context] Fetching treasury for:', wallet.address, 'Simulation:', isSimulationMode);
+        console.log('[Context] Fetching treasury for:', wallet.address);
         setTreasury(prev => ({ ...prev, loading: true, error: null }));
 
         try {
-            const data = await api.getTreasury(wallet.address, wallet.risk, isSimulationMode);
+            const data = await api.getTreasury(wallet.address, wallet.risk);
             console.log('[Context] Treasury data:', data);
             setTreasury({ loading: false, error: null, data });
         } catch (err) {
@@ -280,9 +277,8 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
 
     const [isDepositing, setIsDepositing] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
-    
-    // Simulation mode is now controlled by codebase/env flag only
-    const isSimulationMode = process.env.NEXT_PUBLIC_SHADOWWIRE_MOCK === 'true' || true; 
+
+
 
     const deposit = useCallback(async (amount: number): Promise<boolean> => {
         if (!wallet.address || !sendTransaction) return false;
@@ -406,8 +402,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         isDepositing,
         withdraw,
         isWithdrawing,
-        signMessage,
-        isSimulationMode
+        signMessage
     };
 
     return (

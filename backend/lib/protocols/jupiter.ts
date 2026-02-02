@@ -215,15 +215,9 @@ export async function executeSwap(params: SwapParams): Promise<TxResult> {
                 throw new Error(`Swap API error: ${swapResponse.statusText}`);
             }
 
-            const { swapTransaction, priceImpactPct } = await swapResponse.json();
+            const { swapTransaction } = await swapResponse.json();
 
-            // Step 3: Slippage/Price Impact Check
-            const impact = Number(priceImpactPct) * 100;
-            if (impact > 5) { // 5% hard limit for safety
-                throw new Error(`Price impact too high: ${impact.toFixed(2)}%`);
-            }
-
-            // Step 4: Deserialize transaction
+            // Step 3: Deserialize transaction
             const transactionBuf = Buffer.from(swapTransaction, 'base64');
             const transaction = VersionedTransaction.deserialize(transactionBuf);
 

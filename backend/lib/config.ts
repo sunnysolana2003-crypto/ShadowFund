@@ -14,7 +14,6 @@ interface EnvConfig {
     // Optional
     geminiApiKey?: string;
     shadowwireApiKey?: string;
-    shadowwireMock: boolean;
 }
 
 function getEnvVar(key: string, required: boolean = false, defaultValue?: string): string | undefined {
@@ -33,7 +32,6 @@ export const config: EnvConfig = {
     shadowwireCluster: getEnvVar('SHADOWWIRE_CLUSTER', false, 'mainnet') as string,
     geminiApiKey: getEnvVar('GEMINI_API_KEY'),
     shadowwireApiKey: getEnvVar('SHADOWWIRE_API_KEY'),
-    shadowwireMock: getEnvVar('SHADOWWIRE_MOCK', false, 'true') === 'true',
 };
 
 export function isProduction(): boolean {
@@ -53,6 +51,5 @@ export function logConfig(): void {
     console.log(`  - NODE_ENV: ${config.nodeEnv}`);
     console.log(`  - SOLANA_RPC: ${config.solanaRpcUrl.slice(0, 30)}...`);
     console.log(`  - SHADOWWIRE_CLUSTER: ${config.shadowwireCluster}`);
-    console.log(`  - SHADOWWIRE_MOCK: ${config.shadowwireMock ? 'enabled' : 'disabled'}`);
     console.log(`  - GEMINI_AI: ${hasGeminiAI() ? 'enabled' : 'disabled'}`);
 }

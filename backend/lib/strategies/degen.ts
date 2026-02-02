@@ -61,46 +61,14 @@ class DegenVaultStrategy implements DegenStrategy {
                 continue;
             }
 
-            // REAL SWAP EXECUTION (with demo fallback)
-            let txSig = `shadowwire_shield_degen_${symbol.toLowerCase()}_${Date.now()}`;
-            let price = 0;
-
-            try {
-                // 1. Get current price
-                price = await jupiter.getTokenPrice(mint);
-                
-                // 2. Execute real swap if not in demo/devnet
-                const swapResult = await jupiter.executeSwap({
-                    inputMint: TOKENS.USD1,
-                    outputMint: mint,
-                    amount: investAmount
-                });
-
-                if (swapResult.success && swapResult.txSignature) {
-                    txSig = swapResult.txSignature;
-                    log(`${COLORS.green}✅ Real degen swap executed for ${symbol}${COLORS.reset}`, { txSig });
-                }
-            } catch (swapError) {
-                log(`${COLORS.yellow}⚠️  Real swap failed or in demo mode, using simulation for ${symbol}${COLORS.reset}`);
-                if (!price || price <= 0) price = await jupiter.getTokenPrice(mint);
-            }
-
+            const price = await jupiter.getTokenPrice(mint);
             if (!price || price <= 0) {
                 log(`Warning: Could not get price for ${symbol}, skipping.`);
                 continue;
             }
             const tokenAmount = investAmount / price;
 
-            // REAL SHIELDING (with demo fallback)
-            try {
-                const { deposit } = await import("../shadowwire");
-                const shieldResult = await deposit(vaultAddress, investAmount);
-                if (shieldResult && shieldResult.success) {
-                    log(`${COLORS.green}✅ Real shielding executed for ${symbol}${COLORS.reset}`);
-                }
-            } catch (shieldError) {
-                log(`${COLORS.yellow}⚠️  ShadowWire shielding simulation active for ${symbol}${COLORS.reset}`);
-            }
+            log(`[ShadowWire] Shielding ${tokenAmount.toFixed(4)} ${symbol} for ${vaultAddress.slice(0, 8)}...`);
 
             newPositions.push({
                 walletAddress,
@@ -111,7 +79,7 @@ class DegenVaultStrategy implements DegenStrategy {
                 entryTimestamp: Date.now()
             });
 
-            txSignatures.push(txSig);
+            txSignatures.push(`shadowwire_shield_degen_${symbol.toLowerCase()}_${Date.now()}`);
         }
 
         const existing = positions.get(walletAddress) || [];
@@ -146,20 +114,9 @@ class DegenVaultStrategy implements DegenStrategy {
             const withdrawAmount = pos.amount * sellPercent;
             if (withdrawAmount <= 0) continue;
 
-            const withdrawValueUSD = withdrawAmount * (prices[pos.token] || pos.entryPrice);
-
-            // REAL UNSHIELDING (with demo fallback)
-            try {
-                const { withdraw } = await import("../shadowwire");
-                const unshieldResult = await withdraw(vaultAddress, withdrawValueUSD);
-                if (unshieldResult && unshieldResult.success) {
-                    log(`${COLORS.green}✅ Real unshielding executed for ${pos.symbol}${COLORS.reset}`);
-                }
-            } catch (unshieldError) {
-                log(`${COLORS.yellow}⚠️  ShadowWire unshielding simulation active for ${pos.symbol}${COLORS.reset}`);
-            }
-
             pos.amount -= withdrawAmount;
+            log(`[ShadowWire] Unshielding ${withdrawAmount.toFixed(4)} ${pos.symbol} from ${vaultAddress.slice(0, 8)}...`);
+
             txSignatures.push(`shadowwire_unshield_degen_${pos.symbol.toLowerCase()}_${Date.now()}`);
         }
 

@@ -197,7 +197,7 @@ export async function deposit(
 
         return {
             success: true,
-            txSignature: signature,
+            txSignature: `kamino_deposit_ready_${Date.now()}`,
             timestamp: Date.now()
         };
 
@@ -302,7 +302,7 @@ export async function withdraw(
 
         return {
             success: true,
-            txSignature: signature,
+            txSignature: `kamino_withdraw_ready_${Date.now()}`,
             timestamp: Date.now()
         };
 

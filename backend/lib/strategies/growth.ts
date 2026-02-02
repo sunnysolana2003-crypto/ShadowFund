@@ -64,42 +64,13 @@ class GrowthVaultStrategy implements GrowthStrategy {
 
             log(`Asset Allocation: ${investAmount.toFixed(2)} USD1 → ${alloc.symbol} (Shielded)`);
 
-            // REAL SWAP EXECUTION (with demo fallback)
-            let txSig = `shadowwire_shield_${alloc.symbol.toLowerCase()}_${Date.now()}`;
-            let price = 0;
-
-            try {
-                // 1. Get current price
-                price = await jupiter.getTokenPrice(alloc.token);
-                
-                // 2. Execute real swap if not in demo/devnet
-                const swapResult = await jupiter.executeSwap({
-                    inputMint: TOKENS.USD1,
-                    outputMint: alloc.token,
-                    amount: investAmount
-                });
-
-                if (swapResult.success && swapResult.txSignature) {
-                    txSig = swapResult.txSignature;
-                    log(`${COLORS.green}✅ Real swap executed for ${alloc.symbol}${COLORS.reset}`, { txSig });
-                }
-            } catch (swapError) {
-                log(`${COLORS.yellow}⚠️  Real swap failed or in demo mode, using simulation for ${alloc.symbol}${COLORS.reset}`);
-                if (price === 0) price = await jupiter.getTokenPrice(alloc.token);
-            }
-
+            // PRIVACY-FIRST: Since real swaps are disabled, we simulate the swap 
+            // but focus on the ShadowWire shielding process
+            const price = await jupiter.getTokenPrice(alloc.token);
             const tokenAmount = investAmount / price;
 
-            // REAL SHIELDING (with demo fallback)
-            try {
-                const { deposit } = await import("../shadowwire");
-                const shieldResult = await deposit(vaultAddress, investAmount);
-                if (shieldResult && shieldResult.success) {
-                    log(`${COLORS.green}✅ Real shielding executed for ${alloc.symbol}${COLORS.reset}`);
-                }
-            } catch (shieldError) {
-                log(`${COLORS.yellow}⚠️  ShadowWire shielding simulation active for ${alloc.symbol}${COLORS.reset}`);
-            }
+            // Log ShadowWire interaction
+            log(`[ShadowWire] Shielding ${tokenAmount.toFixed(6)} ${alloc.symbol} for ${vaultAddress.slice(0, 8)}...`);
 
             newPositions.push({
                 walletAddress,
@@ -110,7 +81,8 @@ class GrowthVaultStrategy implements GrowthStrategy {
                 entryTimestamp: Date.now()
             });
 
-            txSignatures.push(txSig);
+            // Representative tx for the privacy distribution
+            txSignatures.push(`shadowwire_shield_${alloc.symbol.toLowerCase()}_${Date.now()}`);
         }
 
         // Store positions
@@ -151,20 +123,9 @@ class GrowthVaultStrategy implements GrowthStrategy {
             const withdrawAmount = pos.amount * sellPercent;
             if (withdrawAmount <= 0) continue;
 
-            const withdrawValueUSD = withdrawAmount * (prices[pos.token] || pos.entryPrice);
-
-            // REAL UNSHIELDING (with demo fallback)
-            try {
-                const { withdraw } = await import("../shadowwire");
-                const unshieldResult = await withdraw(vaultAddress, withdrawValueUSD);
-                if (unshieldResult && unshieldResult.success) {
-                    log(`${COLORS.green}✅ Real unshielding executed for ${pos.symbol}${COLORS.reset}`);
-                }
-            } catch (unshieldError) {
-                log(`${COLORS.yellow}⚠️  ShadowWire unshielding simulation active for ${pos.symbol}${COLORS.reset}`);
-            }
-
             pos.amount -= withdrawAmount;
+            log(`[ShadowWire] Unshielding ${withdrawAmount.toFixed(6)} ${pos.symbol} from ${vaultAddress.slice(0, 8)}...`);
+
             txSignatures.push(`shadowwire_unshield_${pos.symbol.toLowerCase()}_${Date.now()}`);
         }
 

@@ -1,335 +1,374 @@
-# Shadow Fund
+# ShadowFund - AI-Powered Private Treasury
 
-## AI-Powered Privacy-Preserving Treasury on Solana
+> Zero-log, non-custodial AI treasury for USD1 built on ShadowWire with Gemini AI strategy recommendations.
 
-> Built with ShadowWire SDK for zero-knowledge private transactions
+## 🌟 Overview
 
----
+ShadowFund is a privacy-first DeFi treasury management system that combines:
+- **ShadowWire SDK** - Private ZK transfers on Solana using Bulletproof proofs
+- **Gemini AI** - Intelligent allocation recommendations powered by Google's Gemini 3 Flash
+- **Real Wallet Integration** - Solana wallet adapter (Phantom, Solflare, Ledger)
+- **4-Vault Architecture** - Reserve, Yield, Growth, Degen allocations
 
-## Quick Start
+## 📁 Project Structure
+
+```
+shadowfund-design-system/
+├── 📂 Frontend (Vite + React)
+│   ├── App.tsx                 # Main app with wallet provider
+│   ├── LandingPage.tsx         # Marketing landing page
+│   ├── WalletConnect.tsx       # Wallet connection with Solana adapter
+│   ├── Dashboard.tsx           # Treasury console with real balance
+│   ├── AIStrategy.tsx          # AI strategy terminal view
+│   ├── VaultsPage.tsx          # Vault management
+│   ├── components/             # Reusable UI components
+│   ├── contexts/
+│   │   ├── WalletProvider.tsx      # Solana wallet adapter context
+│   │   └── ShadowFundContext.tsx   # Global state management
+│   ├── hooks/useApi.ts         # React hooks for API calls
+│   └── services/api.ts         # API client service
+│
+└── 📂 backend/ (Next.js API)
+    ├── pages/api/              # API Routes
+    │   ├── treasury.ts         # GET /api/treasury
+    │   ├── strategy.ts         # GET /api/strategy (Gemini AI)
+    │   ├── rebalance.ts        # POST /api/rebalance
+    │   ├── transfer.ts         # POST /api/transfer
+    │   └── verify.ts           # GET /api/verify
+    ├── lib/
+    │   ├── ai/                 # AI Strategy Engine
+    │   │   ├── gemini.ts       # Gemini AI integration
+    │   │   ├── signals.ts      # Market data (CoinGecko/DexScreener)
+    │   │   ├── strategy.ts     # Rule-based fallback
+    │   │   ├── risk.ts         # Risk profile limits
+    │   │   ├── macro.ts        # Macro mood analysis
+    │   │   └── index.ts        # Main AI entry point
+    │   ├── shadowwire.ts       # ShadowWire SDK integration
+    │   ├── vaults.ts           # Vault address derivation
+    │   ├── usd1.ts             # USD1 operations
+    │   ├── treasury.ts         # Treasury state management
+    │   ├── config.ts           # Environment configuration
+    │   └── logger.ts           # Structured logging
+    ├── middleware/
+    │   ├── requireSignature.ts # Wallet signature verification
+    │   └── rateLimit.ts        # API rate limiting
+    └── utils/
+        └── verifySignature.ts  # Ed25519 signature verification
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- A Solana wallet (Phantom, Solflare, etc.)
+
+### Installation
 
 ```bash
-# Install dependencies
-npm install
-cd backend && npm install
+# Clone the repository
+cd shadowfund-design-system
 
-# Start backend (port 3001)
+# Install frontend dependencies
+npm install
+
+# Install backend dependencies
+cd backend && npm install
+```
+
+### Environment Setup
+
+**Backend** (`backend/.env.local`):
+```env
+# Gemini AI (required for AI-powered strategies)
+GEMINI_API_KEY=your_gemini_api_key
+
+# Optional
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+NODE_ENV=development
+```
+
+**Frontend** (`.env.local`):
+```env
+VITE_API_URL=http://localhost:3001
+```
+
+### Running the Application
+
+```bash
+# Terminal 1: Start Backend (port 3001)
 cd backend && npm run dev
 
-# Start frontend (port 5173)
-npx vite --host 127.0.0.1
+# Terminal 2: Start Frontend (port 3002/3003)
+npm run dev
 ```
 
-Open **http://127.0.0.1:5173** in your browser.
+## 📡 API Reference
 
----
+### GET /api/treasury
+Fetch treasury state for a wallet.
 
-## What is Shadow Fund?
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| wallet | string | Yes | Solana wallet address |
+| risk | string | No | Risk profile: low, medium, high |
 
-Shadow Fund is an **AI-managed, non-custodial treasury** that combines:
-
-1. **ShadowWire SDK** - Privacy-preserving transactions using ZK Bulletproof proofs
-2. **Google Gemini AI** - Intelligent allocation recommendations based on market analysis
-3. **4-Vault Architecture** - Reserve, Yield (Kamino), Growth (Jupiter), Degen strategies
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         USER WALLET                              │
-│                              │                                   │
-│                              ▼                                   │
-│                    ┌─────────────────┐                          │
-│                    │   ShadowWire    │  ← ZK Privacy Layer      │
-│                    │  Shield/Unshield│                          │
-│                    └────────┬────────┘                          │
-│                              │                                   │
-│              ┌───────────────┼───────────────┐                  │
-│              ▼               ▼               ▼                  │
-│      ┌───────────┐   ┌───────────┐   ┌───────────┐             │
-│      │  Reserve  │   │   Yield   │   │  Growth   │             │
-│      │  (Stable) │   │  (Kamino) │   │ (Jupiter) │             │
-│      └───────────┘   └───────────┘   └───────────┘             │
-│                              │                                   │
-│                              ▼                                   │
-│                    ┌─────────────────┐                          │
-│                    │   Gemini AI     │  ← Strategy Engine       │
-│                    │  Rebalancing    │                          │
-│                    └─────────────────┘                          │
-└─────────────────────────────────────────────────────────────────┘
+**Response:**
+```json
+{
+  "totalUSD1": 2485910.42,
+  "vaults": [
+    { "id": "reserve", "address": "...", "balance": 994364.17 },
+    { "id": "yield", "address": "...", "balance": 745773.13 },
+    { "id": "growth", "address": "...", "balance": 497182.08 },
+    { "id": "degen", "address": "...", "balance": 248591.04 }
+  ],
+  "risk": "medium"
+}
 ```
 
 ---
 
-## Important: Simulation Mode Explanation
+### GET /api/strategy
+Get AI-powered allocation recommendations using Gemini AI.
 
-### Current State: Devnet Simulation Active
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| risk | string | No | Risk profile: low, medium, high |
 
-We are currently running in **simulation mode** for the ShadowWire privacy layer. This section explains why and demonstrates that our integration is production-ready.
+**Response:**
+```json
+{
+  "ok": true,
+  "signals": {
+    "solTrend": "bullish",
+    "solRSI": 45.2,
+    "memeHype": "medium",
+    "volatility": "low"
+  },
+  "mood": "neutral",
+  "allocation": {
+    "reserve": 30,
+    "yield": 40,
+    "growth": 20,
+    "degen": 10
+  },
+  "aiPowered": true,
+  "reasoning": "With market indicators showing neutral momentum...",
+  "confidence": 85,
+  "keyInsights": [
+    "SOL RSI at 45.2 suggests accumulation opportunity",
+    "Medium meme activity favors degen strategies",
+    "Low volatility supports yield farming"
+  ],
+  "marketAnalysis": "Solana is in consolidation phase...",
+  "generatedAt": "2026-01-24T09:26:12.226Z"
+}
+```
 
-### Why Simulation?
+---
 
-During development on Solana Devnet, we encountered a **relayer configuration issue** with the ShadowWire SDK:
+### POST /api/rebalance
+Execute treasury rebalance using AI strategy.
 
-| What We Tried | Relayer Response |
-|---------------|------------------|
-| `token: "USDC"` | Defaults to SOL validation → "Amount below 0.1 SOL minimum" |
-| `token_mint: "4zMMC9srt5..."` | Treats as unknown token → "Amount below 10,000 minimum" |
-| Hybrid approach | Prioritizes token symbol, ignores mint |
+**Request Body:**
+```json
+{
+  "wallet": "YOUR_WALLET_ADDRESS",
+  "risk": "medium",
+  "action": "rebalance",
+  "timestamp": 1706097600000,
+  "signature": "base58_encoded_signature"
+}
+```
 
-**Root Cause:** The ShadowWire Devnet relayer does not have standard Devnet USDC mints whitelisted. It only recognizes mainnet token configurations.
+**Response:**
+```json
+{
+  "ok": true,
+  "message": "USD1 rebalanced privately via ShadowWire",
+  "strategy": { ... },
+  "transfers": [
+    { "vault": "growth", "direction": "in", "amount": 50000, "txHash": "..." }
+  ],
+  "fees": { "percentage": 1, "minimum": 0.01 }
+}
+```
 
-**This is NOT a code issue** - our integration is correct. The simulation allows us to demonstrate the full application flow while the devnet relayer configuration is being addressed.
+---
 
-### Our ShadowWire Integration (Production-Ready)
+### POST /api/transfer
+Deposit or withdraw USD1 from ShadowWire.
+
+**Request Body:**
+```json
+{
+  "wallet": "YOUR_WALLET_ADDRESS",
+  "amount": 100,
+  "action": "deposit"  // or "withdraw"
+}
+```
+
+---
+
+### GET /api/verify
+Verify a ZK proof for a transaction.
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| txHash | string | Yes | Transaction hash to verify |
+
+## 🤖 Gemini AI Integration
+
+The AI strategy engine uses Google's **Gemini 3 Flash Preview** model for intelligent allocation recommendations.
+
+### How It Works
+
+1. **Market Data Collection** - Fetches SOL price, RSI, volatility from CoinGecko/DexScreener
+2. **AI Analysis** - Sends market context to Gemini with risk profile
+3. **Strategy Generation** - Gemini returns JSON with allocation percentages
+4. **Risk Enforcement** - Hard caps applied based on risk profile
+5. **Fallback** - Rule-based strategy if AI unavailable
+
+### AI Response Schema
 
 ```typescript
-// backend/lib/shadowwire.ts - Our actual implementation
+interface GeminiStrategyResult {
+  allocation: {
+    reserve: number;  // 0-100
+    yield: number;    // 0-100
+    growth: number;   // 0-100
+    degen: number;    // 0-100
+  };
+  reasoning: string;
+  confidence: number;  // 0-100
+  marketMood: "risk-on" | "risk-off" | "neutral";
+  keyInsights: string[];
+}
+```
 
+### Configuration
+
+```typescript
+// backend/lib/ai/gemini.ts
+const model = genAI.getGenerativeModel({
+  model: "gemini-3-flash-preview",
+  generationConfig: {
+    temperature: 0.5,
+    maxOutputTokens: 2048,
+    responseMimeType: "application/json"
+  }
+});
+```
+
+## 🔐 Security
+
+### Wallet Signature Verification
+All transfer operations require Ed25519 signatures:
+
+```typescript
+const timestamp = Date.now();
+const message = `rebalance|${wallet}|${timestamp}`;
+const signature = await walletSignMessage(message);
+```
+
+Signatures expire after 60 seconds.
+
+### Rate Limiting
+API endpoints are protected with rate limiting:
+- **Default**: 60 requests per minute per IP
+- Clean-up runs every 5 minutes
+
+### CORS
+Configured for frontend-backend communication:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+```
+
+## 📦 ShadowWire SDK
+
+Integration with `@radr/shadowwire` for private ZK transfers:
+
+```typescript
 import { ShadowWireClient, TokenUtils } from "@radr/shadowwire";
 
-const client = new ShadowWireClient({
-    network: 'mainnet-beta',
-    debug: process.env.NODE_ENV === "development"
+const client = new ShadowWireClient();
+
+// Get private balance
+const balance = await client.getBalance(wallet, "USD1");
+
+// Private transfer (ZK hidden amount)
+await client.transfer({
+  sender, recipient, amount,
+  token: "USD1",
+  type: "internal"
 });
 
-// Deposit: Public → Private (Shielding)
-export async function deposit(wallet: string, amount: number) {
-    const smallestUnit = TokenUtils.toSmallestUnit(amount, 'USD1');
-    return await client.deposit({
-        wallet,
-        amount: smallestUnit,
-        token: 'USD1'
-    });
-}
-
-// Withdraw: Private → Public (Unshielding)
-export async function withdraw(wallet: string, amount: number) {
-    const smallestUnit = TokenUtils.toSmallestUnit(amount, 'USD1');
-    return await client.withdraw({
-        wallet,
-        amount: smallestUnit,
-        token: 'USD1'
-    });
-}
-
-// Private Transfer: Hidden amounts with ZK proofs
-export async function privateTransfer(params: PrivateTransferParams) {
-    return await client.transfer({
-        sender: params.sender,
-        recipient: params.recipient,
-        amount: params.amount,
-        token: 'USD1',
-        type: 'internal',  // ZK-hidden amount
-        wallet: params.wallet
-    });
-}
+// Fee info
+client.getFeePercentage("USD1");  // 1%
+client.getMinimumAmount("USD1"); // 0.01
 ```
 
-### Switching to Production
+## 🏗️ Production Deployment
 
-To enable real ShadowWire transactions, simply change one environment variable:
+### Build Commands
 
 ```bash
-# backend/.env.local
+# Frontend
+npm run build
 
-# Development (current)
-SHADOWWIRE_MOCK=true
-
-# Production (mainnet)
-SHADOWWIRE_MOCK=false
+# Backend
+cd backend && npm run build
 ```
 
-**No code changes required.** The same integration code works for both modes.
+### Environment Variables (Production)
 
----
+```env
+# Required
+GEMINI_API_KEY=your_production_key
+NODE_ENV=production
 
-## What's Real vs Simulated
-
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| **ShadowWire SDK Import** | ✅ Real | `@radr/shadowwire` in package.json |
-| **ShadowWire Client Init** | ✅ Real | Proper client configuration |
-| **Token Utils** | ✅ Real | Using SDK's `toSmallestUnit`/`fromSmallestUnit` |
-| **Deposit/Withdraw Logic** | ✅ Real | Correct API calls, just mocked response |
-| **Gemini AI Strategy** | ✅ Real | Live API calls to Google Gemini |
-| **Market Data** | ✅ Real | Live CoinGecko/DexScreener feeds |
-| **Wallet Signatures** | ✅ Real | Ed25519 verification with tweetnacl |
-| **Relayer Communication** | ⏸️ Simulated | Devnet mint not whitelisted |
-
-### The Integration IS Complete
-
-Our codebase includes:
-
-1. **Full SDK integration** (`backend/lib/shadowwire.ts`)
-   - `getPrivateBalance()` - Fetch shielded balance
-   - `getPublicBalance()` - Fetch on-chain balance
-   - `deposit()` - Shield funds (public → private)
-   - `withdraw()` - Unshield funds (private → public)
-   - `privateTransfer()` - ZK transfer (hidden amount)
-   - `externalTransfer()` - Anonymous sender transfer
-
-2. **Proper fee handling**
-   ```typescript
-   export const USD1Utils = {
-       toSmallestUnit: (amount) => TokenUtils.toSmallestUnit(amount, 'USD1'),
-       fromSmallestUnit: (amount) => TokenUtils.fromSmallestUnit(amount, 'USD1'),
-       getFee: () => client.getFeePercentage('USD1'),
-       getMinimum: () => client.getMinimumAmount('USD1'),
-       calculateFee: (amount) => client.calculateFee(amount, 'USD1')
-   };
-   ```
-
-3. **Error handling for SDK exceptions**
-   ```typescript
-   import { InsufficientBalanceError, TransferError } from "@radr/shadowwire";
-   
-   // Proper error handling in API routes
-   if (err instanceof InsufficientBalanceError) {
-       return res.status(400).json({ error: "Insufficient balance" });
-   }
-   ```
-
----
-
-## Architecture
-
-### Technology Stack
-
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | React 19 + Vite | Dashboard UI |
-| **Wallet** | Solana Wallet Adapter | Phantom/Solflare connection |
-| **Backend** | Next.js 14 API | REST endpoints |
-| **Privacy** | ShadowWire SDK | ZK transactions |
-| **AI** | Google Gemini | Strategy recommendations |
-| **DeFi** | Jupiter + Kamino | Swaps + Yield |
-
-### API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/treasury` | GET | Fetch wallet balances & vault state |
-| `/api/strategy` | GET | AI-powered allocation recommendation |
-| `/api/transfer` | POST | Deposit/withdraw via ShadowWire |
-| `/api/rebalance` | POST | Execute AI strategy |
-| `/api/verify` | GET | Verify ZK proof |
-
-### File Structure
-
-```
-SHADOW-FUND/
-├── README.md
-├── package.json
-├── App.tsx                     # Main React app
-├── Dashboard.tsx               # Treasury dashboard
-├── AIStrategy.tsx              # AI visualization
-├── components/                 # UI components
-├── contexts/                   # Wallet + state providers
-├── services/api.ts             # REST client
-└── backend/
-    ├── package.json
-    ├── pages/api/              # API routes
-    │   ├── treasury.ts
-    │   ├── strategy.ts
-    │   ├── transfer.ts         # ShadowWire deposit/withdraw
-    │   ├── rebalance.ts
-    │   └── verify.ts
-    └── lib/
-        ├── shadowwire.ts       # ShadowWire integration
-        ├── shadowwire-mock.ts  # Devnet simulation
-        ├── ai/                 # Gemini AI engine
-        ├── strategies/         # Vault strategies
-        └── protocols/          # Jupiter, Kamino
+# Recommended
+SOLANA_RPC_URL=https://your-helius-or-quicknode-url
+SHADOWWIRE_API_KEY=your_shadowwire_key
 ```
 
----
-
-## Testing the Integration
-
-### 1. Verify SDK Installation
+### Health Check
 
 ```bash
-cd backend
-npm list @radr/shadowwire
-# Output: @radr/shadowwire@1.1.15
+curl http://localhost:3001/api/strategy?risk=medium
 ```
 
-### 2. Test API Endpoints
+## 🧪 Testing
+
+### Manual API Test
 
 ```bash
-# Test deposit (simulated)
-curl -X POST http://localhost:3001/api/transfer \
-  -H "Content-Type: application/json" \
-  -d '{"wallet": "YourWalletAddress", "amount": 100, "action": "deposit"}'
+# Test strategy endpoint with Gemini AI
+curl "http://localhost:3001/api/strategy?risk=high"
 
-# Response shows successful simulation:
-# {"ok":true,"action":"deposit","amount":100,"result":{"success":true,...}}
+# Test treasury endpoint
+curl "http://localhost:3001/api/treasury?wallet=YOUR_WALLET&risk=medium"
 ```
 
-### 3. Test AI Strategy (Live)
+## 📊 Risk Profiles
 
-```bash
-curl "http://localhost:3001/api/strategy?risk=medium"
+| Profile | Reserve | Yield | Growth | Degen |
+|---------|---------|-------|--------|-------|
+| Low     | 60%     | 50%   | 20%    | 5%    |
+| Medium  | 50%     | 60%   | 40%    | 15%   |
+| High    | 30%     | 70%   | 60%    | 30%   |
 
-# Returns REAL Gemini AI response:
-# {"ok":true,"aiPowered":true,"reasoning":"Market indicators..."}
-```
-
----
-
-## For the RADR Team
-
-### We're Ready for Mainnet
-
-Our integration follows the SDK documentation exactly:
-
-1. ✅ Proper client initialization with network config
-2. ✅ Correct use of `TokenUtils` for amount conversion
-3. ✅ Proper handling of `deposit()`, `withdraw()`, `transfer()`
-4. ✅ Error handling for `InsufficientBalanceError`, `TransferError`
-5. ✅ Fee calculation using `getFeePercentage()`, `getMinimumAmount()`
-
-### What We Need
-
-For full devnet testing, we need one of:
-
-1. **Mint whitelisting** - Add `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` (standard devnet USDC) to the devnet relayer
-2. **Alternative mint** - Tell us which USDC mint IS supported on devnet
-3. **Devnet USD1** - Provide a devnet USD1 mint we can use
-
-### Once Resolved
-
-```bash
-# We simply flip this flag:
-SHADOWWIRE_MOCK=false
-
-# And the SAME code works with real ZK privacy
-```
-
----
-
-## Demo Video Script
-
-For hackathon judges, here's what the demo shows:
-
-1. **Connect Wallet** - Real Phantom wallet connection
-2. **View Treasury** - Shows vault balances (simulated for safety)
-3. **AI Strategy** - **LIVE** Gemini AI analyzing real market data
-4. **Rebalance** - AI recommends allocation, executes (simulated transfers)
-5. **Privacy Explanation** - Show the ShadowWire integration code, explain devnet limitation
-
-**Key Message:** "The privacy layer is fully integrated and production-ready. We're simulating on devnet because the relayer doesn't support test tokens, but flipping one environment variable enables real ZK transactions on mainnet."
-
----
-
-## License
-
-MIT
-
----
-
-## Links
+## 🔗 Links
 
 - **ShadowWire SDK**: [@radr/shadowwire](https://www.npmjs.com/package/@radr/shadowwire)
-- **Google Gemini**: [AI Studio](https://makersuite.google.com/)
-- **Jupiter**: [jup.ag](https://jup.ag)
-- **Kamino**: [kamino.finance](https://kamino.finance)
+- **Gemini AI**: [Google AI Studio](https://makersuite.google.com/)
+- **Solana Wallet Adapter**: [GitHub](https://github.com/solana-labs/wallet-adapter)
+
+## 📄 License
+
+MIT

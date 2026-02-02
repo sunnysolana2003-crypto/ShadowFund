@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Fingerprint, Smartphone, CheckCircle2, Loader2, ArrowRight, AlertCircle, Zap } from 'lucide-react';
+import { Shield, Lock, Fingerprint, Smartphone, CheckCircle2, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useShadowFund } from './contexts/ShadowFundContext';
 import { ShadowButton } from './components/ShadowButton';
 import { ShadowTypography } from './components/ShadowTypography';
 import { ShadowCard } from './components/ShadowCard';
@@ -16,7 +15,6 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
   const [step, setStep] = useState<'selection' | 'connecting' | 'verifying' | 'success' | 'error'>('selection');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const { isSimulationMode } = useShadowFund();
   const { publicKey, connected, connecting, disconnect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
 
@@ -74,7 +72,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
     <div className="min-h-screen bg-shadow-black flex flex-col items-center justify-center relative overflow-hidden px-lg">
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF7A00]/5 rounded-full blur-[120px] opacity-30" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-shadow-green/5 rounded-full blur-[120px] opacity-30" />
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
       </div>
 
@@ -85,11 +83,11 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
         className="w-full max-w-md z-10"
       >
         <div className="text-center mb-xl space-y-md">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-sm border-2 border-[#FF7A00] bg-shadow-black shadow-[0_0_15px_rgba(255,122,0,0.3)] mb-md mx-auto">
-            <Shield className="w-8 h-8 text-[#FF7A00]" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-sm border-2 border-shadow-green bg-shadow-black glow-green mb-md mx-auto">
+            <Shield className="w-8 h-8 text-shadow-green" />
           </div>
           <ShadowTypography variant="h2" className="text-white tracking-tighter">
-            Shadow<span className="text-[#FF7A00]">Agent</span> Access
+            Shadow<span className="text-shadow-green">Vault</span> Access
           </ShadowTypography>
           <p className="text-shadow-500 text-sm font-medium tracking-wide">
             PRIVATE BANKING GATEWAY
@@ -178,9 +176,9 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
                 className="py-xl flex flex-col items-center text-center space-y-xl"
               >
                 <div className="relative">
-                  <div className="absolute inset-0 animate-ping rounded-full bg-[#FF7A00]/20" />
-                  <div className="relative w-24 h-24 rounded-full border border-[#FF7A00]/30 flex items-center justify-center bg-[#FF7A00]/5">
-                    <Loader2 className="w-10 h-10 text-[#FF7A00] animate-spin" />
+                  <div className="absolute inset-0 animate-ping rounded-full bg-shadow-green/20" />
+                  <div className="relative w-24 h-24 rounded-full border border-shadow-green/30 flex items-center justify-center bg-shadow-green/5">
+                    <Loader2 className="w-10 h-10 text-shadow-green animate-spin" />
                   </div>
                 </div>
 
@@ -201,7 +199,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
                     "Loading Private Treasury"
                   ].map((text, i) => (
                     <div key={i} className="flex items-center gap-md text-left px-lg">
-                      <div className="w-1 h-1 rounded-full bg-[#FF7A00] animate-pulse" />
+                      <div className="w-1 h-1 rounded-full bg-shadow-green animate-pulse" />
                       <span className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest">{text}</span>
                     </div>
                   ))}
@@ -216,13 +214,13 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
                 animate={{ opacity: 1, y: 0 }}
                 className="py-xl flex flex-col items-center text-center space-y-xl"
               >
-                <div className="w-24 h-24 rounded-full border-2 border-[#FF7A00] flex items-center justify-center bg-[#FF7A00]/10 shadow-[0_0_15px_rgba(255,122,0,0.3)]">
-                  <CheckCircle2 className="w-12 h-12 text-[#FF7A00]" />
+                <div className="w-24 h-24 rounded-full border-2 border-shadow-green flex items-center justify-center bg-shadow-green/10 glow-green">
+                  <CheckCircle2 className="w-12 h-12 text-shadow-green" />
                 </div>
 
                 <div className="space-y-sm">
                   <ShadowTypography variant="h3" className="text-white">Access Granted</ShadowTypography>
-                  <p className="text-[#FF7A00] text-[10px] font-bold uppercase tracking-[0.3em]">Wallet Connected</p>
+                  <p className="text-shadow-green text-[10px] font-bold uppercase tracking-[0.3em]">Wallet Connected</p>
                   {publicKey && (
                     <p className="text-shadow-500 text-xs font-mono mt-2">
                       {publicKey.toBase58().slice(0, 12)}...{publicKey.toBase58().slice(-12)}
@@ -267,7 +265,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
         >
           <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md">
             <Lock className="w-3 h-3 text-shadow-gold" />
-            <span className="text-[9px] font-bold text-shadow-gold uppercase tracking-[0.2em]">Zero-Knowledge Verified by ShadowAgent™</span>
+            <span className="text-[9px] font-bold text-shadow-gold uppercase tracking-[0.2em]">Zero-Knowledge Verified by ShadowWire™</span>
           </div>
 
           <div className="flex gap-lg">

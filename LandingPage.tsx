@@ -42,7 +42,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
     <div className="relative min-h-screen bg-shadow-black overflow-hidden flex flex-col items-center">
       {/* Background Cinematic Elements */}
       <div ref={tokenContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/10 blur-2xl w-96 h-96 bg-[#FF7A00]/5 rounded-full" />
+        <div className="absolute top-1/4 left-1/10 blur-2xl w-96 h-96 bg-shadow-green/5 rounded-full" />
         <div className="absolute bottom-1/4 right-1/10 blur-2xl w-96 h-96 bg-shadow-gold/5 rounded-full" />
 
         {/* Animated Tokens for Parallax Effect */}
@@ -56,11 +56,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       {/* Navigation */}
       <nav className="relative z-20 w-full max-w-7xl px-lg py-xl flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border border-[#FF7A00] flex items-center justify-center rounded-sm shadow-[0_0_10px_rgba(255,122,0,0.3)]">
-            <Shield className="w-5 h-5 text-[#FF7A00]" />
+          <div className="w-8 h-8 border border-shadow-green flex items-center justify-center rounded-sm glow-green">
+            <Shield className="w-5 h-5 text-shadow-green" />
           </div>
           <span className="text-white font-display font-black tracking-tighter uppercase text-lg">
-            Shadow<span className="text-[#FF7A00]">Agent</span>
+            Shadow<span className="text-shadow-green">Fund</span>
           </span>
         </div>
         <div className="hidden md:flex items-center gap-xl">
@@ -79,18 +79,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="space-y-xl"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#FF7A00]/30 bg-[#FF7A00]/5 backdrop-blur-md">
-            <Zap className="w-3 h-3 text-[#FF7A00]" />
-            <span className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-[0.2em]">Institutional Privacy Protocol</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-shadow-green/30 bg-shadow-green/5 backdrop-blur-md">
+            <Zap className="w-3 h-3 text-shadow-green" />
+            <span className="text-[10px] font-bold text-shadow-green uppercase tracking-[0.2em]">Institutional Privacy Protocol</span>
           </div>
 
           <h1 className="text-6xl md:text-8xl font-display font-bold text-white tracking-tighter leading-none">
-            Invisible <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF7A00] via-shadow-gold to-[#FF7A00] bg-[length:200%_auto] animate-[gradient_8s_linear_infinite]">DeFi Yields</span>
+            Your Private <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-shadow-green via-shadow-gold to-shadow-green bg-[length:200%_auto] animate-[gradient_8s_linear_infinite]">AI Treasury</span>
           </h1>
 
           <p className="text-lg md:text-xl text-shadow-400 max-w-2xl mx-auto font-light leading-relaxed">
-            A privacy-first agent that optimizes your USD1 holdings using zero-knowledge proofs. Earn maximally without revealing your strategies.
+            USD1, managed by autonomous intelligence, protected by zero-knowledge cryptography. The evolution of private wealth starts here.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-md pt-lg">
@@ -101,12 +101,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                 className="px-12 group"
                 onClick={onEnter}
               >
-                Connect Wallet
+                Enter ShadowFund
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </ShadowButton>
             </motion.div>
-            <ShadowButton variant="secondary" size="lg" className="text-shadow-400" onClick={onEnter}>
-              Read Docs
+            <ShadowButton variant="ghost" size="lg" className="text-shadow-400">
+              Read Protocol Whitepaper
             </ShadowButton>
           </div>
         </motion.div>
@@ -126,21 +126,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         {[
           {
             icon: <Cpu className="w-8 h-8" />,
-            title: "Total Privacy",
+            title: "AI Optimization",
             description: "Deep-learning models constantly rebalance your USD1 for maximum risk-adjusted yield across every chain.",
             color: "text-shadow-gold"
           },
           {
             icon: <Lock className="w-8 h-8" />,
-            title: "Instant Execution",
+            title: "ZK Privacy",
             description: "Every transaction is shielded. Your balance and strategy are known only to you and the treasury node.",
-            color: "text-[#FF7A00]"
+            color: "text-shadow-green"
           },
           {
             icon: <Shield className="w-8 h-8" />,
-            title: "Yield Optimization",
+            title: "Custodial Security",
             description: "Multi-sig protection meets autonomous execution. Secured by a decentralized network of private validators.",
-            color: "text-[#FF7A00]"
+            color: "text-shadow-green"
           }
         ].map((feature, i) => (
           <motion.div
@@ -149,7 +149,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.2 }}
-            className="p-xl rounded-2xl glass-panel-light border-white/5 space-y-md group hover:border-[#FF7A00]/20 transition-all duration-500"
+            className="p-xl rounded-2xl glass-panel-light border-white/5 space-y-md group hover:border-shadow-green/20 transition-all duration-500"
           >
             <div className={`${feature.color} group-hover:scale-110 transition-transform duration-500`}>
               {feature.icon}
@@ -161,11 +161,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       </section>
 
       <footer className="relative z-10 w-full max-w-7xl px-lg py-xl flex flex-col md:flex-row items-center justify-between border-t border-white/5 text-[10px] font-bold uppercase tracking-widest text-shadow-700">
-        <div className="mb-4 md:mb-0">© 2024 ShadowAgent protocol. All rights reserved.</div>
+        <div className="mb-4 md:mb-0">© 2024 ShadowFund protocol. All rights reserved.</div>
         <div className="flex gap-xl">
-          <a href="#" className="hover:text-[#FF7A00] transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-[#FF7A00] transition-colors">Term of Use</a>
-          <a href="#" className="hover:text-[#FF7A00] transition-colors">Documentation</a>
+          <a href="#" className="hover:text-shadow-green transition-colors">Privacy Policy</a>
+          <a href="#" className="hover:text-shadow-green transition-colors">Term of Use</a>
+          <a href="#" className="hover:text-shadow-green transition-colors">Documentation</a>
         </div>
       </footer>
 

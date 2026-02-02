@@ -22,22 +22,20 @@ export default async function handler(
     const startTime = Date.now();
 
     try {
-        const { wallet, risk, simulation } = req.query;
+        const { wallet, risk } = req.query;
 
         if (!wallet || typeof wallet !== "string") {
             return res.status(400).json({ error: "wallet parameter required" });
         }
 
         const riskLevel = (risk as RiskProfile) || "medium";
-        const isSimulation = simulation === "true";
 
         console.log("\n" + "┈".repeat(50));
         console.log("\x1b[32m[TREASURY API]\x1b[0m 🏦 Fetching state for:", `\x1b[1m${wallet.slice(0, 12)}...\x1b[0m`);
         console.log("\x1b[32m[TREASURY API]\x1b[0m 🎯 Risk Profile:", riskLevel);
-        console.log("\x1b[32m[TREASURY API]\x1b[0m 🎭 Simulation Mode:", isSimulation ? "ON" : "OFF");
 
         // Load current USD1 state
-        const data = await loadTreasury(wallet, riskLevel, isSimulation);
+        const data = await loadTreasury(wallet, riskLevel);
 
         const duration = Date.now() - startTime;
         console.log("\x1b[32m[TREASURY API]\x1b[0m 💰 Total Balance:", `\x1b[1m$${data.totalUSD1.toLocaleString()}\x1b[0m`);

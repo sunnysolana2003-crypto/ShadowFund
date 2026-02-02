@@ -46,7 +46,7 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
             <SignalCard
               label="SOL Trend"
               value={signals?.solTrend || '...'}
-              icon={signals?.solTrend === 'bullish' ? <TrendingUp className="text-[#FF7A00]" /> : <TrendingDown className="text-shadow-error" />}
+              icon={signals?.solTrend === 'bullish' ? <TrendingUp className="text-shadow-green" /> : <TrendingDown className="text-shadow-error" />}
             />
             <SignalCard
               label="SOL RSI"
@@ -71,13 +71,13 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
             {/* Deep Analysis */}
             <ShadowCard className="lg:col-span-12 p-2xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-white/5 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-lg opacity-10 pointer-events-none">
-                <Brain className="w-64 h-64 text-[#FF7A00]" />
+                <Brain className="w-64 h-64 text-shadow-green" />
               </div>
 
               <div className="relative z-10 space-y-xl">
                 <div className="flex items-center gap-4 border-b border-white/10 pb-xl">
-                  <div className="p-4 rounded-2xl bg-[#FF7A00]/10">
-                    <Sparkles className="w-8 h-8 text-[#FF7A00]" />
+                  <div className="p-4 rounded-2xl bg-shadow-green/10">
+                    <Sparkles className="w-8 h-8 text-shadow-green" />
                   </div>
                   <div>
                     <ShadowTypography variant="h3" className="text-white">Gemini Market Analysis</ShadowTypography>
@@ -92,7 +92,7 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
                       {strategy.data?.marketAnalysis || "Awaiting signals from the Solana mainnet..."}
                     </p>
                     <div className="p-xl rounded-xl bg-white/[0.02] border border-white/5">
-                      <p className="text-sm font-bold text-[#FF7A00] mb-3 uppercase tracking-widest">Strategic Logic</p>
+                      <p className="text-sm font-bold text-shadow-green mb-3 uppercase tracking-widest">Strategic Logic</p>
                       <p className="text-sm text-shadow-400 leading-relaxed italic">
                         "{strategy.data?.reasoning || "Calculating optimal yield-to-risk vector based on current volatility coefficients..."}"
                       </p>
@@ -104,7 +104,7 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
                     <div className="space-y-md">
                       {strategy.data?.keyInsights?.map((insight, i) => (
                         <div key={i} className="flex gap-4 p-lg rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-                          <div className="w-8 h-8 rounded-full bg-[#FF7A00]/10 flex items-center justify-center text-[#FF7A00] font-mono text-sm shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-shadow-green/10 flex items-center justify-center text-shadow-green font-mono text-sm shrink-0">
                             {i + 1}
                           </div>
                           <p className="text-sm text-shadow-300 leading-snug">{insight}</p>
@@ -120,7 +120,7 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
             <ShadowCard className="lg:col-span-8 p-xl">
               <div className="flex items-center justify-between mb-xl">
                 <ShadowTypography variant="h4" className="text-white">Risk Profile Correlation</ShadowTypography>
-                <Shield className="w-5 h-5 text-[#FF7A00]" />
+                <Shield className="w-5 h-5 text-shadow-green" />
               </div>
 
               <div className="space-y-xl">
@@ -130,13 +130,13 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
                     <div key={vault} className="space-y-md">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-white uppercase tracking-widest">{vault}</span>
-                        <span className="text-sm font-mono text-[#FF7A00]">{val.toFixed(1)}% Target</span>
+                        <span className="text-sm font-mono text-shadow-green">{val.toFixed(1)}% Target</span>
                       </div>
                       <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${val}%` }}
-                          className="h-full bg-gradient-to-r from-[#FF7A00] to-white shadow-[0_0_10px_rgba(255,122,0,0.3)]"
+                          className="h-full bg-gradient-to-r from-shadow-green to-white shadow-[0_0_10px_rgba(0,255,163,0.3)]"
                         />
                       </div>
                     </div>

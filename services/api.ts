@@ -146,12 +146,8 @@ class ShadowFundAPI {
     /**
      * Fetch treasury data for a wallet
      */
-    async getTreasury(wallet: string, risk: "low" | "medium" | "high" = "medium", simulation: boolean = false): Promise<Treasury> {
-        const params = new URLSearchParams({ 
-            wallet, 
-            risk,
-            simulation: simulation.toString()
-        });
+    async getTreasury(wallet: string, risk: "low" | "medium" | "high" = "medium"): Promise<Treasury> {
+        const params = new URLSearchParams({ wallet, risk });
         const response = await fetch(`${this.baseUrl}/api/treasury?${params}`);
 
         if (!response.ok) {
