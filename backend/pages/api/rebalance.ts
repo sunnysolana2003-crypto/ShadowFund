@@ -178,15 +178,12 @@ export default async function handler(
                         throw new Error(result.error || 'Transfer failed');
                     }
                 } catch (moveError: any) {
-                    // If real transfer fails, use demo mode
-                    log("STEP 5", `  🎭 Transfer failed, using DEMO MODE for ${vault.id}`);
-
-                    const { default: DEMO_MODE } = await import('../../lib/demoMode');
-                    DEMO_MODE.setVaultBalance(wallet, vault.id, target);
+                    // If real transfer fails, use simulation
+                    log("STEP 5", `  🎭 Transfer failed, using simulation for ${vault.id}`);
 
                     result = {
                         success: true,
-                        txHash: `demo_${vault.id}_${Date.now()}`,
+                        txHash: `sim_${vault.id}_${Date.now()}`,
                         demo: true,
                     };
                 }
