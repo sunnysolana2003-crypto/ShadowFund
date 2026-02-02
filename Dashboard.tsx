@@ -135,7 +135,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     <div className="flex min-h-screen bg-shadow-black text-shadow-300 font-sans">
       <Sidebar onNavigate={onNavigate} currentView={currentView} />
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
-        <Navbar />
+        <Navbar currentView={currentView} onNavigate={onNavigate} />
 
         {/* Demo Mode Banner */}
         {totalBalance > 0 && publicBalance > 0 && (
@@ -158,7 +158,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
             <div>
               <ShadowTypography variant="h1" className="text-white mb-2">My Portfolio</ShadowTypography>
               <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-shadow-green shadow-[0_0_8px_#00FFA3]" />
+                <div className="w-2 h-2 rounded-full bg-shadow-green shadow-[0_0_8px_var(--shadow-green)]" />
                 <span className="text-[10px] uppercase tracking-widest text-shadow-500 font-bold">Secure ZK-Node Connected</span>
                 <span className="px-2 py-0.5 rounded-full bg-shadow-green/10 border border-shadow-green text-[8px] uppercase font-black text-shadow-green tracking-tighter">Mainnet Beta</span>
               </div>

@@ -109,6 +109,15 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #333333;
         }
+
+        /* Hide scrollbars in horizontal chip rows (mobile nav, etc.) */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none; /* IE/Edge */
+            scrollbar-width: none; /* Firefox */
+        }
     </style>
 <link rel="stylesheet" href="/index.css">
 </head>

@@ -73,7 +73,7 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
     <div className="flex min-h-screen bg-shadow-black text-shadow-300 font-sans">
       <Sidebar onNavigate={onNavigate} currentView={currentView} />
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
-        <Navbar />
+        <Navbar currentView={currentView} onNavigate={onNavigate} />
 
         <div className="p-xl md:p-2xl space-y-2xl max-w-7xl mx-auto w-full">
           {/* Header */}
