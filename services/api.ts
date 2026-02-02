@@ -4,7 +4,7 @@
  */
 
 // @ts-ignore - Vite provides this
-const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || "http://localhost:3001";
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || "";
 
 export interface Vault {
     id: "reserve" | "yield" | "growth" | "degen";
