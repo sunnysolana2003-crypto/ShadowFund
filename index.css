@@ -16,6 +16,46 @@ body {
   color: #D4D4D4;
 }
 
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism */
+  .glass-panel {
+    background: rgba(17, 17, 17, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-panel-light {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  /* Premium glows */
+  .glow-green {
+    box-shadow: 0 0 25px -5px rgba(255, 122, 0, 0.35);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 25px -5px rgba(197, 160, 89, 0.2);
+  }
+
+  /* Hide scrollbars in horizontal chip rows */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 /* Custom Scrollbar (also in index.html, but keep for consistency) */
 ::-webkit-scrollbar {
   width: 4px;

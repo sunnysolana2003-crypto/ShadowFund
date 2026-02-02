@@ -88,6 +88,11 @@ export const TOKENS = {
     WSOL: "So11111111111111111111111111111111111111112",
     WETH: "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", // Generic Devnet WETH
     WBTC: "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh", // Generic Devnet WBTC
+    // Meme tokens (placeholders on mainnet; override via env if needed)
+    BONK: IS_DEVNET
+        ? "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263" // Bonk mint (commonly used mainnet mint; devnet placeholder)
+        : "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    RADR: process.env.RADR_MINT || "So11111111111111111111111111111111111111112",
 } as const;
 
 // Growth vault target allocation

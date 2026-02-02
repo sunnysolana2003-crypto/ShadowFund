@@ -1,15 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { loadTreasury } from "../../lib/treasury";
 import { RiskProfile } from "../../lib/ai";
+import { applyCors } from "../../lib/cors";
+import logger from "../../lib/logger";
 
 export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    // Enable CORS
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    applyCors(req, res, ["GET", "OPTIONS"]);
 
     if (req.method === "OPTIONS") {
         return res.status(200).end();
@@ -30,21 +29,17 @@ export default async function handler(
 
         const riskLevel = (risk as RiskProfile) || "medium";
 
-        console.log("\n" + "┈".repeat(50));
-        console.log("\x1b[32m[TREASURY API]\x1b[0m 🏦 Fetching state for:", `\x1b[1m${wallet.slice(0, 12)}...\x1b[0m`);
-        console.log("\x1b[32m[TREASURY API]\x1b[0m 🎯 Risk Profile:", riskLevel);
+        logger.info("Treasury request", "TREASURY", { wallet: `${wallet.slice(0, 12)}...`, risk: riskLevel });
 
         // Load current USD1 state
         const data = await loadTreasury(wallet, riskLevel);
 
         const duration = Date.now() - startTime;
-        console.log("\x1b[32m[TREASURY API]\x1b[0m 💰 Total Balance:", `\x1b[1m$${data.totalUSD1.toLocaleString()}\x1b[0m`);
-        console.log("\x1b[32m[TREASURY API]\x1b[0m ✓ Loaded in", `${duration}ms`);
-        console.log("┈".repeat(50) + "\n");
+        logger.api(req.method || "GET", "/api/treasury", 200, duration);
 
         res.status(200).json(data);
     } catch (err) {
-        console.error("\x1b[31m[TREASURY API] ❌ Error:\x1b[0m", err);
+        logger.error("Treasury error", "TREASURY", err instanceof Error ? { message: err.message } : { error: String(err) });
         res.status(500).json({ error: "Failed to load treasury" });
     }
 }

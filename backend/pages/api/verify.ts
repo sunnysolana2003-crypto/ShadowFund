@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { applyCors } from "../../lib/cors";
 
 /**
  * Verify Transaction Proof
@@ -10,10 +11,7 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    // Enable CORS for frontend
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    applyCors(req, res, ["GET", "OPTIONS"]);
 
     if (req.method === "OPTIONS") {
         return res.status(200).end();

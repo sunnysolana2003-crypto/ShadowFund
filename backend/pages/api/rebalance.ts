@@ -6,6 +6,7 @@ import { moveUSD1, getUSD1Fees } from "../../lib/usd1";
 import { deposit, withdraw } from "../../lib/shadowwire";
 import { getAIStrategy } from "../../lib/ai";
 import { executeAllStrategies, getVaultStats, getAllTransactions } from "../../lib/strategies";
+import { applyCors } from "../../lib/cors";
 
 // Color codes for terminal output
 const COLORS = {
@@ -31,10 +32,7 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    // Enable CORS for frontend
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    applyCors(req, res, ["POST", "OPTIONS"]);
 
     if (req.method === "OPTIONS") {
         return res.status(200).end();

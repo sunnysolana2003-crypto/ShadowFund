@@ -1,14 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getAIStrategy, RiskProfile } from "../../lib/ai";
+import { applyCors } from "../../lib/cors";
+import logger from "../../lib/logger";
 
 export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    // Enable CORS for frontend
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    applyCors(req, res, ["GET", "OPTIONS"]);
 
     if (req.method === "OPTIONS") {
         return res.status(200).end();
@@ -24,26 +23,20 @@ export default async function handler(
         const { risk } = req.query;
         const riskLevel = (risk as RiskProfile) || "medium";
 
-        console.log("\n" + "─".repeat(50));
-        console.log("\x1b[36m[STRATEGY API]\x1b[0m 📡 Strategy request received");
-        console.log("\x1b[36m[STRATEGY API]\x1b[0m 🎯 Risk level:", riskLevel);
-        console.log("─".repeat(50));
+        logger.info("Strategy request", "STRATEGY", { risk: riskLevel });
 
         const strategy = await getAIStrategy(riskLevel);
 
         const duration = Date.now() - startTime;
+        logger.api(req.method || "GET", "/api/strategy", 200, duration);
 
-        console.log("─".repeat(50));
-        console.log("\x1b[36m[STRATEGY API]\x1b[0m \x1b[32m✓ Response ready in " + duration + "ms\x1b[0m");
-        console.log("─".repeat(50) + "\n");
-
-        res.json({
+        res.status(200).json({
             ok: true,
             ...strategy,
             generatedAt: new Date().toISOString()
         });
     } catch (err) {
-        console.error("\x1b[31m[STRATEGY API] ❌ Error:\x1b[0m", err);
+        logger.error("Strategy error", "STRATEGY", err instanceof Error ? { message: err.message } : { error: String(err) });
         res.status(500).json({ error: "Failed to get strategy" });
     }
 }
