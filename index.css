@@ -1,0 +1,51 @@
+/* ShadowFund Design System Styles */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --shadow-black: #050505;
+  --shadow-orange: #FF7A00;
+  --shadow-amber: #C5A059;
+  --shadow-orange-glow: rgba(255, 122, 0, 0.4);
+}
+
+body {
+  background-color: var(--shadow-black);
+  color: #D4D4D4;
+}
+
+@layer utilities {
+  .glow-orange {
+    box-shadow: 0 0 20px var(--shadow-orange-glow);
+  }
+  
+  .tech-icon-float {
+    will-change: transform;
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+/* Custom Scrollbar (also in index.html, but keep for consistency) */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333333;
+}
