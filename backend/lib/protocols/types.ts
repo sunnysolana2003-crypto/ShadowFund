@@ -86,3 +86,6 @@ export const GROWTH_ALLOCATION = {
     WETH: 30, // 30% Wrapped ETH
     WBTC: 20, // 20% Wrapped BTC
 } as const;
+
+// Degen vault target tokens
+export const DEGEN_TOKENS = ["SOL", "BONK", "RADR"] as const;
