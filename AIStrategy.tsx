@@ -136,7 +136,7 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${val}%` }}
-                          className="h-full bg-gradient-to-r from-shadow-green to-white shadow-[0_0_10px_rgba(0,255,163,0.3)]"
+                          className="h-full bg-gradient-to-r from-shadow-green to-white shadow-[0_0_10px_var(--shadow-green)]"
                         />
                       </div>
                     </div>

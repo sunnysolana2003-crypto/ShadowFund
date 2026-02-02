@@ -44,7 +44,7 @@ const AnimatedValue: React.FC<{ value: number; prefix?: string; suffix?: string;
   return <span ref={elRef}>{prefix}{value.toLocaleString()}{suffix}</span>;
 };
 
-const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string }> = ({ onNavigate, currentView }) => {
+const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string; onDisconnect?: () => void }> = ({ onNavigate, currentView }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');

@@ -50,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView = 'dashboard', onN
               {item.icon}
             </span>
             <span className="text-sm font-bold tracking-wide">{item.label}</span>
-            {currentView === item.id && <div className="ml-auto w-1 h-1 rounded-full bg-shadow-green shadow-[0_0_8px_rgba(0,255,163,0.8)]" />}
+            {currentView === item.id && <div className="ml-auto w-1 h-1 rounded-full bg-shadow-green shadow-[0_0_8px_var(--shadow-green)]" />}
           </button>
         ))}
       </nav>

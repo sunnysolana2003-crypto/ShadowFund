@@ -2,15 +2,34 @@ import { ShadowWireClient, TokenUtils } from "@radr/shadowwire";
 import { PublicKey } from "@solana/web3.js";
 import { connection } from "./rpc";
 import { config } from "./config";
+import { MockShadowWireClient, MockTokenUtils } from "./shadowwire-mock";
+import { TOKENS } from "./protocols/types";
 
-const USD1_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+const USD1_MINT = TOKENS.USD1;
+
+function isDevnet(): boolean {
+    return (
+        (process.env.SOLANA_RPC_URL || "").includes("devnet") ||
+        (process.env.SHADOWWIRE_CLUSTER || "").includes("devnet")
+    );
+}
+
+function shadowwireNetwork(): "devnet" | "mainnet" {
+    return isDevnet() ? "devnet" : "mainnet";
+}
+
+function isMockMode(): boolean {
+    return config.shadowwireMock === true;
+}
 
 // Initialize the ShadowWire client
-export const shadowwire = new ShadowWireClient({
-    // @ts-ignore - Force devnet network to switch API endpoints
-    network: 'devnet',
-    debug: process.env.NODE_ENV === "development"
-});
+export const shadowwire: any = isMockMode()
+    ? new MockShadowWireClient({ network: shadowwireNetwork(), debug: process.env.NODE_ENV === "development" })
+    : new ShadowWireClient({
+        // @ts-ignore - SDK network enum is not typed for all values
+        network: shadowwireNetwork(),
+        debug: process.env.NODE_ENV === "development",
+    });
 
 // Helper to get USD1 balance for a wallet
 export async function getPrivateBalance(wallet: string): Promise<number> {
@@ -143,4 +162,6 @@ export async function withdraw(wallet: string, amount: number) {
 }
 
 // Export the client and utils
-export { ShadowWireClient, TokenUtils };
+export const TokenUtilsImpl = isMockMode() ? MockTokenUtils : TokenUtils;
+export { ShadowWireClient };
+export { TokenUtilsImpl as TokenUtils };

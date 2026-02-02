@@ -9,9 +9,7 @@ import TechStack from './TechStack';
 import { WalletProvider } from './contexts/WalletProvider';
 import { ShadowFundProvider, useShadowFund } from './contexts/ShadowFundContext';
 
-// 🎬 DEMO MODE: Set to true to skip wallet connection (for presentations)
-const DEMO_MODE = false;
-const DEMO_WALLET = 'DEMO7xQai9wYgLbGSDjJxr3cFkQaQZ5uY2hZfGKpL7Wallet'; // Simulated demo wallet
+// 🎬 Demo mode is controlled via environment flags elsewhere; keep routing deterministic here.
 
 // Inner app component that uses the context and wallet
 const AppContent: React.FC = () => {

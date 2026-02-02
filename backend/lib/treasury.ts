@@ -29,12 +29,14 @@ export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<T
         // Use public balance as total
         totalUSD1 = publicBalance;
 
-        // Simulate vault allocations based on risk profile
-        const allocations = risk === 'aggressive'
-            ? { reserve: 0.10, yield: 0.30, growth: 0.40, degen: 0.20 }
-            : risk === 'conservative'
-                ? { reserve: 0.40, yield: 0.40, growth: 0.15, degen: 0.05 }
-                : { reserve: 0.20, yield: 0.40, growth: 0.30, degen: 0.10 }; // medium
+        // Simulate vault allocations based on risk profile.
+        // RiskProfile is "low" | "medium" | "high" across the entire codebase.
+        const allocations =
+            risk === "high"
+                ? { reserve: 0.10, yield: 0.30, growth: 0.40, degen: 0.20 }
+                : risk === "low"
+                    ? { reserve: 0.40, yield: 0.40, growth: 0.15, degen: 0.05 }
+                    : { reserve: 0.20, yield: 0.40, growth: 0.30, degen: 0.10 }; // medium
 
         vaultBalances = {
             reserve: publicBalance * allocations.reserve,

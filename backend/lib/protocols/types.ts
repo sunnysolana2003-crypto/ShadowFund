@@ -70,10 +70,20 @@ export interface DegenPosition extends Position {
     strategy: "momentum" | "dip-buy" | "new-launch";
 }
 
-// Token mint addresses (Solana Devnet)
+// Token mint addresses
+// - On devnet we treat devnet-USDC as USD1 for demo/simulation flows.
+// - On mainnet-beta we use canonical mints.
+const IS_DEVNET =
+    (process.env.SOLANA_RPC_URL || "").includes("devnet") ||
+    (process.env.SHADOWWIRE_CLUSTER || "").includes("devnet");
+
 export const TOKENS = {
-    USD1: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", // Use Devnet USDC as test USD1
-    USDC: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+    USD1: IS_DEVNET
+        ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Devnet USDC (demo USD1)
+        : "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB", // Mainnet USD1
+    USDC: IS_DEVNET
+        ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" // Devnet USDC
+        : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // Mainnet USDC
     SOL: "So11111111111111111111111111111111111111112",
     WSOL: "So11111111111111111111111111111111111111112",
     WETH: "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", // Generic Devnet WETH

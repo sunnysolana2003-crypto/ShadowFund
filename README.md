@@ -20,12 +20,13 @@ shadowfund-design-system/
 │   ├── WalletConnect.tsx       # Wallet connection with Solana adapter
 │   ├── Dashboard.tsx           # Treasury console with real balance
 │   ├── AIStrategy.tsx          # AI strategy terminal view
-│   ├── VaultsPage.tsx          # Vault management
+│   ├── TechOverview.tsx        # Technology page (architecture + audit)
+│   ├── TechStack.tsx           # Tech stack page (what we used)
+│   ├── polyfills.ts            # Browser polyfills (Buffer) for Solana libs
 │   ├── components/             # Reusable UI components
 │   ├── contexts/
 │   │   ├── WalletProvider.tsx      # Solana wallet adapter context
 │   │   └── ShadowFundContext.tsx   # Global state management
-│   ├── hooks/useApi.ts         # React hooks for API calls
 │   └── services/api.ts         # API client service
 │
 └── 📂 backend/ (Next.js API)
@@ -44,6 +45,7 @@ shadowfund-design-system/
     │   │   ├── macro.ts        # Macro mood analysis
     │   │   └── index.ts        # Main AI entry point
     │   ├── shadowwire.ts       # ShadowWire SDK integration
+    │   ├── shadowwire-mock.ts  # Mock ShadowWire client (devnet relayer workaround)
     │   ├── vaults.ts           # Vault address derivation
     │   ├── usd1.ts             # USD1 operations
     │   ├── treasury.ts         # Treasury state management
@@ -86,11 +88,20 @@ GEMINI_API_KEY=your_gemini_api_key
 # Optional
 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 NODE_ENV=development
+
+# ShadowWire devnet workaround (recommended for hackathon demo)
+# true  = use in-memory mock client
+# false = use real ShadowWire SDK client
+SHADOWWIRE_MOCK=true
 ```
 
 **Frontend** (`.env.local`):
 ```env
+# Optional: set if backend runs on a different origin locally
 VITE_API_URL=http://localhost:3001
+
+# Optional: expose a UI “simulation” indicator (build-time)
+VITE_SHADOWWIRE_MOCK=true
 ```
 
 ### Running the Application
@@ -99,7 +110,7 @@ VITE_API_URL=http://localhost:3001
 # Terminal 1: Start Backend (port 3001)
 cd backend && npm run dev
 
-# Terminal 2: Start Frontend (port 3002/3003)
+# Terminal 2: Start Frontend (Vite default: 5173)
 npm run dev
 ```
 
