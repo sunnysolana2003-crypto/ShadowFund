@@ -36,6 +36,9 @@ interface ShadowFundContextType {
     disconnectWallet: () => void;
     setRiskLevel: (risk: "low" | "medium" | "high") => void;
 
+    // Demo/simulation mode (build-time flag)
+    isSimulationMode: boolean;
+
     // Treasury state
     treasury: TreasuryState;
     fetchTreasury: () => Promise<void>;
@@ -66,6 +69,11 @@ const connection = new Connection(clusterApiUrl('mainnet-beta'), "confirmed");
 
 export function ShadowFundProvider({ children }: { children: ReactNode }) {
     const { publicKey, signMessage: walletSignMessage, connected, sendTransaction } = useWallet();
+
+    // Build-time flag for demo/simulation (set on Vercel as VITE_SHADOWWIRE_MOCK=true)
+    const isSimulationMode =
+        (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SHADOWWIRE_MOCK === "true") ||
+        false;
 
     // Wallet state
     const [wallet, setWallet] = useState<WalletState>({
@@ -391,6 +399,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         connectWallet,
         disconnectWallet,
         setRiskLevel,
+        isSimulationMode,
         treasury,
         fetchTreasury,
         strategy,

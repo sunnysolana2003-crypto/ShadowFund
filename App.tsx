@@ -4,6 +4,8 @@ import LandingPage from './LandingPage';
 import Dashboard from './Dashboard';
 import WalletConnect from './WalletConnect';
 import AIStrategy from './AIStrategy';
+import TechOverview from './TechOverview';
+import TechStack from './TechStack';
 import { WalletProvider } from './contexts/WalletProvider';
 import { ShadowFundProvider, useShadowFund } from './contexts/ShadowFundContext';
 
@@ -13,7 +15,7 @@ const DEMO_WALLET = 'DEMO7xQai9wYgLbGSDjJxr3cFkQaQZ5uY2hZfGKpL7Wallet'; // Simul
 
 // Inner app component that uses the context and wallet
 const AppContent: React.FC = () => {
-  const [view, setView] = useState<'landing' | 'wallet' | 'dashboard' | 'strategy'>('landing');
+  const [view, setView] = useState<'landing' | 'wallet' | 'dashboard' | 'strategy' | 'tech' | 'tech-stack'>('landing');
   const { connectWallet, fetchTreasury, fetchStrategy } = useShadowFund();
   const { disconnect } = useWallet();
 
@@ -65,6 +67,18 @@ const AppContent: React.FC = () => {
         <AIStrategy
           onNavigate={(v) => setView(v as any)}
           currentView="strategy"
+        />
+      )}
+      {view === 'tech' && (
+        <TechOverview
+          onNavigate={(v) => setView(v as any)}
+          currentView="tech"
+        />
+      )}
+      {view === 'tech-stack' && (
+        <TechStack
+          onNavigate={(v) => setView(v as any)}
+          currentView="tech-stack"
         />
       )}
     </>

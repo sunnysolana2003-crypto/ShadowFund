@@ -5,7 +5,9 @@ import {
   Settings,
   Shield,
   Zap,
-  Terminal
+  Terminal,
+  Cpu,
+  Layers
 } from 'lucide-react';
 import { ShadowTypography } from './ShadowTypography';
 
@@ -18,6 +20,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView = 'dashboard', onN
   const menuItems = [
     { icon: <LayoutGrid className="w-5 h-5" />, label: 'Overview', id: 'dashboard' },
     { icon: <Terminal className="w-5 h-5" />, label: 'AI Strategy', id: 'strategy' },
+    { icon: <Cpu className="w-5 h-5" />, label: 'Technology', id: 'tech' },
+    { icon: <Layers className="w-5 h-5" />, label: 'Tech Stack', id: 'tech-stack' },
   ];
 
   return (

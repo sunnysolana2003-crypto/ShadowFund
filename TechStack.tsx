@@ -31,7 +31,7 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
       title: "Frontend Architecture",
       icon: <Globe className="w-6 h-6 text-[#FF7A00]" />,
       items: [
-        { name: "React 19", desc: "Latest UI framework for concurrent rendering and state management." },
+        { name: "React 18", desc: "Modern UI framework powering the dashboard and animated experience." },
         { name: "Vite 6", desc: "Next-generation frontend tooling for lightning-fast HMR." },
         { name: "Tailwind CSS", desc: "Utility-first CSS for rapid, responsive design system development." },
         { name: "Framer Motion", desc: "Production-ready motion library for smooth UI transitions." },

@@ -6,7 +6,8 @@
 
 :root {
   --shadow-black: #050505;
-  --shadow-green: #00FFA3;
+  /* Accent (updated to orange theme) */
+  --shadow-green: #FF7A00;
   --shadow-gold: #C5A059;
 }
 
