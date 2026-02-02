@@ -76,6 +76,8 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   const publicBalance = treasury.data?.publicBalance ?? 0;
   const vaultsData = treasury.data?.vaults ?? [];
 
+  type VaultId = 'reserve' | 'yield' | 'growth' | 'degen';
+
   const vaultDisplayInfo: Record<string, { color: string; icon: React.ReactNode }> = {
     'reserve': { color: 'shadow-green', icon: <Shield className="w-4 h-4" /> },
     'yield': { color: 'shadow-gold', icon: <Zap className="w-4 h-4" /> },
@@ -83,13 +85,21 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     'degen': { color: 'shadow-error', icon: <Activity className="w-4 h-4" /> },
   };
 
-  const vaults = vaultsData.map(v => ({
-    ...v,
-    name: v.id.charAt(0).toUpperCase() + v.id.slice(1),
-    allocation: totalBalance > 0 ? Math.round((v.balance / totalBalance) * 100) : 0,
-    targetAllocation: strategy.data?.allocation[v.id as keyof typeof strategy.data.allocation] ?? 0,
-    ...vaultDisplayInfo[v.id]
-  }));
+  // Always render all 4 vaults (even if backend returns partial data).
+  const vaultOrder: VaultId[] = ['reserve', 'yield', 'growth', 'degen'];
+  const vaultById = new Map(vaultsData.map(v => [v.id, v]));
+
+  const vaults = vaultOrder.map((id) => {
+    const v = vaultById.get(id) ?? { id, address: id, balance: 0 };
+    const targetAllocation = strategy.data?.allocation?.[id] ?? 0;
+    return {
+      ...v,
+      name: id.charAt(0).toUpperCase() + id.slice(1),
+      allocation: totalBalance > 0 ? Math.round((v.balance / totalBalance) * 100) : 0,
+      targetAllocation,
+      ...vaultDisplayInfo[id],
+    };
+  });
 
   const handleRebalance = async () => {
     await rebalance();
