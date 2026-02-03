@@ -1,19 +1,29 @@
 /**
  * Growth Vault Strategy
  * Invests USD1 into blue-chip tokens (SOL, wETH, wBTC) via Jupiter.
- * When server wallet is configured and not on devnet, executes real swaps; otherwise simulates.
+ * 
+ * POSITION PERSISTENCE: Uses Solana Memo Program for on-chain storage.
+ * Positions are reconstructed from transaction history - fully decentralized.
  */
 
+import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 import { GrowthStrategy, VaultStatus, StrategyExecutionResult } from "./types";
 import { TxResult, Position, TOKENS, GROWTH_ALLOCATION, getRADRDecimals } from "../protocols/types";
 import { jupiter } from "../protocols";
 import { getVaultAddress } from "../vaults";
 import { logger } from "../logger";
+import { 
+    reconstructPositions, 
+    ReconstructedPosition,
+    PositionMemo 
+} from "../positionMemo";
 
 const log = (msg: string) => logger.info(msg, "GROWTH");
 
+const getRpcUrl = () => process.env.SOLANA_RPC_URL || clusterApiUrl('mainnet-beta');
+const connection = new Connection(getRpcUrl(), 'confirmed');
 
-// In-memory position tracking (in production, use database)
+// In-memory cache (populated from on-chain memos)
 interface GrowthPosition {
     walletAddress: string;
     token: string;
@@ -24,6 +34,10 @@ interface GrowthPosition {
 }
 
 const positions: Map<string, GrowthPosition[]> = new Map();
+const positionsLoaded: Set<string> = new Set(); // Track which wallets we've loaded
+
+// Pending memos to attach to transactions
+const pendingMemos: Map<string, PositionMemo[]> = new Map();
 
 class GrowthVaultStrategy implements GrowthStrategy {
     vaultId = "growth";
@@ -31,8 +45,58 @@ class GrowthVaultStrategy implements GrowthStrategy {
     description = "RADR Labs shielded growth (SOL, RADR, ORE, ANON)";
     riskLevel = "medium" as const;
 
-    async deposit(walletAddress: string, amount: number): Promise<TxResult> {
+    /**
+     * Load positions from on-chain memos (called once per wallet)
+     */
+    async loadPositionsFromChain(walletAddress: string): Promise<void> {
+        if (positionsLoaded.has(walletAddress)) {
+            return; // Already loaded
+        }
+
+        try {
+            log("Loading positions from on-chain memos...");
+            const onChainPositions = await reconstructPositions(connection, walletAddress, 'growth');
+
+            if (onChainPositions.length > 0) {
+                const loadedPositions: GrowthPosition[] = onChainPositions.map(p => ({
+                    walletAddress,
+                    token: p.tokenMint,
+                    symbol: p.tokenSymbol,
+                    amount: p.amount,
+                    entryPrice: p.entryPrice,
+                    entryTimestamp: p.openedAt
+                }));
+
+                positions.set(walletAddress, loadedPositions);
+                log(`Loaded ${loadedPositions.length} positions from blockchain`);
+            }
+
+            positionsLoaded.add(walletAddress);
+        } catch (error) {
+            log("Failed to load from chain, using empty positions");
+            positionsLoaded.add(walletAddress);
+        }
+    }
+
+    /**
+     * Get pending memos for a wallet (to attach to transactions)
+     */
+    getPendingMemos(walletAddress: string): PositionMemo[] {
+        return pendingMemos.get(walletAddress) || [];
+    }
+
+    /**
+     * Clear pending memos after transaction is sent
+     */
+    clearPendingMemos(walletAddress: string): void {
+        pendingMemos.delete(walletAddress);
+    }
+
+    async deposit(walletAddress: string, amount: number): Promise<TxResult & { positionMemos?: PositionMemo[] }> {
         log("Distributing into RADR shielded assets");
+
+        // Load existing positions from chain first
+        await this.loadPositionsFromChain(walletAddress);
 
         // RADR Labs supported tokens only: SOL, RADR, ORE, ANON
         const allocations = [
@@ -44,6 +108,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
 
         const txSignatures: string[] = [];
         const newPositions: GrowthPosition[] = [];
+        const memos: PositionMemo[] = [];
 
         for (const alloc of allocations) {
             const investAmount = amount * (alloc.percent / 100);
@@ -60,7 +125,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
                 outputMint: alloc.token,
                 amount: investAmount,
                 slippageBps: 80,
-            });
+            }, walletAddress);
 
             if (swapResult.success && swapResult.txSignature) {
                 txSignatures.push(swapResult.txSignature);
@@ -69,6 +134,19 @@ class GrowthVaultStrategy implements GrowthStrategy {
             }
 
             log(`Shielding ${alloc.symbol}`);
+
+            // Create position memo for on-chain persistence
+            const existingPos = (positions.get(walletAddress) || []).find(p => p.token === alloc.token);
+            const memo: PositionMemo = {
+                vault: 'growth',
+                action: existingPos ? 'add' : 'open',
+                tokenSymbol: alloc.symbol,
+                tokenMint: alloc.token,
+                amount: tokenAmount,
+                priceUSD: price,
+                timestamp: Date.now()
+            };
+            memos.push(memo);
 
             newPositions.push({
                 walletAddress,
@@ -80,21 +158,41 @@ class GrowthVaultStrategy implements GrowthStrategy {
             });
         }
 
-        // Store positions
+        // Store positions in memory cache
         const existingPositions = positions.get(walletAddress) || [];
-        positions.set(walletAddress, [...existingPositions, ...newPositions]);
+        
+        // Merge with existing positions (add to same token if exists)
+        for (const newPos of newPositions) {
+            const existing = existingPositions.find(p => p.token === newPos.token);
+            if (existing) {
+                // Weighted average entry price
+                const totalAmount = existing.amount + newPos.amount;
+                existing.entryPrice = (existing.entryPrice * existing.amount + newPos.entryPrice * newPos.amount) / totalAmount;
+                existing.amount = totalAmount;
+            } else {
+                existingPositions.push(newPos);
+            }
+        }
+        positions.set(walletAddress, existingPositions);
+
+        // Store pending memos to be attached to transaction
+        pendingMemos.set(walletAddress, memos);
 
         log("Growth distribution complete");
 
         return {
             success: true,
             txSignature: txSignatures.join(","),
+            positionMemos: memos,
             timestamp: Date.now()
         };
     }
 
-    async withdraw(walletAddress: string, amount: number): Promise<TxResult & { unsigned_txs?: string[]; totalUSD1?: number }> {
+    async withdraw(walletAddress: string, amount: number): Promise<TxResult & { unsigned_txs?: string[]; totalUSD1?: number; positionMemos?: PositionMemo[] }> {
         log("Withdrawing: swapping tokens back to USD1");
+
+        // Load positions from chain first
+        await this.loadPositionsFromChain(walletAddress);
 
         const currentPositions = positions.get(walletAddress) || [];
         const totalValue = await this.getValue(walletAddress);
@@ -110,6 +208,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
         const sellPercent = amount / totalValue;
         const txSignatures: string[] = [];
         const unsignedTxs: string[] = [];
+        const memos: PositionMemo[] = [];
         let totalUSD1Received = 0;
 
         for (const pos of currentPositions) {
@@ -120,6 +219,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
 
             // Get token decimals
             const decimals = getRADRDecimals(pos.symbol);
+            const currentPrice = await jupiter.getTokenPrice(pos.token);
 
             // Execute real swap: Token → USD1
             const swapResult = await jupiter.swapToUSD1(
@@ -140,6 +240,19 @@ class GrowthVaultStrategy implements GrowthStrategy {
                     totalUSD1Received += swapResult.outputAmount;
                 }
 
+                // Create memo for on-chain persistence
+                const isClosingFully = pos.amount - withdrawTokenAmount < 0.000001;
+                const memo: PositionMemo = {
+                    vault: 'growth',
+                    action: isClosingFully ? 'close' : 'reduce',
+                    tokenSymbol: pos.symbol,
+                    tokenMint: pos.token,
+                    amount: withdrawTokenAmount,
+                    priceUSD: currentPrice,
+                    timestamp: Date.now()
+                };
+                memos.push(memo);
+
                 // Reduce position
                 pos.amount -= withdrawTokenAmount;
                 log(`Sold ${pos.symbol}, received ~$${swapResult.outputAmount?.toFixed(2) || '?'} USD1`);
@@ -154,11 +267,16 @@ class GrowthVaultStrategy implements GrowthStrategy {
             currentPositions.filter(p => p.amount > 0.000001)
         );
 
+        // Store pending memos
+        const existingMemos = pendingMemos.get(walletAddress) || [];
+        pendingMemos.set(walletAddress, [...existingMemos, ...memos]);
+
         return {
             success: true,
             txSignature: txSignatures.join(","),
             unsigned_txs: unsignedTxs.length > 0 ? unsignedTxs : undefined,
             totalUSD1: totalUSD1Received,
+            positionMemos: memos,
             timestamp: Date.now()
         };
     }
@@ -170,6 +288,9 @@ class GrowthVaultStrategy implements GrowthStrategy {
     }
 
     async getValue(walletAddress: string): Promise<number> {
+        // Load positions from chain first
+        await this.loadPositionsFromChain(walletAddress);
+
         const userPositions = positions.get(walletAddress) || [];
 
         // GET SHADOWWIRE CASH BALANCE FOR THIS VAULT

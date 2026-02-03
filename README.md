@@ -163,11 +163,24 @@ npm run dev
 | **Growth vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
 | **Degen vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
 
-### ⚠️ KNOWN LIMITATIONS
+### 🔗 DECENTRALIZED POSITION PERSISTENCE (Memo Program)
 
-| Component | Issue | Notes |
-|-----------|-------|-------|
-| **Position persistence** | In-memory storage | Lost on restart (needs DB for production) |
+Position data is stored **on-chain** using Solana's Memo Program:
+
+```
+SHADOWFUND|growth|open|SOL|So1111...|0.5|145.20|1706097600000
+```
+
+**How it works:**
+1. When you open/close positions, memos are attached to transactions
+2. On reconnect, positions are reconstructed from transaction history
+3. No database needed - fully decentralized and permanent
+
+**Benefits:**
+- ✅ Survives server restarts
+- ✅ Works across devices
+- ✅ Verifiable on-chain
+- ✅ True Web3 architecture
 
 ---
 

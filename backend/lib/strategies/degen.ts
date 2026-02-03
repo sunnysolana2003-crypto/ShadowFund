@@ -1,16 +1,26 @@
 /**
  * Degen Vault Strategy
  * High-conviction memecoin trading (SOL, BONK, RADR).
- * When server wallet is configured and not on devnet, executes real swaps; otherwise simulates.
+ * 
+ * POSITION PERSISTENCE: Uses Solana Memo Program for on-chain storage.
+ * Positions are reconstructed from transaction history - fully decentralized.
  */
 
+import { Connection, clusterApiUrl } from "@solana/web3.js";
 import { DegenStrategy, VaultStatus, StrategyExecutionResult } from "./types";
 import { TxResult, Position, TOKENS, DEGEN_TOKENS, getRADRDecimals } from "../protocols/types";
 import { jupiter } from "../protocols";
 import { getVaultAddress } from "../vaults";
 import { logger } from "../logger";
+import { 
+    reconstructPositions, 
+    PositionMemo 
+} from "../positionMemo";
 
 const log = (msg: string) => logger.info(msg, "DEGEN");
+
+const getRpcUrl = () => process.env.SOLANA_RPC_URL || clusterApiUrl('mainnet-beta');
+const connection = new Connection(getRpcUrl(), 'confirmed');
 
 interface DegenPositionInternal {
     walletAddress: string;
@@ -22,6 +32,8 @@ interface DegenPositionInternal {
 }
 
 const positions: Map<string, DegenPositionInternal[]> = new Map();
+const positionsLoaded: Set<string> = new Set();
+const pendingMemos: Map<string, PositionMemo[]> = new Map();
 
 class DegenVaultStrategy implements DegenStrategy {
     vaultId = "degen";
@@ -29,13 +41,56 @@ class DegenVaultStrategy implements DegenStrategy {
     description = "Privacy-shielded moonshots via RADR ecosystem memecoins";
     riskLevel = "high" as const;
 
-    async deposit(walletAddress: string, amount: number): Promise<TxResult> {
+    /**
+     * Load positions from on-chain memos
+     */
+    async loadPositionsFromChain(walletAddress: string): Promise<void> {
+        if (positionsLoaded.has(walletAddress)) {
+            return;
+        }
+
+        try {
+            log("Loading positions from on-chain memos...");
+            const onChainPositions = await reconstructPositions(connection, walletAddress, 'degen');
+
+            if (onChainPositions.length > 0) {
+                const loadedPositions: DegenPositionInternal[] = onChainPositions.map(p => ({
+                    walletAddress,
+                    token: p.tokenMint,
+                    symbol: p.tokenSymbol,
+                    amount: p.amount,
+                    entryPrice: p.entryPrice,
+                    entryTimestamp: p.openedAt
+                }));
+
+                positions.set(walletAddress, loadedPositions);
+                log(`Loaded ${loadedPositions.length} degen positions from blockchain`);
+            }
+
+            positionsLoaded.add(walletAddress);
+        } catch (error) {
+            log("Failed to load from chain, using empty positions");
+            positionsLoaded.add(walletAddress);
+        }
+    }
+
+    getPendingMemos(walletAddress: string): PositionMemo[] {
+        return pendingMemos.get(walletAddress) || [];
+    }
+
+    clearPendingMemos(walletAddress: string): void {
+        pendingMemos.delete(walletAddress);
+    }
+
+    async deposit(walletAddress: string, amount: number): Promise<TxResult & { positionMemos?: PositionMemo[] }> {
         log("Deploying into degen assets");
 
-        // Derived vault address for privacy
-        const vaultAddress = await getVaultAddress(walletAddress, "degen");
+        // Load existing positions from chain
+        await this.loadPositionsFromChain(walletAddress);
+
         const txSignatures: string[] = [];
         const newPositions: DegenPositionInternal[] = [];
+        const memos: PositionMemo[] = [];
 
         // Pick top performers from DEGEN_TOKENS (weighted distribution)
         const candidates = [...DEGEN_TOKENS];
@@ -63,7 +118,7 @@ class DegenVaultStrategy implements DegenStrategy {
                 outputMint: mint,
                 amount: investAmount,
                 slippageBps: 100,
-            });
+            }, walletAddress);
 
             if (swapResult.success && swapResult.txSignature) {
                 txSignatures.push(swapResult.txSignature);
@@ -72,6 +127,19 @@ class DegenVaultStrategy implements DegenStrategy {
             }
 
             log(`Shielding ${symbol}`);
+
+            // Create position memo for on-chain persistence
+            const existingPos = (positions.get(walletAddress) || []).find(p => p.token === mint);
+            const memo: PositionMemo = {
+                vault: 'degen',
+                action: existingPos ? 'add' : 'open',
+                tokenSymbol: symbol,
+                tokenMint: mint,
+                amount: tokenAmount,
+                priceUSD: price,
+                timestamp: Date.now()
+            };
+            memos.push(memo);
 
             newPositions.push({
                 walletAddress,
@@ -83,18 +151,36 @@ class DegenVaultStrategy implements DegenStrategy {
             });
         }
 
+        // Merge with existing positions
         const existing = positions.get(walletAddress) || [];
-        positions.set(walletAddress, [...existing, ...newPositions]);
+        for (const newPos of newPositions) {
+            const existingPos = existing.find(p => p.token === newPos.token);
+            if (existingPos) {
+                const totalAmount = existingPos.amount + newPos.amount;
+                existingPos.entryPrice = (existingPos.entryPrice * existingPos.amount + newPos.entryPrice * newPos.amount) / totalAmount;
+                existingPos.amount = totalAmount;
+            } else {
+                existing.push(newPos);
+            }
+        }
+        positions.set(walletAddress, existing);
+
+        // Store pending memos
+        pendingMemos.set(walletAddress, memos);
 
         return {
             success: true,
             txSignature: txSignatures.join(","),
+            positionMemos: memos,
             timestamp: Date.now()
         };
     }
 
-    async withdraw(walletAddress: string, amount: number): Promise<TxResult & { unsigned_txs?: string[]; totalUSD1?: number }> {
+    async withdraw(walletAddress: string, amount: number): Promise<TxResult & { unsigned_txs?: string[]; totalUSD1?: number; positionMemos?: PositionMemo[] }> {
         log("Withdrawing: swapping degen tokens back to USD1");
+
+        // Load positions from chain
+        await this.loadPositionsFromChain(walletAddress);
 
         const currentPositions = positions.get(walletAddress) || [];
         const totalValue = await this.getValue(walletAddress);
@@ -110,6 +196,7 @@ class DegenVaultStrategy implements DegenStrategy {
         const sellPercent = amount / totalValue;
         const txSignatures: string[] = [];
         const unsignedTxs: string[] = [];
+        const memos: PositionMemo[] = [];
         let totalUSD1Received = 0;
 
         for (const pos of currentPositions) {
@@ -118,8 +205,8 @@ class DegenVaultStrategy implements DegenStrategy {
 
             log(`Selling ${pos.symbol} → USD1`);
 
-            // Get token decimals
             const decimals = getRADRDecimals(pos.symbol);
+            const currentPrice = await jupiter.getTokenPrice(pos.token);
 
             // Execute real swap: Token → USD1
             const swapResult = await jupiter.swapToUSD1(
@@ -140,6 +227,19 @@ class DegenVaultStrategy implements DegenStrategy {
                     totalUSD1Received += swapResult.outputAmount;
                 }
 
+                // Create memo for on-chain persistence
+                const isClosingFully = pos.amount - withdrawTokenAmount < 0.000001;
+                const memo: PositionMemo = {
+                    vault: 'degen',
+                    action: isClosingFully ? 'close' : 'reduce',
+                    tokenSymbol: pos.symbol,
+                    tokenMint: pos.token,
+                    amount: withdrawTokenAmount,
+                    priceUSD: currentPrice,
+                    timestamp: Date.now()
+                };
+                memos.push(memo);
+
                 // Reduce position
                 pos.amount -= withdrawTokenAmount;
                 log(`Sold ${pos.symbol}, received ~$${swapResult.outputAmount?.toFixed(2) || '?'} USD1`);
@@ -151,11 +251,16 @@ class DegenVaultStrategy implements DegenStrategy {
         // Cleanup empty positions
         positions.set(walletAddress, currentPositions.filter(p => p.amount > 0.000001));
 
+        // Store pending memos
+        const existingMemos = pendingMemos.get(walletAddress) || [];
+        pendingMemos.set(walletAddress, [...existingMemos, ...memos]);
+
         return {
             success: true,
             txSignature: txSignatures.join(","),
             unsigned_txs: unsignedTxs.length > 0 ? unsignedTxs : undefined,
             totalUSD1: totalUSD1Received,
+            positionMemos: memos,
             timestamp: Date.now()
         };
     }
@@ -165,6 +270,9 @@ class DegenVaultStrategy implements DegenStrategy {
     }
 
     async getValue(walletAddress: string): Promise<number> {
+        // Load positions from chain first
+        await this.loadPositionsFromChain(walletAddress);
+
         const userPositions = positions.get(walletAddress) || [];
         const vaultAddress = await getVaultAddress(walletAddress, "degen");
 
