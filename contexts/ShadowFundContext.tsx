@@ -41,7 +41,7 @@ interface ShadowFundContextType {
 
     // Treasury state
     treasury: TreasuryState;
-    fetchTreasury: () => Promise<void>;
+    fetchTreasury: (overrideAddress?: string) => Promise<void>;
 
     // Strategy state
     strategy: StrategyState;
@@ -192,22 +192,19 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         }
     }, [wallet.address, walletSignMessage]);
 
-    // Fetch treasury data from real API
-    const fetchTreasury = useCallback(async () => {
-        if (!wallet.address) {
-            console.log('[Context] No wallet address, skipping treasury fetch');
+    // Fetch treasury data from real API (optional overrideAddress for right-after-connect)
+    const fetchTreasury = useCallback(async (overrideAddress?: string) => {
+        const address = overrideAddress ?? wallet.address;
+        if (!address) {
             return;
         }
 
-        console.log('[Context] Fetching treasury for:', wallet.address);
         setTreasury(prev => ({ ...prev, loading: true, error: null }));
 
         try {
-            const data = await api.getTreasury(wallet.address, wallet.risk);
-            console.log('[Context] Treasury data:', data);
+            const data = await api.getTreasury(address, wallet.risk);
             setTreasury({ loading: false, error: null, data });
         } catch (err) {
-            console.error('[Context] Treasury fetch error:', err);
             setTreasury({
                 loading: false,
                 error: err instanceof Error ? err.message : "Failed to fetch treasury",

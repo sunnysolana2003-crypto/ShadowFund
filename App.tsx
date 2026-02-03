@@ -18,21 +18,15 @@ const AppContent: React.FC = () => {
   const { disconnect } = useWallet();
 
   const handleWalletConnect = useCallback(async (walletAddress: string) => {
-    console.log('[App] Wallet connected:', walletAddress);
-
-    // Store real wallet address in context
     connectWallet(walletAddress);
-
-    // Fetch initial data from backend with real wallet
     try {
       await Promise.all([
-        fetchTreasury(),
+        fetchTreasury(walletAddress),
         fetchStrategy()
       ]);
-    } catch (error) {
-      console.error('[App] Failed to fetch initial data:', error);
+    } catch (_) {
+      // Dashboard will refetch on mount if needed
     }
-
     setView('dashboard');
   }, [connectWallet, fetchTreasury, fetchStrategy]);
 

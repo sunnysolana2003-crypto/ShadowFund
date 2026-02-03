@@ -11,9 +11,20 @@
   --shadow-gold: #C5A059;
 }
 
+html {
+  min-height: 100%;
+}
+
 body {
+  min-height: 100vh;
   background-color: var(--shadow-black);
   color: #D4D4D4;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 @layer base {
