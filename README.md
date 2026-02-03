@@ -114,24 +114,232 @@ cd backend && npm run dev
 npm run dev
 ```
 
-## 🏭 Production Deployment
+---
 
-For **real capital** (mainnet), set the following:
+## 🏆 USD1 INTEGRATION — CORE ARCHITECTURE
 
-| Variable | Purpose |
-|----------|---------|
-| `SHADOWWIRE_MOCK=false` | Use real ShadowWire SDK (no in-memory mock). |
-| `SOLANA_RPC_URL` | Mainnet RPC (paid RPC recommended). |
-| `SHADOWWIRE_CLUSTER=mainnet-beta` | ShadowWire mainnet. |
-| `CORS_ORIGINS` | Comma-separated frontend origin(s), e.g. `https://yourapp.vercel.app`. |
-| `SERVER_WALLET_SECRET` | Funded server keypair (base64) for Jupiter swaps and signing. |
-| `KAMINO_WALLET_KEYPAIR_PATH` or `KAMINO_WALLET_PRIVATE_KEY` | Funded wallet for Yield vault Kamino deposits/withdrawals. |
+**USD1 isn't just "supported" — it's the foundation of the entire fund:**
 
-**Yield vault:** Kamino deposits/withdrawals use the **user wallet** (or the Kamino keypair above if configured). Rebalance moves USD1 to vault PDAs via ShadowWire; the Yield strategy then deploys to Kamino from the configured wallet. For multi-instance backends, use Redis (or similar) for rate limiting instead of in-memory. See `docs/PRODUCTION_READINESS.md` for the full checklist.
+### USD1 as Universal Unit of Account
+- All 4 vaults denominate in USD1
+- User deposits USD1 → AI allocates USD1 across vaults → Withdrawals return USD1
+- No stablecoin fragmentation — one privacy-first primitive for everything
 
-### Non-logging policy
+### USD1-Native Treasury Operations
+| Vault | USD1 Flow |
+|-------|-----------|
+| **Reserve** | Holds pure USD1 (no swaps, maximum safety) |
+| **Yield** | USD1 deployed to Kamino lending |
+| **Growth** | USD1 → SOL/WETH/WBTC via Jupiter, profits return as USD1 |
+| **Degen** | USD1 → meme tokens via Jupiter, gains consolidated to USD1 |
 
-The backend **never logs** wallets, amounts, balances, signatures, addresses, or tx hashes. All logging goes through `backend/lib/logger.ts`, which redacts sensitive keys and, in production or when `LOG_POLICY=minimal` / `NON_LOGGING_POLICY=true`, omits payload data. Use only generic messages (e.g. "Transfer completed", "Deposit started") in code.
+### ZK-Private USD1 Transfers
+- Every rebalance moves USD1 between vault PDAs via ShadowWire
+- Amounts are ZK-hidden — competitors can't front-run allocation changes
+- 1% fee model respected throughout
+
+### Non-Logging USD1 Policy
+- Zero USD1 amounts in logs
+- Zero wallet addresses in logs
+- Zero transaction hashes in logs
+- Institutional-grade privacy from app layer to blockchain
+
+---
+
+## ⚡ MAINNET READINESS — HONEST ASSESSMENT
+
+### ✅ WORKS ON MAINNET TODAY
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **USD1 deposit → ShadowWire** | ✅ Ready | `shadowwire.deposit()` with USD1 mint |
+| **USD1 withdraw ← ShadowWire** | ✅ Ready | `shadowwire.withdraw()` with USD1 mint |
+| **ZK transfers between vaults** | ✅ Ready | `privateTransfer()` for internal moves |
+| **Vault PDA derivation** | ✅ Ready | Deterministic addresses from wallet + vault ID |
+| **AI Strategy (Gemini)** | ✅ Ready | Real API calls with market data |
+| **Wallet signatures** | ✅ Ready | Ed25519 verification, 60s expiry |
+| **Reserve vault** | ✅ Ready | USD1 only, no swaps needed |
+
+### ⚠️ WORKS WITH CONFIGURATION
+
+| Component | Requirement | How to Enable |
+|-----------|-------------|---------------|
+| **Yield vault (Kamino)** | Funded server wallet | Set `KAMINO_WALLET_PRIVATE_KEY` |
+| **Growth vault (Jupiter)** | Funded server wallet | Set `SERVER_WALLET_SECRET` |
+| **Degen vault (Jupiter)** | Funded server wallet | Set `SERVER_WALLET_SECRET` |
+
+### ❌ NOT YET IMPLEMENTED
+
+| Component | Issue | Status |
+|-----------|-------|--------|
+| **Growth/Degen withdrawals** | Token → USD1 sell swaps | Simulated (positions tracked, no real sell) |
+| **Position persistence** | In-memory storage | Lost on restart (needs DB for production) |
+
+---
+
+## 🏭 PRODUCTION DEPLOYMENT
+
+### Required Environment Variables
+
+```env
+# === CORE ===
+NODE_ENV=production
+SHADOWWIRE_MOCK=false                    # USE REAL SDK
+SHADOWWIRE_CLUSTER=mainnet-beta
+SOLANA_RPC_URL=https://your-helius-rpc   # Paid RPC recommended
+
+# === AI ===
+GEMINI_API_KEY=your_gemini_api_key
+
+# === SECURITY ===
+CORS_ORIGINS=https://your-frontend.vercel.app
+
+# === YIELD VAULT (Kamino) ===
+KAMINO_WALLET_PRIVATE_KEY=base58_encoded_private_key
+
+# === GROWTH/DEGEN VAULTS (Jupiter) ===
+SERVER_WALLET_SECRET=base64_encoded_keypair
+```
+
+---
+
+## 🌾 SETTING UP KAMINO YIELD FARMING
+
+The Yield vault uses **Kamino Finance** (Klend SDK) for lending.
+
+### Step 1: Create a Dedicated Wallet
+
+```bash
+# Generate a new Solana keypair
+solana-keygen new --outfile kamino-wallet.json
+
+# Get the public key
+solana-keygen pubkey kamino-wallet.json
+```
+
+### Step 2: Fund the Wallet
+
+Transfer SOL (for transaction fees) and USD1 (for deposits) to this wallet.
+
+- **Minimum SOL**: 0.1 SOL for transaction fees
+- **USD1**: Amount you want to deploy to Kamino
+
+### Step 3: Export Private Key
+
+```bash
+# Get the private key as base58
+cat kamino-wallet.json
+# Copy the array, convert to base58, or use directly
+```
+
+### Step 4: Set Environment Variable
+
+```env
+# Option A: Path to keypair file
+KAMINO_WALLET_KEYPAIR_PATH=/path/to/kamino-wallet.json
+
+# Option B: Private key directly (base58)
+KAMINO_WALLET_PRIVATE_KEY=your_base58_private_key
+```
+
+### How It Works
+
+1. **Rebalance** moves USD1 to the Yield vault PDA via ShadowWire
+2. **Yield strategy** calls Kamino `deposit()` from the configured wallet
+3. **Position tracked**: deposited amount, current value, APY, earned yield
+4. **Withdraw**: Kamino `redeem()` returns funds to the wallet
+
+### Kamino Markets
+
+The integration uses Kamino's **main market** by default. Typical APY: 5-15% on stablecoin deposits.
+
+---
+
+## 📈 SETTING UP JUPITER SWAPS (Growth/Degen)
+
+Growth and Degen vaults use **Jupiter Aggregator** for best-price swaps.
+
+### Step 1: Create a Server Wallet
+
+```bash
+# Generate keypair
+solana-keygen new --outfile server-wallet.json
+
+# Get public key
+solana-keygen pubkey server-wallet.json
+```
+
+### Step 2: Fund the Wallet
+
+- **SOL**: 0.5+ SOL for transaction fees (swaps are frequent)
+- **USD1**: Initial capital for swaps (or leave empty, rebalance will fund it)
+
+### Step 3: Convert to Base64
+
+```bash
+# Convert keypair JSON to base64
+cat server-wallet.json | base64
+```
+
+### Step 4: Set Environment Variable
+
+```env
+SERVER_WALLET_SECRET=your_base64_encoded_keypair
+```
+
+### How It Works
+
+**Growth Vault:**
+1. Rebalance allocates USD1 to Growth vault PDA
+2. Strategy swaps USD1 → target tokens (SOL, WETH, WBTC)
+3. Jupiter finds best route across all Solana DEXs
+4. Positions tracked with entry price, current price, P&L
+
+**Degen Vault:**
+1. Rebalance allocates USD1 to Degen vault PDA
+2. Strategy swaps USD1 → meme tokens (BONK, RADR, etc.)
+3. Higher slippage tolerance (1% vs 0.5% for Growth)
+4. Positions tracked with stop-loss levels
+
+### Token Allocations
+
+**Growth (Low Risk):**
+```typescript
+SOL: 40%, WETH: 30%, WBTC: 30%
+```
+
+**Degen (High Risk):**
+```typescript
+SOL: 30%, BONK: 25%, RADR: 20%, JIM: 15%, POKI: 10%
+```
+
+### Setting Custom Token Mints
+
+For RADR-shielded tokens, set mints in environment:
+
+```env
+RADR_MINT=your_radr_mint_address
+ORE_MINT=your_ore_mint_address
+ANON_MINT=your_anon_mint_address
+JIM_MINT=your_jim_mint_address
+POKI_MINT=your_poki_mint_address
+```
+
+---
+
+## 🔐 Non-Logging Policy
+
+The backend **never logs** sensitive data:
+
+| Never Logged | Why |
+|--------------|-----|
+| Wallet addresses | Privacy |
+| USD1 amounts | Privacy |
+| Transaction hashes | Privacy |
+| Private keys | Security |
+| Signatures | Security |
+
+All logging goes through `backend/lib/logger.ts` which redacts sensitive keys automatically.
 
 ## 📡 API Reference
 
