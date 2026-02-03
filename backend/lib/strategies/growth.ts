@@ -93,8 +93,8 @@ class GrowthVaultStrategy implements GrowthStrategy {
         };
     }
 
-    async withdraw(walletAddress: string, amount: number): Promise<TxResult> {
-        log("Unshielding and withdrawing");
+    async withdraw(walletAddress: string, amount: number): Promise<TxResult & { unsigned_txs?: string[]; totalUSD1?: number }> {
+        log("Withdrawing: swapping tokens back to USD1");
 
         const currentPositions = positions.get(walletAddress) || [];
         const totalValue = await this.getValue(walletAddress);
@@ -102,23 +102,50 @@ class GrowthVaultStrategy implements GrowthStrategy {
         if (totalValue < amount) {
             return {
                 success: false,
-                error: `Insufficient shielded value. Available: $${totalValue.toFixed(2)}`,
+                error: `Insufficient value. Available: $${totalValue.toFixed(2)}`,
                 timestamp: Date.now()
             };
         }
 
         const sellPercent = amount / totalValue;
         const txSignatures: string[] = [];
-        const vaultAddress = await getVaultAddress(walletAddress, "growth");
+        const unsignedTxs: string[] = [];
+        let totalUSD1Received = 0;
 
         for (const pos of currentPositions) {
-            const withdrawAmount = pos.amount * sellPercent;
-            if (withdrawAmount <= 0) continue;
+            const withdrawTokenAmount = pos.amount * sellPercent;
+            if (withdrawTokenAmount <= 0.000001) continue;
 
-            pos.amount -= withdrawAmount;
-            log(`Unshielding ${pos.symbol}`);
+            log(`Selling ${pos.symbol} → USD1`);
 
-            txSignatures.push(`shadowwire_unshield_${pos.symbol.toLowerCase()}_${Date.now()}`);
+            // Get token decimals
+            const decimals = getRADRDecimals(pos.symbol);
+
+            // Execute real swap: Token → USD1
+            const swapResult = await jupiter.swapToUSD1(
+                pos.token,
+                withdrawTokenAmount,
+                decimals,
+                walletAddress
+            );
+
+            if (swapResult.success) {
+                if (swapResult.txSignature) {
+                    txSignatures.push(swapResult.txSignature);
+                }
+                if (swapResult.unsigned_tx_base64) {
+                    unsignedTxs.push(swapResult.unsigned_tx_base64);
+                }
+                if (swapResult.outputAmount) {
+                    totalUSD1Received += swapResult.outputAmount;
+                }
+
+                // Reduce position
+                pos.amount -= withdrawTokenAmount;
+                log(`Sold ${pos.symbol}, received ~$${swapResult.outputAmount?.toFixed(2) || '?'} USD1`);
+            } else {
+                log(`Warning: Failed to sell ${pos.symbol}: ${swapResult.error}`);
+            }
         }
 
         // Cleanup empty positions
@@ -130,6 +157,8 @@ class GrowthVaultStrategy implements GrowthStrategy {
         return {
             success: true,
             txSignature: txSignatures.join(","),
+            unsigned_txs: unsignedTxs.length > 0 ? unsignedTxs : undefined,
+            totalUSD1: totalUSD1Received,
             timestamp: Date.now()
         };
     }

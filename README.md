@@ -163,11 +163,10 @@ npm run dev
 | **Growth vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
 | **Degen vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
 
-### ❌ NOT YET IMPLEMENTED
+### ⚠️ KNOWN LIMITATIONS
 
-| Component | Issue | Status |
-|-----------|-------|--------|
-| **Growth/Degen withdrawals** | Token → USD1 sell swaps | Simulated (positions tracked, no real sell) |
+| Component | Issue | Notes |
+|-----------|-------|-------|
 | **Position persistence** | In-memory storage | Lost on restart (needs DB for production) |
 
 ---

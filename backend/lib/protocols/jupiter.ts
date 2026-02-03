@@ -281,6 +281,132 @@ export function calculateSwapAmount(
 }
 
 /**
+ * Swap tokens back to USD1 (for withdrawals)
+ * Handles different token decimals correctly
+ */
+export async function swapToUSD1(
+    tokenMint: string,
+    tokenAmount: number,
+    tokenDecimals: number,
+    userWalletAddress?: string
+): Promise<TxResult & { unsigned_tx_base64?: string; outputAmount?: number }> {
+    try {
+        log("Swapping token to USD1");
+
+        // Convert token amount to smallest units based on decimals
+        const amountInSmallestUnits = Math.floor(tokenAmount * Math.pow(10, tokenDecimals));
+
+        // DEVNET MODE: Simulate
+        if (getRpcUrl().includes('devnet')) {
+            log("Simulating swap to USD1 (devnet)");
+            const price = await getTokenPrice(tokenMint);
+            const outputAmount = tokenAmount * price;
+
+            return {
+                success: true,
+                txSignature: `jupiter_to_usd1_devnet_${Date.now()}`,
+                outputAmount,
+                timestamp: Date.now()
+            };
+        }
+
+        // Step 1: Get quote (Token → USD1)
+        const quoteResponse = await fetch(
+            `${JUPITER_API}/quote?` +
+            `inputMint=${tokenMint}&` +
+            `outputMint=${TOKENS.USD1}&` +
+            `amount=${amountInSmallestUnits}&` +
+            `slippageBps=100` // 1% slippage for sells
+        );
+
+        if (!quoteResponse.ok) {
+            throw new Error(`Quote failed: ${quoteResponse.statusText}`);
+        }
+
+        const quoteData = await quoteResponse.json();
+        log("Quote received for token → USD1");
+
+        // Calculate output amount (USD1 has 6 decimals)
+        const outputAmount = Number(quoteData.outAmount) / 1e6;
+
+        // Determine which wallet to use
+        const serverWallet = isDemoMode() ? null : getServerWallet();
+        const walletPubkey = serverWallet?.publicKey.toBase58() || userWalletAddress;
+
+        if (!walletPubkey) {
+            // No wallet - return simulated result with output amount
+            log("No wallet configured, simulating");
+            return {
+                success: true,
+                txSignature: `jupiter_to_usd1_sim_${Date.now()}`,
+                outputAmount,
+                timestamp: Date.now()
+            };
+        }
+
+        // Step 2: Get swap transaction
+        const swapResponse = await fetch(`${JUPITER_API}/swap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                quoteResponse: quoteData,
+                userPublicKey: walletPubkey,
+                wrapAndUnwrapSol: true,
+                dynamicComputeUnitLimit: true,
+                prioritizationFeeLamports: 'auto'
+            })
+        });
+
+        if (!swapResponse.ok) {
+            throw new Error(`Swap API error: ${swapResponse.statusText}`);
+        }
+
+        const { swapTransaction } = await swapResponse.json();
+        const transactionBuf = Buffer.from(swapTransaction, 'base64');
+        const transaction = VersionedTransaction.deserialize(transactionBuf);
+
+        if (serverWallet) {
+            // SERVER MODE: Sign and send
+            log("Executing swap to USD1 (server wallet)");
+            transaction.sign([serverWallet]);
+
+            const signature = await connection.sendRawTransaction(
+                transaction.serialize(),
+                { skipPreflight: false, maxRetries: 3 }
+            );
+
+            await connection.confirmTransaction(signature, 'confirmed');
+            log("Swap to USD1 successful");
+
+            return {
+                success: true,
+                txSignature: signature,
+                outputAmount,
+                timestamp: Date.now()
+            };
+        } else {
+            // USER WALLET MODE: Return unsigned transaction
+            log("Returning unsigned swap-to-USD1 transaction for user signing");
+
+            return {
+                success: true,
+                txSignature: `pending_user_sign_${Date.now()}`,
+                unsigned_tx_base64: swapTransaction,
+                outputAmount,
+                timestamp: Date.now()
+            };
+        }
+    } catch (error) {
+        logger.error("Swap to USD1 failed", "Jupiter");
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Swap to USD1 failed",
+            timestamp: Date.now()
+        };
+    }
+}
+
+/**
  * Get all portfolio token information including prices
  * ✅ REAL API - Always works
  */
