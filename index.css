@@ -1,14 +1,44 @@
-/* ShadowFund Design System Styles */
+/* ShadowFund Design System Styles - Tailwind v4 */
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@theme {
+  /* Custom palette so utilities like bg-shadow-green, text-shadow-black work */
+  --color-shadow-black: #050505;
+  --color-shadow-dark: #0a0a0a;
+  --color-shadow-gray-900: #111111;
+  --color-shadow-gray-800: #1a1a1a;
+  --color-shadow-gray-700: #262626;
+  --color-shadow-gray-600: #333333;
+  --color-shadow-gray-500: #666666;
+  --color-shadow-gray-400: #a3a3a3;
+  --color-shadow-gray-300: #d4d4d4;
+  --color-shadow-green: #ff7a00;
+  --color-shadow-green-muted: #3b1d00;
+  --color-shadow-green-glow: rgba(255, 122, 0, 0.18);
+  --color-shadow-gold: #c5a059;
+  --color-shadow-gold-light: #e5c58d;
+  --color-shadow-gold-dark: #8a6d3b;
+  --color-shadow-error: #ff3b30;
+  --color-shadow-error-muted: #4d1210;
+  --color-shadow-purple: #9945ff;
+  --color-shadow-blue: #627eea;
+  /* Spacing used in components */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
 
 :root {
   --shadow-black: #050505;
-  /* Accent (updated to orange theme) */
-  --shadow-green: #FF7A00;
-  --shadow-gold: #C5A059;
+  --shadow-green: #ff7a00;
+  --shadow-gold: #c5a059;
 }
 
 html {
@@ -27,44 +57,38 @@ body {
   flex-direction: column;
 }
 
-@layer base {
-  body {
-    font-family: 'Inter', sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-@layer utilities {
-  /* Glassmorphism */
-  .glass-panel {
-    background: rgba(17, 17, 17, 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
+/* Glassmorphism & utilities */
+.glass-panel {
+  background: rgba(17, 17, 17, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
 
-  .glass-panel-light {
-    background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.03);
-  }
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
 
-  /* Premium glows */
-  .glow-green {
-    box-shadow: 0 0 25px -5px rgba(255, 122, 0, 0.35);
-  }
+.glow-green {
+  box-shadow: 0 0 25px -5px rgba(255, 122, 0, 0.35);
+}
 
-  .glow-gold {
-    box-shadow: 0 0 25px -5px rgba(197, 160, 89, 0.2);
-  }
+.glow-gold {
+  box-shadow: 0 0 25px -5px rgba(197, 160, 89, 0.2);
+}
 
-  /* Hide scrollbars in horizontal chip rows */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom Scrollbar (also in index.html, but keep for consistency) */
