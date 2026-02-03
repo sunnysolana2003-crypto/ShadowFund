@@ -25,9 +25,9 @@ interface WalletProviderProps {
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
-    // You can also provide a custom RPC endpoint
+    // Use custom RPC or fallback to public node
     const endpoint = useMemo(
-        () => clusterApiUrl('mainnet-beta'),
+        () => import.meta.env.VITE_SOLANA_RPC_URL || clusterApiUrl('mainnet-beta'),
         []
     );
 

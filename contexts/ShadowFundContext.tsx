@@ -53,7 +53,8 @@ interface ShadowFundContextType {
 
 const ShadowFundContext = createContext<ShadowFundContextType | null>(null);
 
-const connection = new Connection(clusterApiUrl('mainnet-beta'), "confirmed");
+const rpcUrl = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SOLANA_RPC_URL) || clusterApiUrl('mainnet-beta');
+const connection = new Connection(rpcUrl, "confirmed");
 
 export function ShadowFundProvider({ children }: { children: ReactNode }) {
     const { publicKey, signMessage: walletSignMessage, connected, sendTransaction } = useWallet();
