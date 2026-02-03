@@ -9,6 +9,8 @@ Zero-knowledge treasury management with Gemini AI strategy, USD1 stablecoin, and
 [![ShadowWire](https://img.shields.io/badge/ShadowWire-ZK%20Privacy-000000?style=flat)](https://radr.dev)
 [![Gemini AI](https://img.shields.io/badge/Gemini%203-AI%20Strategy-4285F4?style=flat&logo=google)](https://ai.google.dev)
 
+🚀 **Live Demo**: [https://shadow-fund-gamma.vercel.app/](https://shadow-fund-gamma.vercel.app/)
+
 ---
 
 ## ✨ What is ShadowFund?
