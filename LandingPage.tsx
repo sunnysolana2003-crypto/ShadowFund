@@ -54,7 +54,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-20 w-full max-w-7xl px-lg py-xl flex items-center justify-between">
+      <nav className="relative z-20 w-full max-w-7xl px-6 py-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border border-shadow-green flex items-center justify-center rounded-sm glow-green">
             <Shield className="w-5 h-5 text-shadow-green" />
@@ -63,7 +63,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             Shadow<span className="text-shadow-green">Fund</span>
           </span>
         </div>
-        <div className="hidden md:flex items-center gap-xl">
+        <div className="hidden md:flex items-center gap-8">
           <a href="#" className="text-xs uppercase tracking-widest font-bold text-shadow-500 hover:text-white transition-colors">Technology</a>
           <a href="#" className="text-xs uppercase tracking-widest font-bold text-shadow-500 hover:text-white transition-colors">Treasury</a>
           <a href="#" className="text-xs uppercase tracking-widest font-bold text-shadow-500 hover:text-white transition-colors">Governance</a>
@@ -72,12 +72,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-lg max-w-4xl py-3xl">
+      <section className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 max-w-4xl py-16">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="space-y-xl"
+          className="space-y-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-shadow-green/30 bg-shadow-green/5 backdrop-blur-md">
             <Zap className="w-3 h-3 text-shadow-green" />
@@ -93,7 +93,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             USD1, managed by autonomous intelligence, protected by zero-knowledge cryptography. The evolution of private wealth starts here.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-md pt-lg">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
               <ShadowButton
                 variant="primary"
@@ -122,7 +122,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       </section>
 
       {/* Features Preview */}
-      <section className="relative z-10 w-full max-w-7xl px-lg py-3xl grid grid-cols-1 md:grid-cols-3 gap-xl">
+      <section className="relative z-10 w-full max-w-7xl px-6 py-16 grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
           {
             icon: <Cpu className="w-8 h-8" />,

@@ -22,7 +22,7 @@ export const ShadowCard: React.FC<ShadowCardProps> = ({
     outline: "bg-transparent border-shadow-gray-700"
   };
 
-  const padding = noPadding ? "" : "p-lg md:p-xl";
+  const padding = noPadding ? "" : "p-6 md:p-8";
 
   return (
     <div className={`${baseStyles} ${variants[variant]} ${padding} ${className}`}>
