@@ -1,80 +1,175 @@
-# ShadowFund - AI-Powered Private Treasury
+# 🌑 ShadowFund
 
-> Zero-log, non-custodial AI treasury for USD1 built on ShadowWire with Gemini AI strategy recommendations.
+> **AI-Powered Privacy-First Hedge Fund on Solana**
 
-## 🌟 Overview
+Zero-knowledge treasury management with Gemini AI strategy, USD1 stablecoin, and ShadowWire privacy.
 
-ShadowFund is a privacy-first DeFi treasury management system that combines:
-- **ShadowWire SDK** - Private ZK transfers on Solana using Bulletproof proofs
-- **Gemini AI** - Intelligent allocation recommendations powered by Google's Gemini 3 Flash
-- **Real Wallet Integration** - Solana wallet adapter (Phantom, Solflare, Ledger)
-- **4-Vault Architecture** - Reserve, Yield, Growth, Degen allocations
+[![Solana](https://img.shields.io/badge/Solana-Mainnet%20Ready-9945FF?style=flat&logo=solana)](https://solana.com)
+[![USD1](https://img.shields.io/badge/USD1-Native%20Integration-FFD700?style=flat)](https://usd1.io)
+[![ShadowWire](https://img.shields.io/badge/ShadowWire-ZK%20Privacy-000000?style=flat)](https://radr.dev)
+[![Gemini AI](https://img.shields.io/badge/Gemini%203-AI%20Strategy-4285F4?style=flat&logo=google)](https://ai.google.dev)
 
-## 📁 Project Structure
+---
+
+## ✨ What is ShadowFund?
+
+ShadowFund is a **non-custodial, AI-managed hedge fund** where:
+
+- **Privacy comes first** — All transfers use ZK proofs via ShadowWire
+- **AI decides allocation** — Gemini 3 Flash analyzes markets in real-time
+- **USD1 is native** — Zero-log stablecoin as the universal unit of account
+- **You keep your keys** — User signs all transactions with their own wallet
 
 ```
-shadowfund-design-system/
-├── 📂 Frontend (Vite + React)
+┌─────────────────────────────────────────────────────────────────────┐
+│                        SHADOWFUND ARCHITECTURE                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│     USER WALLET                     AI STRATEGY ENGINE               │
+│         │                                  │                         │
+│         │    USD1 Deposit                  │  Gemini 3 Flash         │
+│         ▼                                  │  Market Analysis        │
+│    ┌─────────┐                             ▼                         │
+│    │ SHADOW  │◄───────────────────────────────────────────────┐      │
+│    │  WIRE   │   ZK-Private Transfers                         │      │
+│    │   SDK   │                                                │      │
+│    └────┬────┘                                                │      │
+│         │                                                     │      │
+│    ┌────┴────────────────────────────────────────────────┐    │      │
+│    │                    4 VAULTS                          │    │      │
+│    ├──────────┬──────────┬──────────┬────────────────────┤    │      │
+│    │ RESERVE  │  YIELD   │  GROWTH  │       DEGEN        │    │      │
+│    │   40%    │   30%    │   20%    │        10%         │    │      │
+│    │          │          │          │                    │    │      │
+│    │  Pure    │  Kamino  │ Jupiter  │    Jupiter         │    │      │
+│    │  USD1    │  Lending │ SOL/RADR │    Memecoins       │    │      │
+│    └──────────┴──────────┴──────────┴────────────────────┘    │      │
+│                              │                                │      │
+│                              └────────────────────────────────┘      │
+│                         Position Memos On-Chain                      │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏆 USD1 Integration — Core Primitive
+
+**USD1 isn't just "supported" — it's the foundation.**
+
+| Feature | Implementation |
+|---------|---------------|
+| **Unit of Account** | All vaults denominate in USD1 |
+| **Deposit** | User → ShadowWire shielded USD1 |
+| **Yield** | USD1 → Kamino lending pools |
+| **Swaps** | USD1 ↔ tokens via Jupiter |
+| **Withdraw** | Tokens → USD1 → User wallet |
+| **Non-Logging** | Zero USD1 amounts in logs |
+
+**USD1 Mint:** `USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB`
+
+---
+
+## ⚡ Feature Status
+
+### ✅ Production Ready
+
+| Component | Technology | Status |
+|-----------|------------|--------|
+| **ZK Deposits** | ShadowWire SDK | ✅ Working |
+| **ZK Withdrawals** | ShadowWire SDK | ✅ Working |
+| **ZK Transfers** | ShadowWire SDK | ✅ Working |
+| **AI Strategy** | Gemini 3 Flash | ✅ Working |
+| **Reserve Vault** | Pure USD1 | ✅ Working |
+| **Yield Vault** | Kamino Finance | ✅ Working |
+| **Growth Vault** | Jupiter Swaps | ✅ Working |
+| **Degen Vault** | Jupiter Swaps | ✅ Working |
+| **Position Persistence** | Solana Memo Program | ✅ Working |
+| **User Wallet Mode** | Browser Signing | ✅ Working |
+| **Non-Logging** | Redacted Logger | ✅ Working |
+
+### 🔗 Decentralized Position Tracking
+
+Positions are stored **on-chain** using Solana's Memo Program:
+
+```
+SHADOWFUND|growth|open|SOL|So1111...|0.5|145.20|1706097600000
+   ↑         ↑     ↑    ↑     ↑      ↑     ↑         ↑
+ prefix   vault  action token mint  amount price  timestamp
+```
+
+**How it works:**
+1. Memos attached to every trade transaction
+2. Positions reconstructed from transaction history on reconnect
+3. No database needed — fully decentralized
+4. Works across devices and survives server restarts
+
+---
+
+## 🗂️ Project Structure
+
+```
+shadowfund/
+├── 📂 Frontend (Vite + React + TypeScript)
 │   ├── App.tsx                 # Main app with wallet provider
-│   ├── LandingPage.tsx         # Marketing landing page
-│   ├── WalletConnect.tsx       # Wallet connection with Solana adapter
-│   ├── Dashboard.tsx           # Treasury console with real balance
-│   ├── AIStrategy.tsx          # AI strategy terminal view
-│   ├── TechOverview.tsx        # Technology page (architecture + audit)
-│   ├── TechStack.tsx           # Tech stack page (what we used)
-│   ├── polyfills.ts            # Browser polyfills (Buffer) for Solana libs
-│   ├── components/             # Reusable UI components
+│   ├── LandingPage.tsx         # Marketing landing
+│   ├── WalletConnect.tsx       # Solana wallet connection
+│   ├── Dashboard.tsx           # Treasury console
+│   ├── AIStrategy.tsx          # AI strategy terminal
+│   ├── TechOverview.tsx        # Architecture & audit page
+│   ├── polyfills.ts            # Browser Buffer polyfill
 │   ├── contexts/
-│   │   ├── WalletProvider.tsx      # Solana wallet adapter context
-│   │   └── ShadowFundContext.tsx   # Global state management
-│   └── services/api.ts         # API client service
+│   │   ├── WalletProvider.tsx      # Solana adapter context
+│   │   └── ShadowFundContext.tsx   # Global state
+│   └── services/api.ts         # Backend API client
 │
 └── 📂 backend/ (Next.js API)
-    ├── pages/api/              # API Routes
-    │   ├── treasury.ts         # GET /api/treasury
-    │   ├── strategy.ts         # GET /api/strategy (Gemini AI)
-    │   ├── rebalance.ts        # POST /api/rebalance
-    │   ├── transfer.ts         # POST /api/transfer
-    │   └── verify.ts           # GET /api/verify
-    ├── lib/
-    │   ├── ai/                 # AI Strategy Engine
-    │   │   ├── gemini.ts       # Gemini AI integration
-    │   │   ├── signals.ts      # Market data (CoinGecko/DexScreener)
-    │   │   ├── strategy.ts     # Rule-based fallback
-    │   │   ├── risk.ts         # Risk profile limits
-    │   │   ├── macro.ts        # Macro mood analysis
-    │   │   └── index.ts        # Main AI entry point
-    │   ├── shadowwire.ts       # ShadowWire SDK integration
-    │   ├── shadowwire-mock.ts  # Mock ShadowWire client (devnet relayer workaround)
-    │   ├── vaults.ts           # Vault address derivation
-    │   ├── usd1.ts             # USD1 operations
-    │   ├── treasury.ts         # Treasury state management
-    │   ├── config.ts           # Environment configuration
-    │   └── logger.ts           # Structured logging
-    ├── middleware/
-    │   ├── requireSignature.ts # Wallet signature verification
-    │   └── rateLimit.ts        # API rate limiting
-    └── utils/
-        └── verifySignature.ts  # Ed25519 signature verification
+    ├── pages/api/
+    │   ├── treasury.ts         # GET treasury state
+    │   ├── strategy.ts         # GET AI recommendations
+    │   ├── rebalance.ts        # POST execute rebalance
+    │   ├── transfer.ts         # POST deposit/withdraw
+    │   └── verify.ts           # GET verify ZK proof
+    └── lib/
+        ├── ai/                 # Gemini AI engine
+        │   ├── gemini.ts       # Gemini 3 Flash integration
+        │   ├── signals.ts      # Market data (CoinGecko/DexScreener)
+        │   └── strategy.ts     # Rule-based fallback
+        ├── protocols/
+        │   ├── kamino.ts       # Kamino lending (Yield)
+        │   └── jupiter.ts      # Jupiter swaps (Growth/Degen)
+        ├── strategies/
+        │   ├── reserve.ts      # Reserve vault logic
+        │   ├── yield.ts        # Yield vault logic
+        │   ├── growth.ts       # Growth vault logic
+        │   └── degen.ts        # Degen vault logic
+        ├── shadowwire.ts       # ShadowWire SDK wrapper
+        ├── positionMemo.ts     # On-chain position persistence
+        ├── vaults.ts           # PDA derivation
+        ├── treasury.ts         # Treasury state
+        └── logger.ts           # Non-logging redactor
 ```
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+
-- npm or yarn
-- A Solana wallet (Phantom, Solflare, etc.)
+- Solana wallet (Phantom, Solflare)
+- USD1 tokens (mainnet)
 
 ### Installation
 
 ```bash
-# Clone the repository
-cd shadowfund-design-system
+# Clone
+git clone https://github.com/sunnysolana2003-crypto/ShadowFund.git
+cd ShadowFund
 
-# Install frontend dependencies
+# Frontend
 npm install
 
-# Install backend dependencies
+# Backend
 cd backend && npm install
 ```
 
@@ -82,209 +177,66 @@ cd backend && npm install
 
 **Backend** (`backend/.env.local`):
 ```env
-# Gemini AI (required for AI-powered strategies)
+# Required
 GEMINI_API_KEY=your_gemini_api_key
 
-# Optional
-SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-NODE_ENV=development
-
-# ShadowWire devnet workaround (recommended for hackathon demo)
-# true  = use in-memory mock client
-# false = use real ShadowWire SDK client
-SHADOWWIRE_MOCK=true
+# Production
+NODE_ENV=production
+SHADOWWIRE_MOCK=false
+SOLANA_RPC_URL=https://your-helius-rpc
 ```
 
 **Frontend** (`.env.local`):
 ```env
-# Optional: set if backend runs on a different origin locally
 VITE_API_URL=http://localhost:3001
-
-# Optional: expose a UI “simulation” indicator (build-time)
-VITE_SHADOWWIRE_MOCK=true
+VITE_SHADOWWIRE_MOCK=true  # For demo mode
 ```
 
-### Running the Application
+### Run
 
 ```bash
-# Terminal 1: Start Backend (port 3001)
+# Terminal 1 - Backend
 cd backend && npm run dev
 
-# Terminal 2: Start Frontend (Vite default: 5173)
+# Terminal 2 - Frontend  
 npm run dev
 ```
 
 ---
 
-## 🏆 USD1 INTEGRATION — CORE ARCHITECTURE
+## 🎯 User Onboarding — No Server Wallet Required
 
-**USD1 isn't just "supported" — it's the foundation of the entire fund:**
-
-### USD1 as Universal Unit of Account
-- All 4 vaults denominate in USD1
-- User deposits USD1 → AI allocates USD1 across vaults → Withdrawals return USD1
-- No stablecoin fragmentation — one privacy-first primitive for everything
-
-### USD1-Native Treasury Operations
-| Vault | USD1 Flow |
-|-------|-----------|
-| **Reserve** | Holds pure USD1 (no swaps, maximum safety) |
-| **Yield** | USD1 deployed to Kamino lending |
-| **Growth** | USD1 → SOL/WETH/WBTC via Jupiter, profits return as USD1 |
-| **Degen** | USD1 → meme tokens via Jupiter, gains consolidated to USD1 |
-
-### ZK-Private USD1 Transfers
-- Every rebalance moves USD1 between vault PDAs via ShadowWire
-- Amounts are ZK-hidden — competitors can't front-run allocation changes
-- 1% fee model respected throughout
-
-### Non-Logging USD1 Policy
-- Zero USD1 amounts in logs
-- Zero wallet addresses in logs
-- Zero transaction hashes in logs
-- Institutional-grade privacy from app layer to blockchain
-
----
-
-## ⚡ MAINNET READINESS — HONEST ASSESSMENT
-
-### ✅ WORKS ON MAINNET TODAY
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **USD1 deposit → ShadowWire** | ✅ Ready | `shadowwire.deposit()` with USD1 mint |
-| **USD1 withdraw ← ShadowWire** | ✅ Ready | `shadowwire.withdraw()` with USD1 mint |
-| **ZK transfers between vaults** | ✅ Ready | `privateTransfer()` for internal moves |
-| **Vault PDA derivation** | ✅ Ready | Deterministic addresses from wallet + vault ID |
-| **AI Strategy (Gemini)** | ✅ Ready | Real API calls with market data |
-| **Wallet signatures** | ✅ Ready | Ed25519 verification, 60s expiry |
-| **Reserve vault** | ✅ Ready | USD1 only, no swaps needed |
-| **Yield vault (Kamino)** | ✅ Ready | User signs with their own wallet |
-| **Growth vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
-| **Degen vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
-
-### 🔗 DECENTRALIZED POSITION PERSISTENCE (Memo Program)
-
-Position data is stored **on-chain** using Solana's Memo Program:
+**Users sign all transactions with their own wallet:**
 
 ```
-SHADOWFUND|growth|open|SOL|So1111...|0.5|145.20|1706097600000
+┌────────────┐     ┌────────────┐     ┌────────────┐     ┌────────────┐
+│   User     │     │  Backend   │     │   User     │     │  Solana    │
+│  Requests  │ ──► │  Builds TX │ ──► │   Signs    │ ──► │  Network   │
+│  Deposit   │     │ (unsigned) │     │  (Phantom) │     │  Confirms  │
+└────────────┘     └────────────┘     └────────────┘     └────────────┘
 ```
-
-**How it works:**
-1. When you open/close positions, memos are attached to transactions
-2. On reconnect, positions are reconstructed from transaction history
-3. No database needed - fully decentralized and permanent
 
 **Benefits:**
-- ✅ Survives server restarts
-- ✅ Works across devices
-- ✅ Verifiable on-chain
-- ✅ True Web3 architecture
-
----
-
-## 🏭 PRODUCTION DEPLOYMENT
-
-### Required Environment Variables
-
-```env
-# === CORE ===
-NODE_ENV=production
-SHADOWWIRE_MOCK=false                    # USE REAL SDK
-SHADOWWIRE_CLUSTER=mainnet-beta
-SOLANA_RPC_URL=https://your-helius-rpc   # Paid RPC recommended
-
-# === AI ===
-GEMINI_API_KEY=your_gemini_api_key
-
-# === SECURITY ===
-CORS_ORIGINS=https://your-frontend.vercel.app
-```
-
-**Note:** No server wallet required! Users sign transactions with their own wallet (Phantom, Solflare, etc.).
-
----
-
-## 🎯 USER ONBOARDING — NO SERVER WALLET REQUIRED
-
-**Good news:** Users can use Kamino and Jupiter with their own wallet — no server configuration needed.
-
-### How It Works (User Wallet Mode)
-
-1. **Backend builds transaction** (unsigned)
-2. **Returns base64 transaction** to frontend
-3. **User signs** with their browser wallet (Phantom, Solflare)
-4. **Frontend sends** the signed transaction
-
-This means:
 - ✅ Users keep their private keys
-- ✅ No server wallet funding required
-- ✅ Works immediately for any user
+- ✅ No server wallet to fund
 - ✅ True non-custodial operation
+- ✅ Works immediately for any user
 
 ---
 
-## 🌾 KAMINO YIELD FARMING
+## 🌾 Vault Strategies
 
-The Yield vault uses **Kamino Finance** (Klend SDK) for USD1 lending.
+### Reserve (Safe Haven)
+- Pure USD1 holdings
+- No swaps, maximum safety
+- Instant liquidity
 
-### For Users (Automatic)
+### Yield (Kamino Finance)
+- USD1 deployed to Kamino lending pools
+- Typical APY: 5-15%
+- Auto-compounding
 
-Users just need:
-- **USD1 in their wallet** (to deposit)
-- **~0.01 SOL** (for transaction fees)
-
-When they click "Deposit to Yield":
-1. Backend builds Kamino deposit transaction
-2. User signs with their wallet
-3. USD1 earns yield automatically
-
-**Typical APY:** 5-15% on USD1/USDC deposits
-
-### For Operators (Optional Server Wallet)
-
-If you want the backend to execute transactions automatically (no user signing):
-
-```env
-# Option A: Path to keypair file
-KAMINO_WALLET_KEYPAIR_PATH=/path/to/kamino-wallet.json
-
-# Option B: Private key as JSON array
-KAMINO_WALLET_PRIVATE_KEY=[1,2,3,...,64]
-```
-
-Fund this wallet with SOL (fees) and USD1 (deposits).
-
----
-
-## 📈 JUPITER SWAPS (Growth/Degen)
-
-Growth and Degen vaults use **Jupiter Aggregator** for best-price swaps.
-
-### For Users (Automatic)
-
-Users just need:
-- **USD1 in their wallet** (to swap)
-- **~0.01 SOL** (for transaction fees)
-
-When they rebalance to Growth/Degen:
-1. Backend gets Jupiter quote (real prices)
-2. Builds swap transaction
-3. User signs with their wallet
-4. Swap executes via Jupiter
-
-### For Operators (Optional Server Wallet)
-
-If you want automated server-side swaps:
-
-```env
-SERVER_WALLET_SECRET=base64_encoded_keypair
-```
-
-### Token Allocations
-
-**Growth Vault (Lower Risk):**
+### Growth (Jupiter Blue Chips)
 | Token | Allocation |
 |-------|------------|
 | SOL | 40% |
@@ -292,7 +244,7 @@ SERVER_WALLET_SECRET=base64_encoded_keypair
 | ORE | 20% |
 | ANON | 15% |
 
-**Degen Vault (Higher Risk):**
+### Degen (Jupiter Memecoins)
 | Token | Allocation |
 |-------|------------|
 | SOL | 30% |
@@ -301,32 +253,33 @@ SERVER_WALLET_SECRET=base64_encoded_keypair
 | JIM | 15% |
 | POKI | 10% |
 
-### Custom Token Mints
+---
 
-For RADR-shielded tokens, optionally set mints:
+## 🤖 AI Strategy Engine
 
-```env
-RADR_MINT=your_radr_mint_address
-ORE_MINT=your_ore_mint_address
-ANON_MINT=your_anon_mint_address
-JIM_MINT=your_jim_mint_address
-POKI_MINT=your_poki_mint_address
+Powered by **Google Gemini 3 Flash**:
+
+1. **Market Data** — SOL price, RSI, volatility (CoinGecko/DexScreener)
+2. **AI Analysis** — Gemini processes market context + risk profile
+3. **Allocation** — Returns vault percentages with reasoning
+4. **Risk Caps** — Hard limits enforced per risk profile
+5. **Fallback** — Rule-based strategy if AI unavailable
+
+```typescript
+// Example AI Response
+{
+  allocation: { reserve: 30, yield: 40, growth: 20, degen: 10 },
+  reasoning: "Neutral market favors yield farming...",
+  confidence: 85,
+  keyInsights: ["SOL RSI at 45 suggests accumulation"]
+}
 ```
 
 ---
 
-## 🔑 USD1 MINT ADDRESS
+## 🔐 Security
 
-**Mainnet USD1:** `USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB`
-
-This is hardcoded in the backend. Users need USD1 tokens to use ShadowFund.
-
----
-
-## 🔐 Non-Logging Policy
-
-The backend **never logs** sensitive data:
-
+### Non-Logging Policy
 | Never Logged | Why |
 |--------------|-----|
 | Wallet addresses | Privacy |
@@ -335,274 +288,133 @@ The backend **never logs** sensitive data:
 | Private keys | Security |
 | Signatures | Security |
 
-All logging goes through `backend/lib/logger.ts` which redacts sensitive keys automatically.
+### Wallet Signatures
+All operations require Ed25519 signatures with 60s expiry:
+```typescript
+const message = `rebalance|${wallet}|${timestamp}`;
+const signature = await wallet.signMessage(message);
+```
+
+### Rate Limiting
+- 60 requests/minute per IP
+- Auto cleanup every 5 minutes
+
+---
 
 ## 📡 API Reference
 
 ### GET /api/treasury
-Fetch treasury state for a wallet.
-
-**Query Parameters:**
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| wallet | string | Yes | Solana wallet address |
-| risk | string | No | Risk profile: low, medium, high |
-
-**Response:**
-```json
-{
-  "totalUSD1": 2485910.42,
-  "vaults": [
-    { "id": "reserve", "address": "...", "balance": 994364.17 },
-    { "id": "yield", "address": "...", "balance": 745773.13 },
-    { "id": "growth", "address": "...", "balance": 497182.08 },
-    { "id": "degen", "address": "...", "balance": 248591.04 }
-  ],
-  "risk": "medium"
-}
+```bash
+curl "http://localhost:3001/api/treasury?wallet=YOUR_WALLET"
 ```
-
----
 
 ### GET /api/strategy
-Get AI-powered allocation recommendations using Gemini AI.
-
-**Query Parameters:**
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| risk | string | No | Risk profile: low, medium, high |
-
-**Response:**
-```json
-{
-  "ok": true,
-  "signals": {
-    "solTrend": "bullish",
-    "solRSI": 45.2,
-    "memeHype": "medium",
-    "volatility": "low"
-  },
-  "mood": "neutral",
-  "allocation": {
-    "reserve": 30,
-    "yield": 40,
-    "growth": 20,
-    "degen": 10
-  },
-  "aiPowered": true,
-  "reasoning": "With market indicators showing neutral momentum...",
-  "confidence": 85,
-  "keyInsights": [
-    "SOL RSI at 45.2 suggests accumulation opportunity",
-    "Medium meme activity favors degen strategies",
-    "Low volatility supports yield farming"
-  ],
-  "marketAnalysis": "Solana is in consolidation phase...",
-  "generatedAt": "2026-01-24T09:26:12.226Z"
-}
+```bash
+curl "http://localhost:3001/api/strategy?risk=medium"
 ```
-
----
 
 ### POST /api/rebalance
-Execute treasury rebalance using AI strategy.
-
-**Request Body:**
-```json
-{
-  "wallet": "YOUR_WALLET_ADDRESS",
-  "risk": "medium",
-  "action": "rebalance",
-  "timestamp": 1706097600000,
-  "signature": "base58_encoded_signature"
-}
+```bash
+curl -X POST http://localhost:3001/api/rebalance \
+  -H "Content-Type: application/json" \
+  -d '{"wallet":"...","risk":"medium","signature":"..."}'
 ```
-
-**Response:**
-```json
-{
-  "ok": true,
-  "message": "USD1 rebalanced privately via ShadowWire",
-  "strategy": { ... },
-  "transfers": [
-    { "vault": "growth", "direction": "in", "amount": 50000, "txHash": "..." }
-  ],
-  "fees": { "percentage": 1, "minimum": 0.01 }
-}
-```
-
----
 
 ### POST /api/transfer
-Deposit or withdraw USD1 from ShadowWire.
-
-**Request Body:**
-```json
-{
-  "wallet": "YOUR_WALLET_ADDRESS",
-  "amount": 100,
-  "action": "deposit"  // or "withdraw"
-}
+```bash
+curl -X POST http://localhost:3001/api/transfer \
+  -H "Content-Type: application/json" \
+  -d '{"wallet":"...","amount":100,"action":"deposit"}'
 ```
 
 ---
 
-### GET /api/verify
-Verify a ZK proof for a transaction.
+## 🎭 Demo Mode
 
-**Query Parameters:**
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| txHash | string | Yes | Transaction hash to verify |
+For hackathon demos (when ShadowWire devnet has issues):
 
-## 🤖 Gemini AI Integration
-
-The AI strategy engine uses Google's **Gemini 3 Flash Preview** model for intelligent allocation recommendations.
-
-### How It Works
-
-1. **Market Data Collection** - Fetches SOL price, RSI, volatility from CoinGecko/DexScreener
-2. **AI Analysis** - Sends market context to Gemini with risk profile
-3. **Strategy Generation** - Gemini returns JSON with allocation percentages
-4. **Risk Enforcement** - Hard caps applied based on risk profile
-5. **Fallback** - Rule-based strategy if AI unavailable
-
-### AI Response Schema
-
-```typescript
-interface GeminiStrategyResult {
-  allocation: {
-    reserve: number;  // 0-100
-    yield: number;    // 0-100
-    growth: number;   // 0-100
-    degen: number;    // 0-100
-  };
-  reasoning: string;
-  confidence: number;  // 0-100
-  marketMood: "risk-on" | "risk-off" | "neutral";
-  keyInsights: string[];
-}
+```env
+SHADOWWIRE_MOCK=true
 ```
 
-### Configuration
+This enables high-fidelity simulation that:
+- ✅ Shows full UI/UX flow
+- ✅ Demonstrates AI strategy
+- ✅ Simulates vault operations
+- ✅ Maintains realistic balances
 
-```typescript
-// backend/lib/ai/gemini.ts
-const model = genAI.getGenerativeModel({
-  model: "gemini-3-flash-preview",
-  generationConfig: {
-    temperature: 0.5,
-    maxOutputTokens: 2048,
-    responseMimeType: "application/json"
-  }
-});
-```
+**Note:** Production uses `SHADOWWIRE_MOCK=false` with real SDK.
 
-## 🔐 Security
+---
 
-### Wallet Signature Verification
-All transfer operations require Ed25519 signatures:
+## 📊 Risk Profiles
 
-```typescript
-const timestamp = Date.now();
-const message = `rebalance|${wallet}|${timestamp}`;
-const signature = await walletSignMessage(message);
-```
+| Profile | Reserve Cap | Yield Cap | Growth Cap | Degen Cap |
+|---------|-------------|-----------|------------|-----------|
+| **Low** | 60% | 50% | 20% | 5% |
+| **Medium** | 50% | 60% | 40% | 15% |
+| **High** | 30% | 70% | 60% | 30% |
 
-Signatures expire after 60 seconds.
-
-### Rate Limiting
-API endpoints are protected with rate limiting:
-- **Default**: 60 requests per minute per IP
-- Clean-up runs every 5 minutes
-
-### CORS
-Configured for frontend-backend communication:
-```
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, OPTIONS
-```
-
-## 📦 ShadowWire SDK
-
-Integration with `@radr/shadowwire` for private ZK transfers:
-
-```typescript
-import { ShadowWireClient, TokenUtils } from "@radr/shadowwire";
-
-const client = new ShadowWireClient();
-
-// Get private balance
-const balance = await client.getBalance(wallet, "USD1");
-
-// Private transfer (ZK hidden amount)
-await client.transfer({
-  sender, recipient, amount,
-  token: "USD1",
-  type: "internal"
-});
-
-// Fee info
-client.getFeePercentage("USD1");  // 1%
-client.getMinimumAmount("USD1"); // 0.01
-```
+---
 
 ## 🏗️ Production Deployment
 
-### Build Commands
+### Vercel (Recommended)
 
 ```bash
 # Frontend
-npm run build
+vercel
 
 # Backend
-cd backend && npm run build
+cd backend && vercel
 ```
 
 ### Environment Variables (Production)
 
 ```env
-# Required
-GEMINI_API_KEY=your_production_key
 NODE_ENV=production
-
-# Recommended
-SOLANA_RPC_URL=https://your-helius-or-quicknode-url
-SHADOWWIRE_API_KEY=your_shadowwire_key
+SHADOWWIRE_MOCK=false
+SHADOWWIRE_CLUSTER=mainnet-beta
+SOLANA_RPC_URL=https://your-helius-rpc
+GEMINI_API_KEY=your_key
+CORS_ORIGINS=https://your-frontend.vercel.app
 ```
 
-### Health Check
+---
 
-```bash
-curl http://localhost:3001/api/strategy?risk=medium
-```
+## 🔗 Tech Stack
 
-## 🧪 Testing
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Framer Motion |
+| **Backend** | Next.js API Routes, TypeScript |
+| **Blockchain** | Solana, ShadowWire SDK |
+| **DeFi** | Kamino Finance (Klend), Jupiter Aggregator |
+| **AI** | Google Gemini 3 Flash |
+| **Wallet** | Solana Wallet Adapter (Phantom, Solflare, Ledger) |
 
-### Manual API Test
+---
 
-```bash
-# Test strategy endpoint with Gemini AI
-curl "http://localhost:3001/api/strategy?risk=high"
-
-# Test treasury endpoint
-curl "http://localhost:3001/api/treasury?wallet=YOUR_WALLET&risk=medium"
-```
-
-## 📊 Risk Profiles
-
-| Profile | Reserve | Yield | Growth | Degen |
-|---------|---------|-------|--------|-------|
-| Low     | 60%     | 50%   | 20%    | 5%    |
-| Medium  | 50%     | 60%   | 40%    | 15%   |
-| High    | 30%     | 70%   | 60%    | 30%   |
-
-## 🔗 Links
-
-- **ShadowWire SDK**: [@radr/shadowwire](https://www.npmjs.com/package/@radr/shadowwire)
-- **Gemini AI**: [Google AI Studio](https://makersuite.google.com/)
-- **Solana Wallet Adapter**: [GitHub](https://github.com/solana-labs/wallet-adapter)
-
-## 📄 License
+## 📜 License
 
 MIT
+
+---
+
+## 🙏 Acknowledgments
+
+- **RADR Labs** — ShadowWire SDK for ZK privacy
+- **USD1 Protocol** — Privacy-first stablecoin
+- **Kamino Finance** — Lending infrastructure
+- **Jupiter** — DEX aggregation
+- **Google AI** — Gemini 3 Flash model
+
+---
+
+<div align="center">
+
+**Built for the RADR Hackathon 2026**
+
+*Privacy is not a feature. It's a right.*
+
+</div>
