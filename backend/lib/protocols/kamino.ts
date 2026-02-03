@@ -9,34 +9,18 @@ import { Connection, PublicKey, Transaction, Keypair, sendAndConfirmTransaction 
 import { KaminoMarket, KaminoAction, VanillaObligation } from '@kamino-finance/klend-sdk';
 import { LendingPosition, TxResult } from './types';
 import * as fs from 'fs';
+import { logger } from '../logger';
 
-// Kamino Main Market on Solana Mainnet
 const KAMINO_MAIN_MARKET = new PublicKey('7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF');
-
-// Token mints (try USD1 first, fallback to USDC)
 const USD1_MINT = new PublicKey('USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB');
 const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
 
-// Solana connection
 const getRpcUrl = () => process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(getRpcUrl(), 'confirmed');
 
-// In-memory position tracking
 const positionCache: Map<string, LendingPosition> = new Map();
 
-// Color-coded logging
-const COLORS = {
-    reset: "\x1b[0m",
-    green: "\x1b[32m",
-    yellow: "\x1b[33m",
-    cyan: "\x1b[36m",
-    red: "\x1b[31m"
-};
-
-const log = (msg: string, data?: any) => {
-    console.log(`${COLORS.yellow}[KAMINO]${COLORS.reset} ${msg}`);
-    if (data) console.log(`${COLORS.yellow}  └─${COLORS.reset}`, JSON.stringify(data, null, 2));
-};
+const log = (msg: string) => logger.info(msg, "Kamino");
 
 /**
  * Load wallet keypair from file
@@ -56,7 +40,7 @@ function loadWalletKeypair(): Keypair {
         return Keypair.fromSecretKey(Uint8Array.from(secretKey));
     }
 
-    log(`${COLORS.yellow}⚠️  No wallet configured. Using ephemeral wallet${COLORS.reset}`);
+    logger.warn("No wallet configured, using ephemeral", "Kamino");
     return Keypair.generate();
 }
 
@@ -66,7 +50,7 @@ function loadWalletKeypair(): Keypair {
 async function initializeMarket(retries = 3): Promise<KaminoMarket> {
     for (let i = 0; i < retries; i++) {
         try {
-            log(`Initializing Kamino market (attempt ${i + 1}/${retries})...`);
+            log("Initializing Kamino market");
             // SDK 5.15.4 requires recentSlotDurationMs (400-450)
             const market = await KaminoMarket.load(connection, KAMINO_MAIN_MARKET, 450);
 
@@ -74,14 +58,12 @@ async function initializeMarket(retries = 3): Promise<KaminoMarket> {
                 throw new Error('Failed to load Kamino market');
             }
 
-            log(`${COLORS.green}✓ Market loaded${COLORS.reset}`, {
-                reserves: Array.from(market.reserves.keys()).length
-            });
+            log("Market loaded");
 
             return market;
         } catch (error) {
             if (i === retries - 1) {
-                log(`${COLORS.red}✗ Market initialization failed after ${retries} attempts${COLORS.reset}`);
+                logger.error("Market initialization failed", "Kamino");
                 throw error;
             }
             log(`Retry in 2 seconds...`);
@@ -98,12 +80,12 @@ async function getStablecoinReserve(market: KaminoMarket): Promise<{ mint: Publi
     // Try USD1 first
     let reserve = market.getReserveByMint(USD1_MINT);
     if (reserve) {
-        log(`${COLORS.green}✓ USD1 reserve found${COLORS.reset}`);
+        log("USD1 reserve found");
         return { mint: USD1_MINT, reserve, symbol: 'USD1' };
     }
 
     // Fallback to USDC
-    log(`${COLORS.yellow}⚠️  USD1 not found, using USDC${COLORS.reset}`);
+    log("USD1 not found, using USDC");
     reserve = market.getReserveByMint(USDC_MINT);
 
     if (!reserve) {
@@ -122,7 +104,7 @@ export async function deposit(
     strategy: string = "USD1-LENDING"
 ): Promise<TxResult> {
     try {
-        log(`Depositing ${amount} USD1/USDC into Kamino`);
+        log("Depositing into Kamino");
 
         const market = await initializeMarket();
         const { mint, reserve, symbol } = await getStablecoinReserve(market);
@@ -130,19 +112,13 @@ export async function deposit(
         const slot = await connection.getSlot();
         const currentAPY = Number(reserve.totalSupplyAPY(slot)) / 100;
 
-        log(`Using ${symbol} reserve`, {
-            reserve: reserve.address.toBase58(),
-            apy: `${currentAPY.toFixed(2)}%`
-        });
+        log(`Using ${symbol} reserve`);
 
         const signer = loadWalletKeypair();
         const walletPubkey = new PublicKey(walletAddress);
         const amountLamports = Math.floor(amount * 1_000_000);
 
-        log('Building deposit transaction...', {
-            amount: amountLamports,
-            wallet: walletPubkey.toBase58()
-        });
+        log("Building deposit transaction");
 
         // SDK 5.15.4 buildDepositTxns arguments
         const depositAction = await KaminoAction.buildDepositTxns(
@@ -157,11 +133,7 @@ export async function deposit(
             true // includeAtaIxs
         );
 
-        log(`${COLORS.green}✓ Deposit instructions created${COLORS.reset}`, {
-            setupIxs: depositAction.setupIxs.length,
-            lendingIxs: depositAction.lendingIxs.length,
-            cleanupIxs: depositAction.cleanupIxs.length
-        });
+        log("Deposit instructions created");
 
         // PRODUCTION: Execute transactions
         const transaction = new Transaction();
@@ -169,7 +141,7 @@ export async function deposit(
         transaction.add(...depositAction.lendingIxs);
         transaction.add(...depositAction.cleanupIxs);
 
-        log(`Sending real deposit transaction...`);
+        log("Sending deposit transaction");
         const signature = await sendAndConfirmTransaction(
             connection,
             transaction,
@@ -179,7 +151,7 @@ export async function deposit(
                 commitment: 'confirmed'
             }
         );
-        log(`${COLORS.green}✓ Transaction confirmed${COLORS.reset}`, { signature });
+        log("Transaction confirmed");
 
 
         // Update cache
@@ -203,12 +175,12 @@ export async function deposit(
 
     } catch (error) {
         if (error instanceof Error && error.message.includes('0x17a3')) {
-            log(`${COLORS.yellow}⚠️  Error 0x17a3 detected, retrying in 2s...${COLORS.reset}`);
+            log("Retrying after error");
             await new Promise(resolve => setTimeout(resolve, 2000));
             return deposit(walletAddress, amount, strategy);
         }
 
-        log(`${COLORS.red}✗ Deposit failed${COLORS.reset}`, error);
+        logger.error("Deposit failed", "Kamino");
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Deposit failed',
@@ -226,7 +198,7 @@ export async function withdraw(
     strategy: string = "USD1-LENDING"
 ): Promise<TxResult> {
     try {
-        log(`Withdrawing ${amount} from Kamino`);
+        log("Withdrawing from Kamino");
 
         const positionKey = `${walletAddress}:${strategy}`;
         const position = positionCache.get(positionKey);
@@ -246,11 +218,7 @@ export async function withdraw(
         const walletPubkey = new PublicKey(walletAddress);
         const amountLamports = Math.floor(amount * 1_000_000);
 
-        log('Building withdrawal transaction...', {
-            amount: amountLamports,
-            token: symbol,
-            wallet: walletPubkey.toBase58()
-        });
+        log("Building withdrawal transaction");
 
         // SDK 5.15.4 buildWithdrawTxns arguments
         const withdrawAction = await KaminoAction.buildWithdrawTxns(
@@ -265,11 +233,7 @@ export async function withdraw(
             true // includeAtaIxs
         );
 
-        log(`${COLORS.green}✓ Withdrawal instructions created${COLORS.reset}`, {
-            setupIxs: withdrawAction.setupIxs.length,
-            lendingIxs: withdrawAction.lendingIxs.length,
-            cleanupIxs: withdrawAction.cleanupIxs.length
-        });
+        log("Withdrawal instructions created");
 
         // PRODUCTION: Execute transactions
         const transaction = new Transaction();
@@ -277,7 +241,7 @@ export async function withdraw(
         transaction.add(...withdrawAction.lendingIxs);
         transaction.add(...withdrawAction.cleanupIxs);
 
-        log(`Sending real withdrawal transaction...`);
+        log("Sending withdrawal transaction");
         const signature = await sendAndConfirmTransaction(
             connection,
             transaction,
@@ -287,7 +251,7 @@ export async function withdraw(
                 commitment: 'confirmed'
             }
         );
-        log(`${COLORS.green}✓ Transaction confirmed${COLORS.reset}`, { signature });
+        log("Transaction confirmed");
 
 
         // Update position
@@ -308,12 +272,12 @@ export async function withdraw(
 
     } catch (error) {
         if (error instanceof Error && error.message.includes('0x17a3')) {
-            log(`${COLORS.yellow}⚠️  Error 0x17a3 detected, retrying in 2s...${COLORS.reset}`);
+            log("Retrying after error");
             await new Promise(resolve => setTimeout(resolve, 2000));
             return withdraw(walletAddress, amount, strategy);
         }
 
-        log(`${COLORS.red}✗ Withdrawal failed${COLORS.reset}`, error);
+        logger.error("Withdrawal failed", "Kamino");
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Withdrawal failed',
@@ -337,7 +301,7 @@ export async function getUserObligation(walletAddress: string): Promise<any> {
 
         return obligation;
     } catch (error) {
-        log('Failed to fetch obligation', error);
+        logger.error("Failed to fetch obligation", "Kamino");
         return null;
     }
 }
@@ -419,7 +383,7 @@ export async function getCurrentAPY(strategy: string = "USD1-LENDING"): Promise<
 
         return Number(reserve.totalSupplyAPY(slot)) / 100;
     } catch (error) {
-        log('Failed to fetch real-time APY, using default', error);
+        logger.warn("Failed to fetch APY, using default", "Kamino");
         return 8.5;
     }
 }

@@ -1,24 +1,11 @@
 /**
  * ShadowWire Mock Implementation
- * 
- * Simulates ShadowWire SDK behavior for devnet testing when the real
- * relayer doesn't support our token mints.
- * 
+ * Simulates ShadowWire SDK for devnet when relayer doesn't support token mints.
  * Enable with: SHADOWWIRE_MOCK=true in .env.local
+ * Non-logging policy: no wallets, amounts, or balances in logs.
  */
 
-// Color codes for logging
-const COLORS = {
-    reset: "\x1b[0m",
-    green: "\x1b[32m",
-    yellow: "\x1b[33m",
-    cyan: "\x1b[36m",
-    magenta: "\x1b[35m",
-    blue: "\x1b[34m",
-    dim: "\x1b[2m"
-};
-
-const log = (msg: string) => console.log(`${COLORS.magenta}[ShadowWire MOCK]${COLORS.reset} ${msg}`);
+import { logger } from "./logger";
 
 // In-memory balance storage (persists for server lifetime)
 // Maps wallet address -> private balance in smallest units (6 decimals)
@@ -61,7 +48,7 @@ export class MockShadowWireClient {
     constructor(options: { network?: string; debug?: boolean } = {}) {
         this.network = options.network || 'devnet';
         this.debug = options.debug || false;
-        log(`${COLORS.green}✓ Mock client initialized${COLORS.reset} (network: ${this.network})`);
+        logger.info("Mock client initialized", "ShadowWire-Mock", { network: this.network });
     }
 
     async getBalance(wallet: string, token: string): Promise<{ available: number; deposited: number }> {
@@ -69,7 +56,7 @@ export class MockShadowWireClient {
         const balance = privateBalances.get(wallet) || 0;
         
         if (this.debug) {
-            log(`getBalance(${wallet.slice(0, 8)}...) = ${balance / 1_000_000} ${token}`);
+            logger.debug("getBalance", "ShadowWire-Mock");
         }
 
         return {
@@ -86,7 +73,7 @@ export class MockShadowWireClient {
     }> {
         const { wallet, amount } = params;
         
-        log(`📥 Deposit: ${amount / 1_000_000} USD1 -> ${wallet.slice(0, 8)}...`);
+        logger.info("Deposit", "ShadowWire-Mock");
         await simulateDelay(800);
 
         // Calculate 1% fee
@@ -109,7 +96,7 @@ export class MockShadowWireClient {
             status: 'success'
         });
 
-        log(`${COLORS.green}✓ Deposit success${COLORS.reset} | Net: ${netAmount / 1_000_000} | Fee: ${fee / 1_000_000} | New Balance: ${(currentBalance + netAmount) / 1_000_000}`);
+        logger.info("Deposit success", "ShadowWire-Mock");
 
         return {
             success: true,
@@ -127,15 +114,15 @@ export class MockShadowWireClient {
     }> {
         const { wallet, amount } = params;
         
-        log(`📤 Withdraw: ${amount / 1_000_000} USD1 <- ${wallet.slice(0, 8)}...`);
+        logger.info("Withdraw", "ShadowWire-Mock");
         await simulateDelay(800);
 
         const currentBalance = privateBalances.get(wallet) || 0;
 
         // Check sufficient balance
         if (currentBalance < amount) {
-            log(`${COLORS.yellow}⚠ Insufficient balance: ${currentBalance / 1_000_000} < ${amount / 1_000_000}${COLORS.reset}`);
-            throw new Error(`Insufficient private balance: have ${currentBalance / 1_000_000}, need ${amount / 1_000_000}`);
+            logger.warn("Insufficient balance", "ShadowWire-Mock");
+            throw new Error(`Insufficient private balance`);
         }
 
         // Calculate 1% fee
@@ -157,7 +144,7 @@ export class MockShadowWireClient {
             status: 'success'
         });
 
-        log(`${COLORS.green}✓ Withdraw success${COLORS.reset} | Net: ${netAmount / 1_000_000} | Fee: ${fee / 1_000_000} | New Balance: ${(currentBalance - amount) / 1_000_000}`);
+        logger.info("Withdraw success", "ShadowWire-Mock");
 
         return {
             success: true,
@@ -181,7 +168,7 @@ export class MockShadowWireClient {
     }> {
         const { sender, recipient, amount, type } = params;
         
-        log(`🔄 ${type === 'internal' ? 'Private' : 'External'} Transfer: ${amount} USD1 | ${sender.slice(0, 8)}... -> ${recipient.slice(0, 8)}...`);
+        logger.info(type === 'internal' ? "Private transfer" : "External transfer", "ShadowWire-Mock");
         await simulateDelay(600);
 
         const senderBalance = privateBalances.get(sender) || 0;
@@ -189,7 +176,7 @@ export class MockShadowWireClient {
 
         // Check sufficient balance
         if (senderBalance < amountSmallest) {
-            log(`${COLORS.yellow}⚠ Insufficient balance for transfer${COLORS.reset}`);
+            logger.warn("Insufficient balance for transfer", "ShadowWire-Mock");
             throw new Error(`Insufficient balance for transfer`);
         }
 
@@ -215,7 +202,7 @@ export class MockShadowWireClient {
             status: 'success'
         });
 
-        log(`${COLORS.green}✓ Transfer success${COLORS.reset}`);
+        logger.info("Transfer success", "ShadowWire-Mock");
 
         return {
             success: true,
@@ -264,19 +251,16 @@ export function getMockTransactions(): MockTransaction[] {
 }
 
 export function setMockBalance(wallet: string, amount: number): void {
-    // amount in human-readable units (e.g., 100 = $100)
     privateBalances.set(wallet, Math.floor(amount * 1_000_000));
-    log(`${COLORS.blue}[DEBUG] Set balance for ${wallet.slice(0, 8)}... to ${amount} USD1${COLORS.reset}`);
+    logger.debug("Set mock balance", "ShadowWire-Mock");
 }
 
 export function clearMockData(): void {
     privateBalances.clear();
     transactionHistory.length = 0;
-    log(`${COLORS.blue}[DEBUG] Cleared all mock data${COLORS.reset}`);
+    logger.info("Cleared mock data", "ShadowWire-Mock");
 }
 
-// Pre-seed some test balances for easier testing
 export function seedTestBalances(): void {
-    log(`${COLORS.blue}[DEBUG] Seeding test balances...${COLORS.reset}`);
-    // These will be overwritten when real wallets connect, but helpful for API testing
+    logger.debug("Seeding test balances", "ShadowWire-Mock");
 }

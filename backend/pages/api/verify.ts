@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { applyCors } from "../../lib/cors";
+import { logger } from "../../lib/logger";
 
 /**
  * Verify Transaction Proof
@@ -47,8 +48,8 @@ export default async function handler(
                     : "Invalid transaction hash format"
             }
         });
-    } catch (err) {
-        console.error("Verify API error:", err);
+    } catch {
+        logger.error("Verify failed", "Verify");
         res.status(500).json({ error: "Unable to verify proof" });
     }
 }

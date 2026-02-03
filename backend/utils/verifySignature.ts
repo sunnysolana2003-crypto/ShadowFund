@@ -1,5 +1,6 @@
 import nacl from "tweetnacl";
 import bs58 from "bs58";
+import { logger } from "../lib/logger";
 
 export function verifySignature(
     message: string,
@@ -12,8 +13,8 @@ export function verifySignature(
         const pub = bs58.decode(publicKey);
 
         return nacl.sign.detached.verify(msg, sig, pub);
-    } catch (error) {
-        console.error("Signature verification error:", error);
+    } catch {
+        logger.error("Signature verification error", "Verify");
         return false;
     }
 }

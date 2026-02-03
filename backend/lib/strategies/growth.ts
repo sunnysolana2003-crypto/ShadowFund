@@ -1,26 +1,16 @@
 /**
  * Growth Vault Strategy
- * Invests USD1 into blue-chip tokens (SOL, wETH, wBTC) via Jupiter
+ * Invests USD1 into blue-chip tokens (SOL, wETH, wBTC) via Jupiter.
+ * When server wallet is configured and not on devnet, executes real swaps; otherwise simulates.
  */
 
 import { GrowthStrategy, VaultStatus, StrategyExecutionResult } from "./types";
-import { TxResult, Position, TOKENS, GROWTH_ALLOCATION } from "../protocols/types";
+import { TxResult, Position, TOKENS, GROWTH_ALLOCATION, getRADRDecimals } from "../protocols/types";
 import { jupiter } from "../protocols";
 import { getVaultAddress } from "../vaults";
+import { logger } from "../logger";
 
-// Color-coded logging
-const COLORS = {
-    reset: "\x1b[0m",
-    green: "\x1b[32m",
-    yellow: "\x1b[33m",
-    cyan: "\x1b[36m",
-    red: "\x1b[31m"
-};
-
-const log = (msg: string, data?: any) => {
-    console.log(`${COLORS.cyan}[GROWTH VAULT]${COLORS.reset} ${msg}`);
-    if (data) console.log(`${COLORS.cyan}  └─${COLORS.reset}`, JSON.stringify(data));
-};
+const log = (msg: string) => logger.info(msg, "GROWTH");
 
 
 // In-memory position tracking (in production, use database)
@@ -38,13 +28,13 @@ const positions: Map<string, GrowthPosition[]> = new Map();
 class GrowthVaultStrategy implements GrowthStrategy {
     vaultId = "growth";
     name = "Growth Vault";
-    description = "Balanced exposure to blue-chip tokens (SOL, wETH, wBTC)";
+    description = "RADR Labs shielded growth (SOL, RADR, ORE, ANON)";
     riskLevel = "medium" as const;
 
     async deposit(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Distributing ${amount} USD1 into RADR Shielded Assets`);
+        log("Distributing into RADR shielded assets");
 
-        // Target allocations from types.ts
+        // RADR Labs supported tokens only: SOL, RADR, ORE, ANON
         const allocations = [
             { token: TOKENS.SOL, symbol: "SOL", percent: GROWTH_ALLOCATION.SOL },
             { token: TOKENS.RADR, symbol: "RADR", percent: GROWTH_ALLOCATION.RADR },
@@ -55,22 +45,30 @@ class GrowthVaultStrategy implements GrowthStrategy {
         const txSignatures: string[] = [];
         const newPositions: GrowthPosition[] = [];
 
-        // Derived vault address for privacy
-        const vaultAddress = await getVaultAddress(walletAddress, "growth");
-
         for (const alloc of allocations) {
             const investAmount = amount * (alloc.percent / 100);
             if (investAmount < 0.1) continue;
 
-            log(`Asset Allocation: ${investAmount.toFixed(2)} USD1 → ${alloc.symbol} (Shielded)`);
+            log(`Allocation: ${alloc.symbol}`);
 
-            // PRIVACY-FIRST: Since real swaps are disabled, we simulate the swap 
-            // but focus on the ShadowWire shielding process
             const price = await jupiter.getTokenPrice(alloc.token);
-            const tokenAmount = investAmount / price;
+            const tokenAmount = price > 0 ? investAmount / price : 0;
 
-            // Log ShadowWire interaction
-            log(`[ShadowWire] Shielding ${tokenAmount.toFixed(6)} ${alloc.symbol} for ${vaultAddress.slice(0, 8)}...`);
+            // Execute real swap when server wallet + mainnet; otherwise simulate
+            const swapResult = await jupiter.executeSwap({
+                inputMint: TOKENS.USD1,
+                outputMint: alloc.token,
+                amount: investAmount,
+                slippageBps: 80,
+            });
+
+            if (swapResult.success && swapResult.txSignature) {
+                txSignatures.push(swapResult.txSignature);
+            } else {
+                txSignatures.push(`growth_shield_${alloc.symbol.toLowerCase()}_${Date.now()}`);
+            }
+
+            log(`Shielding ${alloc.symbol}`);
 
             newPositions.push({
                 walletAddress,
@@ -80,19 +78,13 @@ class GrowthVaultStrategy implements GrowthStrategy {
                 entryPrice: price,
                 entryTimestamp: Date.now()
             });
-
-            // Representative tx for the privacy distribution
-            txSignatures.push(`shadowwire_shield_${alloc.symbol.toLowerCase()}_${Date.now()}`);
         }
 
         // Store positions
         const existingPositions = positions.get(walletAddress) || [];
         positions.set(walletAddress, [...existingPositions, ...newPositions]);
 
-        log(`${COLORS.green}✓ Growth Distribution Complete${COLORS.reset}`, {
-            totalInvested: amount,
-            privacyVault: vaultAddress
-        });
+        log("Growth distribution complete");
 
         return {
             success: true,
@@ -102,7 +94,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
     }
 
     async withdraw(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Unshielding and withdrawing ${amount} USD worth of assets`);
+        log("Unshielding and withdrawing");
 
         const currentPositions = positions.get(walletAddress) || [];
         const totalValue = await this.getValue(walletAddress);
@@ -124,7 +116,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
             if (withdrawAmount <= 0) continue;
 
             pos.amount -= withdrawAmount;
-            log(`[ShadowWire] Unshielding ${withdrawAmount.toFixed(6)} ${pos.symbol} from ${vaultAddress.slice(0, 8)}...`);
+            log(`Unshielding ${pos.symbol}`);
 
             txSignatures.push(`shadowwire_unshield_${pos.symbol.toLowerCase()}_${Date.now()}`);
         }
@@ -172,7 +164,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
     }
 
     async rebalancePortfolio(walletAddress: string): Promise<TxResult> {
-        log(`Rebalancing portfolio to target allocation`);
+        log("Rebalancing portfolio");
 
         const currentValue = await this.getValue(walletAddress);
         if (currentValue < 10) {
@@ -194,8 +186,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
         }
 
 
-        log(`Current allocation:`, currentAlloc);
-        log(`Target allocation:`, GROWTH_ALLOCATION);
+        log("Current vs target allocation");
 
         // Calculate rebalancing trades
         const trades: { symbol: string; action: "buy" | "sell"; amount: number }[] = [];
@@ -214,7 +205,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
             }
         }
 
-        log(`Rebalancing trades:`, trades);
+        log("Rebalancing trades");
 
         // Execute trades (simulated)
         const txSignatures = trades.map(t =>
@@ -242,7 +233,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
                 token: {
                     mint: pos.token,
                     symbol: pos.symbol,
-                    decimals: pos.symbol === "SOL" ? 9 : 8,
+                    decimals: getRADRDecimals(pos.symbol),
                     price: currentPrice
                 },
                 amount: pos.amount,
@@ -294,7 +285,7 @@ export async function executeGrowthStrategy(
     walletAddress: string,
     targetAmount: number
 ): Promise<StrategyExecutionResult> {
-    log(`Executing strategy: target $${targetAmount} in blue-chips`);
+    log("Executing strategy");
 
     const currentValue = await growthStrategy.getValue(walletAddress);
     const difference = targetAmount - currentValue;
@@ -303,14 +294,14 @@ export async function executeGrowthStrategy(
 
     if (difference > 10) {
         // Need to buy more
-        log(`Buying ${difference} worth of blue-chip tokens`);
+        log("Buying blue-chip tokens");
         const depositResult = await growthStrategy.deposit(walletAddress, difference);
         if (depositResult.txSignature) {
             txSignatures.push(...depositResult.txSignature.split(","));
         }
     } else if (difference < -10) {
         // Need to sell
-        log(`Selling ${Math.abs(difference)} worth of tokens`);
+        log("Selling tokens");
         const withdrawResult = await growthStrategy.withdraw(walletAddress, Math.abs(difference));
         if (withdrawResult.txSignature) {
             txSignatures.push(...withdrawResult.txSignature.split(","));

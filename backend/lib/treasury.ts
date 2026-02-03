@@ -1,6 +1,7 @@
 import { getVaultStats } from "./strategies";
 import { getUSD1Balance, getPublicUSD1Balance } from "./usd1";
 import { Treasury, RiskProfile } from "../types";
+import { logger } from "./logger";
 
 export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<Treasury> {
     // Fetch high-fidelity vault stats (Cash + Positions)
@@ -24,9 +25,7 @@ export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<T
     // DEMO MODE: Auto-simulate when real balances are < $1 but public balance exists
     // (Using threshold to handle dust balances like $0.113 from SOL conversion)
     if (totalUSD1 < 1 && publicBalance > 0) {
-        console.log(`\x1b[35m[TREASURY]\x1b[0m 🎭 DEMO MODE - Auto-simulating portfolio: $${publicBalance}`);
-
-        // Use public balance as total
+        logger.info("Demo mode: auto-simulating portfolio", "TREASURY");
         totalUSD1 = publicBalance;
 
         // Simulate vault allocations based on risk profile.
@@ -45,7 +44,6 @@ export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<T
             degen: publicBalance * allocations.degen,
         };
 
-        console.log(`\x1b[35m[TREASURY]\x1b[0m 📊 Vault simulation:`, vaultBalances);
     }
 
     return {

@@ -1,7 +1,9 @@
 /**
  * Environment Configuration
- * Validates and exports environment variables
+ * Validates and exports environment variables.
+ * Non-logging policy: no RPC URLs or secrets in logs.
  */
+import { logger } from "./logger";
 
 interface EnvConfig {
     // Required
@@ -23,7 +25,7 @@ function getEnvVar(key: string, required: boolean = false, defaultValue?: string
     const value = process.env[key];
 
     if (!value && required && !defaultValue) {
-        console.warn(`[Config] Missing required environment variable: ${key}`);
+        logger.warn("Missing required environment variable", "Config", { key });
     }
 
     return value || defaultValue;
@@ -51,10 +53,5 @@ export function hasGeminiAI(): boolean {
 }
 
 export function logConfig(): void {
-    console.log('[Config] Environment loaded:');
-    console.log(`  - NODE_ENV: ${config.nodeEnv}`);
-    console.log(`  - SOLANA_RPC: ${config.solanaRpcUrl.slice(0, 30)}...`);
-    console.log(`  - SHADOWWIRE_CLUSTER: ${config.shadowwireCluster}`);
-    console.log(`  - SHADOWWIRE_MOCK: ${config.shadowwireMock ? 'true' : 'false'}`);
-    console.log(`  - GEMINI_AI: ${hasGeminiAI() ? 'enabled' : 'disabled'}`);
+    logger.info("Environment loaded", "Config");
 }

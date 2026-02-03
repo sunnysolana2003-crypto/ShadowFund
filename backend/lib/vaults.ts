@@ -1,9 +1,10 @@
 /**
  * Vault Management
- * Handles deterministic vault address derivation using ShadowWire
+ * Handles deterministic vault address derivation using ShadowWire.
+ * Non-logging policy: no wallet or address in logs.
  */
-
 import { VaultId } from "../types";
+import { logger } from "./logger";
 import { PublicKey } from "@solana/web3.js";
 import crypto from "crypto";
 import bs58 from "bs58";
@@ -32,7 +33,7 @@ export async function getVaultAddress(wallet: string, id: VaultId): Promise<stri
         try {
             userPubKey = new PublicKey(wallet);
         } catch (e) {
-            console.error(`Invalid user wallet address: ${wallet}`);
+            logger.error("Invalid wallet address", "Vaults");
             throw new Error(`Invalid user wallet address: ${wallet}`);
         }
 
@@ -51,11 +52,9 @@ export async function getVaultAddress(wallet: string, id: VaultId): Promise<stri
         // Cache the result
         vaultCache.set(cacheKey, address);
 
-        console.log(`[Vaults] Derived vault ${id} for ${wallet.slice(0, 8)}...: ${address.slice(0, 8)}...`);
-
         return address;
     } catch (error) {
-        console.error(`Error deriving vault address for ${wallet}:${id}:`, error);
+        logger.error("Error deriving vault address", "Vaults");
         // Fallback to a legacy derivation if web3.js fails (though it shouldn't)
         const seed = `shadowfund:${wallet}:${id}`;
         const hash = crypto.createHash("sha256").update(seed).digest();

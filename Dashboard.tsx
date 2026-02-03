@@ -59,7 +59,8 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     deposit,
     isDepositing,
     isWithdrawing,
-    withdraw
+    withdraw,
+    isSimulationMode
   } = useShadowFund();
 
   // Live yield ticker simulation
@@ -137,16 +138,21 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <Navbar currentView={currentView} onNavigate={onNavigate} />
 
-        {/* Demo Mode Banner */}
-        {totalBalance > 0 && publicBalance > 0 && (
+        {/* Mode banner: always visible when simulation; shows USD1 zero-log and link to Technology */}
+        {isSimulationMode && (
           <div className="bg-gradient-to-r from-shadow-purple/20 via-shadow-gold/20 to-shadow-purple/20 border-b border-shadow-purple/30">
             <div className="max-w-7xl mx-auto px-xl py-md">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-4 h-4 text-shadow-purple animate-pulse" />
-                <p className="text-sm text-shadow-300">
-                  <span className="font-bold text-shadow-purple">DEMO MODE</span> - Portfolio simulation active.
-                  <span className="text-shadow-500 ml-2">All features functional without real ShadowWire deposits.</span>
-                </p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-4 h-4 text-shadow-purple animate-pulse shrink-0" />
+                  <p className="text-sm text-shadow-300">
+                    <span className="font-bold text-shadow-purple">DEMO MODE</span> — Portfolio simulation active.
+                    <span className="text-shadow-500 ml-2">USD1 zero-log • No amounts or wallets in logs.</span>
+                  </p>
+                </div>
+                <ShadowButton variant="secondary" size="sm" onClick={() => onNavigate('tech')}>
+                  Mainnet status & roadmap →
+                </ShadowButton>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { verifySignature } from "../../utils/verifySignature";
 import { deposit, withdraw } from "../../lib/shadowwire";
 import { getUSD1Fees } from "../../lib/usd1";
 import { applyCors } from "../../lib/cors";
+import { logger } from "../../lib/logger";
 import {
     InsufficientBalanceError,
     TransferError
@@ -33,20 +34,15 @@ export default async function handler(
             });
         }
 
-        console.log("\n" + "⚡".repeat(30));
-        console.log(`\x1b[33m[TRANSFER API]\x1b[0m 💳 Request: \x1b[1m${action.toUpperCase()}\x1b[0m`);
-        console.log(`\x1b[33m[TRANSFER API]\x1b[0m 💸 Amount: \x1b[1m$${amount}\x1b[0m`);
-        console.log(`\x1b[33m[TRANSFER API]\x1b[0m 👤 Wallet: ${wallet.slice(0, 12)}...`);
+        logger.info("Transfer request", "TRANSFER", { action: action.toUpperCase() });
 
         // Verify wallet signature
         if (signature && timestamp) {
-            console.log(`\x1b[33m[TRANSFER API]\x1b[0m 🔐 Verifying signature...`);
             const message = `${action}|${wallet}|${timestamp}`;
             if (!verifySignature(message, signature, wallet)) {
-                console.log(`\x1b[31m[TRANSFER API] ❌ Invalid signature\x1b[0m`);
+                logger.warn("Invalid signature", "TRANSFER");
                 return res.status(401).json({ error: "Invalid signature" });
             }
-            console.log(`\x1b[33m[TRANSFER API]\x1b[0m ✓ Signature valid`);
         }
 
         const numAmount = Number(amount);
@@ -56,7 +52,6 @@ export default async function handler(
         let minimumAmount = feeInfo.minimumAmount;
         if (process.env.TESTING_MODE === 'true') {
             minimumAmount = 0.01;
-            console.log(`\x1b[33m[TRANSFER API]\x1b[0m ⚠️  Testing mode: Reduced minimum to 0.01 USD1`);
         }
 
         if (numAmount < minimumAmount) {
@@ -67,16 +62,12 @@ export default async function handler(
 
         let result;
         if (action === "deposit") {
-            console.log(`\x1b[33m[TRANSFER API]\x1b[0m 📥 Depositing logic starting... Amount: ${numAmount}`);
-
             try {
-                // Try standard deposit first
                 result = await deposit(wallet, numAmount);
             } catch (sdkError: any) {
                 // If SDK fails with minimum error, use simulation
                 if (sdkError.message?.includes('below minimum') || sdkError.message?.includes('0.1000 SOL')) {
-                    console.log(`\x1b[33m[TRANSFER API]\x1b[0m 🎭 SDK failed, using simulation for $${numAmount}`);
-
+                    logger.info("Deposit SDK fallback to simulation", "TRANSFER");
                     result = {
                         success: true,
                         txSignature: `sim_deposit_${Date.now()}`,
@@ -88,13 +79,10 @@ export default async function handler(
                 }
             }
         } else {
-            console.log(`\x1b[33m[TRANSFER API]\x1b[0m 📤 Withdrawal logic starting...`);
             result = await withdraw(wallet, numAmount);
         }
 
-        const duration = Date.now() - startTime;
-        console.log(`\x1b[33m[TRANSFER API]\x1b[0m ✅ Success in ${duration}ms`);
-        console.log("⚡".repeat(30) + "\n");
+        logger.info("Transfer completed", "TRANSFER", { durationMs: Date.now() - startTime });
 
         res.json({
             ok: true,
@@ -107,7 +95,7 @@ export default async function handler(
             }
         });
     } catch (err) {
-        console.error(`\x1b[31m[TRANSFER API] ❌ Error:\x1b[0m`, err);
+        logger.error("Transfer failed", "TRANSFER");
 
         if (err instanceof InsufficientBalanceError) {
             return res.status(400).json({ error: "Insufficient balance" });

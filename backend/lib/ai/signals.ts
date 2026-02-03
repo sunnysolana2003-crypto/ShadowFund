@@ -1,3 +1,5 @@
+import { logger } from "../logger";
+
 const COINGECKO = "https://api.coingecko.com/api/v3";
 const DEXSCREENER = "https://api.dexscreener.com/latest/dex";
 
@@ -74,7 +76,7 @@ export async function getMarketSignals(): Promise<MarketSignals> {
             volatility: volatilityLevel
         };
     } catch (error) {
-        console.error("Error fetching market signals:", error);
+        logger.error("Error fetching market signals", "Signals");
         // Return safe defaults on error
         return {
             solTrend: "bearish",

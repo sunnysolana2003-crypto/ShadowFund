@@ -114,6 +114,25 @@ cd backend && npm run dev
 npm run dev
 ```
 
+## 🏭 Production Deployment
+
+For **real capital** (mainnet), set the following:
+
+| Variable | Purpose |
+|----------|---------|
+| `SHADOWWIRE_MOCK=false` | Use real ShadowWire SDK (no in-memory mock). |
+| `SOLANA_RPC_URL` | Mainnet RPC (paid RPC recommended). |
+| `SHADOWWIRE_CLUSTER=mainnet-beta` | ShadowWire mainnet. |
+| `CORS_ORIGINS` | Comma-separated frontend origin(s), e.g. `https://yourapp.vercel.app`. |
+| `SERVER_WALLET_SECRET` | Funded server keypair (base64) for Jupiter swaps and signing. |
+| `KAMINO_WALLET_KEYPAIR_PATH` or `KAMINO_WALLET_PRIVATE_KEY` | Funded wallet for Yield vault Kamino deposits/withdrawals. |
+
+**Yield vault:** Kamino deposits/withdrawals use the **user wallet** (or the Kamino keypair above if configured). Rebalance moves USD1 to vault PDAs via ShadowWire; the Yield strategy then deploys to Kamino from the configured wallet. For multi-instance backends, use Redis (or similar) for rate limiting instead of in-memory. See `docs/PRODUCTION_READINESS.md` for the full checklist.
+
+### Non-logging policy
+
+The backend **never logs** wallets, amounts, balances, signatures, addresses, or tx hashes. All logging goes through `backend/lib/logger.ts`, which redacts sensitive keys and, in production or when `LOG_POLICY=minimal` / `NON_LOGGING_POLICY=true`, omits payload data. Use only generic messages (e.g. "Transfer completed", "Deposit started") in code.
+
 ## 📡 API Reference
 
 ### GET /api/treasury

@@ -10,6 +10,7 @@ import {
   Layers
 } from 'lucide-react';
 import { ShadowTypography } from './ShadowTypography';
+import { useShadowFund } from '../contexts/ShadowFundContext';
 
 interface SidebarProps {
   currentView?: string;
@@ -17,6 +18,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView = 'dashboard', onNavigate }) => {
+  const { isSimulationMode } = useShadowFund();
   const menuItems = [
     { icon: <LayoutGrid className="w-5 h-5" />, label: 'Overview', id: 'dashboard' },
     { icon: <Terminal className="w-5 h-5" />, label: 'AI Strategy', id: 'strategy' },
@@ -67,12 +69,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView = 'dashboard', onN
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-md py-4 border-t border-shadow-gray-800">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-shadow-green" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-shadow-500">Live Node Connected</span>
+        <div className="space-y-2 px-md py-4 border-t border-shadow-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-shadow-green" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-shadow-500">Live Node Connected</span>
+            </div>
+            <Settings className="w-4 h-4 text-shadow-700 hover:text-shadow-300 transition-colors cursor-pointer" />
           </div>
-          <Settings className="w-4 h-4 text-shadow-700 hover:text-shadow-300 transition-colors cursor-pointer" />
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-shadow-600">Mode</span>
+            <span className={`text-[9px] font-bold uppercase ${isSimulationMode ? 'text-shadow-gold' : 'text-shadow-green'}`}>
+              {isSimulationMode ? 'Simulation' : 'Mainnet-ready'}
+            </span>
+          </div>
         </div>
       </div>
     </aside>

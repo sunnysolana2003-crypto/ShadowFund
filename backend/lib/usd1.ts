@@ -1,8 +1,8 @@
 /**
  * USD1 Token Operations
- * Handles balance fetching and private transfers using ShadowWire
+ * Handles balance fetching and private transfers using ShadowWire.
+ * Non-logging policy: no addresses or amounts in logs.
  */
-
 import {
     shadowwire,
     getPrivateBalance,
@@ -10,6 +10,7 @@ import {
     USD1Utils,
     TokenUtils
 } from "./shadowwire";
+import { logger } from "./logger";
 
 const DECIMALS = 6; // USD1 has 6 decimals
 
@@ -21,8 +22,8 @@ export async function getUSD1Balance(addr: string): Promise<number> {
         // Use the ShadowWire client to get private balance
         const balance = await getPrivateBalance(addr);
         return balance;
-    } catch (error) {
-        console.error(`Error fetching USD1 balance for ${addr}:`, error);
+    } catch {
+        logger.error("Error fetching USD1 balance", "USD1");
         return 0;
     }
 }
@@ -34,8 +35,8 @@ export async function getPublicUSD1Balance(addr: string): Promise<number> {
     try {
         const { getPublicBalance } = await import("./shadowwire");
         return await getPublicBalance(addr);
-    } catch (error) {
-        console.error(`Error fetching public USD1 balance for ${addr}:`, error);
+    } catch {
+        logger.error("Error fetching public USD1 balance", "USD1");
         return 0;
     }
 }
@@ -56,7 +57,6 @@ export async function moveUSD1(
         // OVERRIDE: On Devnet OR Testing Mode, allow small transfers
         if (process.env.SOLANA_RPC_URL?.includes('devnet') || process.env.TESTING_MODE === 'true') {
             minimum = 0.01;
-            console.log('[USD1] Testing mode: Using reduced minimum of 0.01 USD1');
         }
 
         if (amount < minimum) {
@@ -66,9 +66,7 @@ export async function moveUSD1(
             };
         }
 
-        // Calculate fee for logging
         const feeBreakdown = USD1Utils.calculateFee(amount);
-        console.log(`[ShadowWire] Moving ${amount} USD1: fee=${feeBreakdown.fee}, net=${feeBreakdown.netAmount}`);
 
         // Execute private transfer with ZK proofs
         const result = await privateTransfer({
@@ -82,8 +80,8 @@ export async function moveUSD1(
             success: true,
             txHash: (result as any)?.tx_signature || "pending"
         };
-    } catch (error) {
-        console.error(`Error moving USD1 from ${from} to ${to}:`, error);
+    } catch {
+        logger.error("Error moving USD1", "USD1");
         return {
             success: false,
             error: error instanceof Error ? error.message : "Transfer failed"

@@ -1,17 +1,14 @@
 /**
  * DexScreener Integration
- * Used for meme coin discovery and trading signals in the Degen vault
+ * Used for meme coin discovery and trading signals in the Degen vault.
+ * Non-logging policy: no addresses or amounts in logs.
  */
-
 import { MemeToken } from "./types";
+import { logger } from "../logger";
 
 const DEXSCREENER_API = "https://api.dexscreener.com/latest/dex";
 
-// Color-coded logging
-const log = (msg: string, data?: any) => {
-    console.log(`\x1b[35m[DEXSCREENER]\x1b[0m ${msg}`);
-    if (data) console.log(`\x1b[35m  └─\x1b[0m`, data);
-};
+const log = (msg: string) => logger.info(msg, "DexScreener");
 
 // Risk scoring criteria
 const RISK_WEIGHTS = {
@@ -27,7 +24,7 @@ const RISK_WEIGHTS = {
  */
 export async function getTrendingTokens(limit: number = 20): Promise<MemeToken[]> {
     try {
-        log(`Fetching trending Solana tokens...`);
+        log("Fetching trending tokens");
 
         const response = await fetch(`${DEXSCREENER_API}/pairs/solana`);
 
@@ -40,7 +37,7 @@ export async function getTrendingTokens(limit: number = 20): Promise<MemeToken[]
 
         // Fallback for devnet/mock mode
         if (pairs.length === 0) {
-            log(`⚠️  No real pairs found, using high-fidelity mock data`);
+            log("Using mock data");
             const mockTokens: MemeToken[] = [
                 { address: "WIF...mock", symbol: "WIF", name: "dogwifhat", price: 3.24, priceChange24h: 12.5, volume24h: 45000000, liquidity: 12000000, fdv: 3200000000, createdAt: Date.now() - 86400000 * 30, riskScore: 35 },
                 { address: "POPCAT...mock", symbol: "POPCAT", name: "Popcat", price: 0.85, priceChange24h: -5.2, volume24h: 12000000, liquidity: 4500000, fdv: 850000000, createdAt: Date.now() - 86400000 * 60, riskScore: 42 },
@@ -68,11 +65,11 @@ export async function getTrendingTokens(limit: number = 20): Promise<MemeToken[]
             .map((pair: any) => transformToMemeToken(pair))
             .slice(0, limit);
 
-        log(`Found ${tokens.length} trending tokens`);
+        log("Trending tokens fetched");
 
         return tokens;
-    } catch (error) {
-        console.error("[DexScreener] Trending tokens error:", error);
+    } catch {
+        logger.error("Trending tokens error", "DexScreener");
         return [];
     }
 }
@@ -82,7 +79,7 @@ export async function getTrendingTokens(limit: number = 20): Promise<MemeToken[]
  */
 export async function getNewLaunches(limit: number = 10): Promise<MemeToken[]> {
     try {
-        log(`Fetching new token launches...`);
+        log("Fetching new launches");
 
         const response = await fetch(`${DEXSCREENER_API}/pairs/solana`);
         const data = await response.json();
@@ -105,11 +102,11 @@ export async function getNewLaunches(limit: number = 10): Promise<MemeToken[]> {
             .sort((a: MemeToken, b: MemeToken) => b.volume24h - a.volume24h)
             .slice(0, limit);
 
-        log(`Found ${newTokens.length} new launches`);
+        log("New launches fetched");
 
         return newTokens;
     } catch (error) {
-        console.error("[DexScreener] New launches error:", error);
+        logger.error("New launches error", "DexScreener");
         return [];
     }
 }
@@ -135,7 +132,7 @@ export async function getTokenInfo(address: string): Promise<MemeToken | null> {
 
         return transformToMemeToken(bestPair);
     } catch (error) {
-        console.error("[DexScreener] Token info error:", error);
+        logger.error("Token info error", "DexScreener");
         return null;
     }
 }
@@ -262,7 +259,7 @@ export async function getTotalSolanaVolume(): Promise<number> {
                 total + Number(pair.volume?.h24 || 0), 0
             );
     } catch (error) {
-        console.error("[DexScreener] Volume fetch error:", error);
+        logger.error("Volume fetch error", "DexScreener");
         return 0;
     }
 }

@@ -15,7 +15,11 @@ import {
   Fingerprint,
   Layers,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Rocket,
+  Target
 } from 'lucide-react';
 import { ShadowTypography } from './components/ShadowTypography';
 import { ShadowCard } from './components/ShadowCard';
@@ -27,6 +31,7 @@ import { useShadowFund } from './contexts/ShadowFundContext';
 const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: string }> = ({ onNavigate, currentView }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showAudit, setShowAudit] = useState(false);
+  const [showMainnet, setShowMainnet] = useState(false);
   const { isSimulationMode } = useShadowFund();
 
   useEffect(() => {
@@ -144,6 +149,32 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
             <p className="text-shadow-500 max-w-2xl mx-auto text-lg leading-relaxed">
               ShadowAgent combines Zero-Knowledge cryptography with Large Language Models to create the first truly private, autonomous hedge fund on Solana.
             </p>
+
+            {/* Always-visible key facts for judges and users */}
+            <ShadowCard className="mt-10 mx-auto max-w-4xl p-xl border-[#FF7A00]/20 bg-gradient-to-r from-[#FF7A00]/5 to-transparent">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
+                <div className="flex flex-col items-center md:items-start gap-2">
+                  <span className="text-[9px] font-bold text-[#FF7A00] uppercase tracking-widest">Mainnet & real funds</span>
+                  <p className="text-sm text-white font-medium">Yes, with conditions. Env setup + caveats; see details below.</p>
+                </div>
+                <div className="flex flex-col items-center md:items-start gap-2">
+                  <span className="text-[9px] font-bold text-[#FF7A00] uppercase tracking-widest">USD1 + zero-log</span>
+                  <p className="text-sm text-shadow-300">Core primitive. No amounts, wallets, or tx hashes in logs.</p>
+                </div>
+                <div className="flex flex-col items-center md:items-start gap-2">
+                  <span className="text-[9px] font-bold text-[#FF7A00] uppercase tracking-widest">Simulation (demo)</span>
+                  <p className="text-sm text-shadow-300">Devnet demo uses mock for flawless run; set SHADOWWIRE_MOCK=false for mainnet.</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
+                <ShadowButton variant="secondary" size="sm" onClick={() => setShowAudit(!showAudit)}>
+                  {showAudit ? 'Hide' : 'Show'} full audit
+                </ShadowButton>
+                <ShadowButton variant="secondary" size="sm" onClick={() => setShowMainnet(!showMainnet)}>
+                  {showMainnet ? 'Hide' : 'Show'} mainnet & roadmap
+                </ShadowButton>
+              </div>
+            </ShadowCard>
           </header>
 
           {/* Core Tech Stack */}
@@ -328,7 +359,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                 variant="secondary" 
                 size="sm" 
                 onClick={() => setShowAudit(!showAudit)}
-                icon={showAudit ? <ToggleRight className="text-[#FF7A00]" /> : <ToggleLeft />}
+                icon={showAudit ? <ChevronUp className="text-[#FF7A00]" /> : <ChevronDown className="text-[#FF7A00]" />}
               >
                 {showAudit ? "Hide Audit Details" : "Show Audit Details"}
               </ShadowButton>
@@ -442,6 +473,117 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                       </div>
                     </div>
                   </ShadowCard>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+
+          {/* Mainnet & Real Funds + Production Roadmap */}
+          <section className="py-12 space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Rocket className="w-6 h-6 text-[#FF7A00]" />
+                <ShadowTypography variant="h3" className="text-white uppercase tracking-widest">Mainnet & Real Funds</ShadowTypography>
+              </div>
+              <ShadowButton 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => setShowMainnet(!showMainnet)}
+                icon={showMainnet ? <ChevronUp className="text-[#FF7A00]" /> : <ChevronDown className="text-[#FF7A00]" />}
+              >
+                {showMainnet ? "Hide Details" : "Show Mainnet & Production Roadmap"}
+              </ShadowButton>
+            </div>
+
+            <AnimatePresence>
+              {showMainnet && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden space-y-8"
+                >
+                  <ShadowCard className="p-xl border-[#FF7A00]/20 bg-gradient-to-br from-[#FF7A00]/5 to-transparent">
+                    <div className="space-y-4">
+                      <p className="text-sm font-bold text-white">
+                        Is the project ready for mainnet and real funds?
+                      </p>
+                      <p className="text-sm text-shadow-300 leading-relaxed">
+                        <span className="text-[#FF7A00] font-semibold">Yes, with conditions.</span> You can run on mainnet with real funds after completing the required env setup (e.g. <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, mainnet RPC, funded server and Kamino wallets, RADR token mints, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>). A few caveats remain that you must accept before going live.
+                      </p>
+                    </div>
+                  </ShadowCard>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ShadowCard className="p-xl border-white/5 bg-shadow-black/50">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" /> What works on mainnet today
+                      </h4>
+                      <ul className="space-y-2 text-xs text-shadow-400">
+                        <li>• Reserve vault: USD1 only; balance from ShadowWire PDA</li>
+                        <li>• Transfer API: real deposit/withdraw USD1 (with real ShadowWire)</li>
+                        <li>• Rebalance: real USD1 moves between vault PDAs</li>
+                        <li>• Growth vault: real USD1 → SOL, WETH, WBTC, RADR via Jupiter</li>
+                        <li>• Degen vault: real USD1 → SOL, BONK, RADR, JIM, POKI via Jupiter</li>
+                        <li>• Yield vault: real Kamino lend/redeem when wallet is configured</li>
+                        <li>• Non-logging policy: no wallets, amounts, or tx hashes in logs</li>
+                      </ul>
+                    </ShadowCard>
+                    <ShadowCard className="p-xl border-white/5 bg-shadow-black/50">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-500" /> Caveats (accept before going live)
+                      </h4>
+                      <ul className="space-y-2 text-xs text-shadow-400">
+                        <li>• <strong>Growth/Degen withdraw</strong>: token→USD1 is simulated only; no Jupiter sell yet</li>
+                        <li>• <strong>In-memory positions</strong>: Growth/Degen positions lost on backend restart</li>
+                        <li>• <strong>Yield vault</strong>: rebalance credits vault PDA; Kamino uses Kamino wallet (one funded wallet per deployment)</li>
+                        <li>• <strong>Rate limit</strong>: in-memory; use Redis for multiple backend instances</li>
+                        <li>• <strong>Token mints</strong>: set real ORE, ANON, JIM, POKI mints or fallbacks may be wrong</li>
+                      </ul>
+                    </ShadowCard>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <Target className="w-6 h-6 text-[#FF7A00]" />
+                      <ShadowTypography variant="h3" className="text-white uppercase tracking-widest">Production phase: how we'll solve it</ShadowTypography>
+                    </div>
+                    <p className="text-sm text-shadow-400 mb-6 max-w-2xl">
+                      For full production readiness, we will address each gap as follows.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Growth / Degen withdraw</h5>
+                        <p className="text-xs text-shadow-400 leading-relaxed">
+                          Wire token→USD1 via Jupiter: compute sell amount in token smallest units, call <code className="text-[10px]">executeSwap</code> for token→USDC/USD1, then update ShadowWire balance. Remove simulated-withdraw path once live.
+                        </p>
+                      </ShadowCard>
+                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">In-memory positions</h5>
+                        <p className="text-xs text-shadow-400 leading-relaxed">
+                          Persist Growth/Degen positions in a DB (e.g. Postgres or Redis) keyed by vault id and wallet, or derive positions from on-chain token accounts where possible. Rebuild state on startup from DB/chain.
+                        </p>
+                      </ShadowCard>
+                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Yield vault vs PDA</h5>
+                        <p className="text-xs text-shadow-400 leading-relaxed">
+                          Either (a) document and keep the current model (one funded Kamino wallet per deployment; “yield vault” = that wallet’s Kamino position), or (b) support vault PDA as Kamino depositor via programmatic signer and wire custody.
+                        </p>
+                      </ShadowCard>
+                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Rate limit (multi-instance)</h5>
+                        <p className="text-xs text-shadow-400 leading-relaxed">
+                          Replace in-memory rate limiter with a shared store (e.g. Redis). Wire <code className="text-[10px]">checkRateLimit</code> to Redis increments and TTLs so all backend instances share the same limits.
+                        </p>
+                      </ShadowCard>
+                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50 md:col-span-2">
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Env & operations</h5>
+                        <p className="text-xs text-shadow-400 leading-relaxed">
+                          Production env: mainnet RPC, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, all RADR token mints set, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>, API and wallet keys in secrets manager. Fund server and Kamino wallets; optional: runbooks and monitoring for rebalance and withdraw flows.
+                        </p>
+                      </ShadowCard>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

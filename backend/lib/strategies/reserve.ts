@@ -7,12 +7,9 @@ import { ReserveStrategy, VaultStatus, StrategyExecutionResult } from "./types";
 import { TxResult } from "../protocols/types";
 import { getUSD1Balance, moveUSD1 } from "../usd1";
 import { getVaultAddress } from "../vaults";
+import { logger } from "../logger";
 
-// Color-coded logging
-const log = (msg: string, data?: any) => {
-    console.log(`\x1b[32m[RESERVE VAULT]\x1b[0m ${msg}`);
-    if (data) console.log(`\x1b[32m  └─\x1b[0m`, JSON.stringify(data));
-};
+const log = (msg: string) => logger.info(msg, "RESERVE");
 
 class ReserveVaultStrategy implements ReserveStrategy {
     vaultId = "reserve";
@@ -21,13 +18,9 @@ class ReserveVaultStrategy implements ReserveStrategy {
     riskLevel = "low" as const;
 
     async deposit(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Depositing ${amount} USD1`);
-
-        // Reserve vault just holds USD1 directly
-        // In a real implementation, this would come from the user's wallet
-        const vaultAddress = await getVaultAddress(walletAddress, "reserve");
-
-        log(`Deposit complete`, { vaultAddress: vaultAddress.slice(0, 12) + "..." });
+        log("Deposit started");
+        await getVaultAddress(walletAddress, "reserve");
+        log("Deposit complete");
 
         return {
             success: true,
@@ -37,7 +30,7 @@ class ReserveVaultStrategy implements ReserveStrategy {
     }
 
     async withdraw(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Withdrawing ${amount} USD1`);
+        log("Withdraw started");
 
         const balance = await this.getBalance(walletAddress);
 
@@ -88,7 +81,7 @@ export async function executeReserveStrategy(
     walletAddress: string,
     targetAmount: number
 ): Promise<StrategyExecutionResult> {
-    log(`Executing strategy: target ${targetAmount} USD1`);
+    log("Executing strategy");
 
     const currentBalance = await reserveStrategy.getBalance(walletAddress);
     const difference = targetAmount - currentBalance;

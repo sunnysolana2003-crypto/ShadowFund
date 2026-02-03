@@ -1,8 +1,9 @@
 /**
  * AI Strategy Engine
- * Combines market signals with Gemini AI for intelligent allocation decisions
+ * Combines market signals with Gemini AI for intelligent allocation decisions.
+ * Non-logging policy: no risk/signals/allocation in logs.
  */
-
+import { logger } from "../logger";
 import { getMarketSignals, MarketSignals } from "./signals";
 import { getRiskLimits, RiskProfile } from "./risk";
 import { getMacroMood, MacroMood } from "./macro";
@@ -32,7 +33,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 export async function getAIStrategy(risk: RiskProfile): Promise<AIStrategyResult> {
     const now = Date.now();
     if (strategyCache[risk] && (now - strategyCache[risk].timestamp) < CACHE_TTL) {
-        console.log(`[AI Engine] Returning cached strategy for ${risk} risk`);
+        logger.info("Returning cached strategy", "AI");
         return strategyCache[risk].result;
     }
 
@@ -44,7 +45,7 @@ export async function getAIStrategy(risk: RiskProfile): Promise<AIStrategyResult
     // Check if Gemini AI is available
     if (isGeminiAvailable()) {
         try {
-            console.log("[AI Engine] Using Gemini AI for strategy generation");
+            logger.info("Using Gemini AI", "AI");
 
             // Get AI-powered strategy
             const geminiResult = await getGeminiStrategy(signals, limits, risk);
@@ -66,12 +67,12 @@ export async function getAIStrategy(risk: RiskProfile): Promise<AIStrategyResult
             strategyCache[risk] = { result, timestamp: now };
             return result;
         } catch (error) {
-            console.error("[AI Engine] Gemini AI failed, falling back to rules:", error);
+            logger.warn("Gemini AI failed, falling back to rules", "AI");
         }
     }
 
     // Fallback to rule-based strategy
-    console.log("[AI Engine] Using rule-based strategy");
+    logger.info("Using rule-based strategy", "AI");
     const allocation = buildStrategy(signals, limits, mood);
 
     const fallbackResult = {

@@ -1,18 +1,17 @@
 /**
  * Yield Vault Strategy
- * Deploys USD1 into lending protocols for yield generation
+ * Deploys USD1 into Kamino lending for yield.
+ * Kamino deposits/withdrawals use the user wallet (or KAMINO_WALLET_* if set);
+ * rebalance moves USD1 to vault PDAs via ShadowWire separately.
  */
 
 import { YieldStrategy, VaultStatus, StrategyExecutionResult } from "./types";
 import { TxResult, LendingPosition } from "../protocols/types";
 import { kamino } from "../protocols";
 import { getVaultAddress } from "../vaults";
+import { logger } from "../logger";
 
-// Color-coded logging
-const log = (msg: string, data?: any) => {
-    console.log(`\x1b[33m[YIELD VAULT]\x1b[0m ${msg}`);
-    if (data) console.log(`\x1b[33m  └─\x1b[0m`, JSON.stringify(data));
-};
+const log = (msg: string) => logger.info(msg, "YIELD");
 
 class YieldVaultStrategy implements YieldStrategy {
     vaultId = "yield";
@@ -21,29 +20,17 @@ class YieldVaultStrategy implements YieldStrategy {
     riskLevel = "low" as const;
 
     async deposit(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Depositing ${amount} USD1 into Kamino`);
-
-        // Deposit into Kamino's USD1 lending strategy
+        log("Deposit started");
         const result = await kamino.deposit(walletAddress, amount, "USD1-LENDING");
-
-        if (result.success) {
-            log(`Deposit successful`, {
-                txSignature: result.txSignature,
-                apy: `${kamino.getCurrentAPY("USD1-LENDING")}%`
-            });
-        }
+        if (result.success) log("Deposit successful");
 
         return result;
     }
 
     async withdraw(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Withdrawing ${amount} USD1 from Kamino`);
-
+        log("Withdraw started");
         const result = await kamino.withdraw(walletAddress, amount, "USD1-LENDING");
-
-        if (result.success) {
-            log(`Withdrawal successful`);
-        }
+        if (result.success) log("Withdrawal successful");
 
         return result;
     }
@@ -69,9 +56,7 @@ class YieldVaultStrategy implements YieldStrategy {
     }
 
     async compound(walletAddress: string): Promise<TxResult> {
-        log(`Compounding yield for ${walletAddress.slice(0, 8)}...`);
-
-        // In Kamino, yields are auto-compounded
+        log("Compound");
         kamino.accrueYield(walletAddress);
 
         return {
@@ -113,7 +98,7 @@ export async function executeYieldStrategy(
     targetAmount: number,
     riskProfile: "low" | "medium" | "high" = "low"
 ): Promise<StrategyExecutionResult> {
-    log(`Executing strategy: target ${targetAmount} USD1, risk: ${riskProfile}`);
+    log("Executing strategy");
 
     const currentValue = await yieldStrategy.getValue(walletAddress);
     const difference = targetAmount - currentValue;
@@ -123,14 +108,14 @@ export async function executeYieldStrategy(
     if (Math.abs(difference) > 1) { // Only act if difference > $1
         if (difference > 0) {
             // Need to deposit more
-            log(`Depositing additional ${difference} USD1`);
+            log("Depositing");
             const depositResult = await yieldStrategy.deposit(walletAddress, difference);
             if (depositResult.txSignature) {
                 txSignatures.push(depositResult.txSignature);
             }
         } else {
             // Need to withdraw
-            log(`Withdrawing ${Math.abs(difference)} USD1`);
+            log("Withdrawing");
             const withdrawResult = await yieldStrategy.withdraw(walletAddress, Math.abs(difference));
             if (withdrawResult.txSignature) {
                 txSignatures.push(withdrawResult.txSignature);

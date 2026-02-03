@@ -2,8 +2,8 @@
  * Protocol Integration Index
  * Central export point for all DeFi protocol integrations
  */
+import { logger } from "../logger";
 
-// Types
 export * from "./types";
 
 // Jupiter - DEX Aggregator
@@ -56,16 +56,11 @@ export async function checkProtocolHealth(): Promise<{
     return results;
 }
 
-// Log protocol status on startup
 export async function logProtocolStatus(): Promise<void> {
-    console.log("\n┈".repeat(30));
-    console.log("\x1b[36m[PROTOCOLS]\x1b[0m Checking protocol connections...\n");
-
     const health = await checkProtocolHealth();
-
-    console.log(`  Jupiter DEX:    ${health.jupiter ? "\x1b[32m✓ Connected\x1b[0m" : "\x1b[31m✗ Unavailable\x1b[0m"}`);
-    console.log(`  Kamino Finance: ${health.kamino ? "\x1b[32m✓ Connected\x1b[0m" : "\x1b[31m✗ Unavailable\x1b[0m"}`);
-    console.log(`  DexScreener:    ${health.dexscreener ? "\x1b[32m✓ Connected\x1b[0m" : "\x1b[31m✗ Unavailable\x1b[0m"}`);
-
-    console.log("\n┈".repeat(30) + "\n");
+    logger.info("Protocol health", "Protocols", {
+        jupiter: health.jupiter,
+        kamino: health.kamino,
+        dexscreener: health.dexscreener
+    });
 }

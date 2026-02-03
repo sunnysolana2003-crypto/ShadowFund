@@ -1,26 +1,16 @@
 /**
- * Degen Vault Strategy - PRODUCTION (RADR Shielded Assets)
- * High-conviction memecoin trading using RADR-supported assets
+ * Degen Vault Strategy
+ * High-conviction memecoin trading (SOL, BONK, RADR).
+ * When server wallet is configured and not on devnet, executes real swaps; otherwise simulates.
  */
 
 import { DegenStrategy, VaultStatus, StrategyExecutionResult } from "./types";
-import { TxResult, Position, TOKENS, DEGEN_TOKENS } from "../protocols/types";
+import { TxResult, Position, TOKENS, DEGEN_TOKENS, getRADRDecimals } from "../protocols/types";
 import { jupiter } from "../protocols";
 import { getVaultAddress } from "../vaults";
+import { logger } from "../logger";
 
-// Color-coded logging
-const COLORS = {
-    reset: "\x1b[0m",
-    red: "\x1b[31m",
-    green: "\x1b[32m",
-    cyan: "\x1b[36m",
-    magenta: "\x1b[35m"
-};
-
-const log = (msg: string, data?: any) => {
-    console.log(`${COLORS.red}[DEGEN VAULT]${COLORS.reset} ${msg}`);
-    if (data) console.log(`${COLORS.red}  └─${COLORS.reset}`, JSON.stringify(data));
-};
+const log = (msg: string) => logger.info(msg, "DEGEN");
 
 interface DegenPositionInternal {
     walletAddress: string;
@@ -40,7 +30,7 @@ class DegenVaultStrategy implements DegenStrategy {
     riskLevel = "high" as const;
 
     async deposit(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Deploying ${amount} USD1 into high-conviction RADR shielded gems`);
+        log("Deploying into degen assets");
 
         // Derived vault address for privacy
         const vaultAddress = await getVaultAddress(walletAddress, "degen");
@@ -52,10 +42,9 @@ class DegenVaultStrategy implements DegenStrategy {
 
         for (const symbol of candidates) {
             const investAmount = amount / candidates.length;
-            if (investAmount < 0.1) continue; // Minimum investment per token
+            if (investAmount < 0.1) continue;
 
-            // @ts-ignore
-            const mint = TOKENS[symbol];
+            const mint = (TOKENS as Record<string, string>)[symbol];
             if (!mint) {
                 log(`Warning: Token mint not found for symbol ${symbol}`);
                 continue;
@@ -68,7 +57,21 @@ class DegenVaultStrategy implements DegenStrategy {
             }
             const tokenAmount = investAmount / price;
 
-            log(`[ShadowWire] Shielding ${tokenAmount.toFixed(4)} ${symbol} for ${vaultAddress.slice(0, 8)}...`);
+            // Execute real swap when server wallet + mainnet; otherwise simulate
+            const swapResult = await jupiter.executeSwap({
+                inputMint: TOKENS.USD1,
+                outputMint: mint,
+                amount: investAmount,
+                slippageBps: 100,
+            });
+
+            if (swapResult.success && swapResult.txSignature) {
+                txSignatures.push(swapResult.txSignature);
+            } else {
+                txSignatures.push(`degen_shield_${symbol.toLowerCase()}_${Date.now()}`);
+            }
+
+            log(`Shielding ${symbol}`);
 
             newPositions.push({
                 walletAddress,
@@ -78,8 +81,6 @@ class DegenVaultStrategy implements DegenStrategy {
                 entryPrice: price,
                 entryTimestamp: Date.now()
             });
-
-            txSignatures.push(`shadowwire_shield_degen_${symbol.toLowerCase()}_${Date.now()}`);
         }
 
         const existing = positions.get(walletAddress) || [];
@@ -93,7 +94,7 @@ class DegenVaultStrategy implements DegenStrategy {
     }
 
     async withdraw(walletAddress: string, amount: number): Promise<TxResult> {
-        log(`Unshielding and withdrawing ${amount} USD worth of degen assets`);
+        log("Unshielding degen assets");
 
         const currentPositions = positions.get(walletAddress) || [];
         const totalValue = await this.getValue(walletAddress);
@@ -115,7 +116,7 @@ class DegenVaultStrategy implements DegenStrategy {
             if (withdrawAmount <= 0) continue;
 
             pos.amount -= withdrawAmount;
-            log(`[ShadowWire] Unshielding ${withdrawAmount.toFixed(4)} ${pos.symbol} from ${vaultAddress.slice(0, 8)}...`);
+            log(`Unshielding ${pos.symbol}`);
 
             txSignatures.push(`shadowwire_unshield_degen_${pos.symbol.toLowerCase()}_${Date.now()}`);
         }
@@ -166,7 +167,7 @@ class DegenVaultStrategy implements DegenStrategy {
                 token: {
                     mint: pos.token,
                     symbol: pos.symbol,
-                    decimals: 9,
+                    decimals: getRADRDecimals(pos.symbol),
                     price: currentPrice
                 },
                 amount: pos.amount,
@@ -206,7 +207,7 @@ class DegenVaultStrategy implements DegenStrategy {
     }
 
     async setStopLoss(walletAddress: string, tokenAddress: string, percent: number): Promise<void> {
-        log(`Setting shielded stop-loss: ${percent}% for ${tokenAddress.slice(0, 8)}`);
+        log("Setting stop-loss");
     }
 
     async getStatus(walletAddress: string): Promise<VaultStatus> {
@@ -239,7 +240,7 @@ export async function executeDegenStrategy(
     targetAmount: number,
     memeHype: "high" | "medium" | "low" // This parameter is now advisory, actual trading is based on RADR assets
 ): Promise<StrategyExecutionResult> {
-    log(`Executing Degen Orbit: target $${targetAmount}, sentiment: ${memeHype}`);
+    log("Executing strategy");
 
     const currentValue = await degenStrategy.getValue(walletAddress);
     const difference = targetAmount - currentValue;
@@ -250,7 +251,7 @@ export async function executeDegenStrategy(
         const res = await degenStrategy.deposit(walletAddress, difference);
         if (res.txSignature) txSignatures.push(...res.txSignature.split(","));
     } else if (difference < -1) { // Withdraw capital if target is lower
-        log(`De-risking: withdrawing $${Math.abs(difference).toFixed(2)}`);
+        log("De-risking");
         const res = await degenStrategy.withdraw(walletAddress, Math.abs(difference));
         if (res.txSignature) txSignatures.push(...res.txSignature.split(","));
     }

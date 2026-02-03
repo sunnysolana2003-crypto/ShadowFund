@@ -1,12 +1,11 @@
 /**
  * Wallet Management for Server-Side Operations
- * Handles wallet creation, loading, and validation
- * 
- * SECURITY WARNING: Handle private keys with extreme care!
- * In production, use AWS KMS, HashiCorp Vault, or similar secure key management
+ * Handles wallet creation, loading, and validation.
+ * Non-logging policy: no keys or addresses in logs.
  */
 import { Keypair, PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
+import { logger } from './logger';
 
 /**
  * Get server wallet from environment variable
@@ -16,8 +15,7 @@ export function getServerWallet(): Keypair {
     const secretKey = process.env.SERVER_WALLET_SECRET;
 
     if (!secretKey) {
-        console.warn('⚠️  SERVER_WALLET_SECRET not set - using demo mode');
-        // In demo mode, generate a temporary wallet
+        logger.warn("Server wallet not set, demo mode", "Wallet");
         return Keypair.generate();
     }
 
@@ -35,9 +33,8 @@ export function getServerWallet(): Keypair {
         }
 
         throw new Error('Invalid key format');
-    } catch (error) {
-        console.error('Failed to load server wallet:', error);
-        console.warn('⚠️  Falling back to demo wallet');
+    } catch {
+        logger.error("Failed to load server wallet", "Wallet");
         return Keypair.generate();
     }
 }

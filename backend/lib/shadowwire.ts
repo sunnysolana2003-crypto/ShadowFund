@@ -4,6 +4,7 @@ import { connection } from "./rpc";
 import { config } from "./config";
 import { MockShadowWireClient, MockTokenUtils } from "./shadowwire-mock";
 import { TOKENS } from "./protocols/types";
+import { logger } from "./logger";
 
 const USD1_MINT = TOKENS.USD1;
 
@@ -40,8 +41,8 @@ export async function getPrivateBalance(wallet: string): Promise<number> {
 
         // Force manual conversion: atomic / 1e6
         return Number(rawBalance) / 1_000_000;
-    } catch (error) {
-        console.error("Error fetching private balance:", error);
+    } catch {
+        logger.error("Error fetching private balance", "ShadowWire");
         return 0;
     }
 }
@@ -60,8 +61,8 @@ export async function getPublicBalance(wallet: string): Promise<number> {
 
         const amount = accounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
         return typeof amount === "number" ? amount : 0;
-    } catch (error) {
-        console.error("Error fetching public balance:", error);
+    } catch {
+        logger.error("Error fetching public balance", "ShadowWire");
         return 0;
     }
 }
@@ -92,7 +93,7 @@ export interface PrivateTransferParams {
 export async function privateTransfer(params: PrivateTransferParams) {
     const { sender, recipient, amount, wallet } = params;
 
-    console.log(`[ShadowWire] Executing REAL ZK-Transfer: ${amount} USDC from ${sender.slice(0, 8)}`);
+    logger.info("ZK-Transfer executing", "ShadowWire");
 
     return await shadowwire.transfer({
         sender,
@@ -120,12 +121,10 @@ export async function externalTransfer(params: PrivateTransferParams) {
 
 // Deposit USD1 into ShadowWire
 export async function deposit(wallet: string, amount: number) {
-    console.log(`[ShadowWire] Starting REAL deposit: wallet=${wallet}, amount=${amount} (Using Hybrid ID: USDC + Mint)`);
+    logger.info("Deposit started", "ShadowWire");
 
     try {
-        // use standard 6 decimals for USDC
         const smallestUnit = Math.floor(amount * 1_000_000);
-        console.log(`[ShadowWire] Amount (atomic): ${smallestUnit}`);
 
         const response = await shadowwire.deposit({
             wallet,
@@ -138,17 +137,16 @@ export async function deposit(wallet: string, amount: number) {
             amount: smallestUnit
         });
 
-        console.log(`[ShadowWire] Deposit response:`, response);
         return response;
     } catch (error) {
-        console.error(`[ShadowWire] Deposit FAILED:`, error);
+        logger.error("Deposit failed", "ShadowWire");
         throw error;
     }
 }
 
 // Withdraw USD1 from ShadowWire
 export async function withdraw(wallet: string, amount: number) {
-    console.log(`[ShadowWire] Starting REAL withdraw: wallet=${wallet}, amount=${amount}`);
+    logger.info("Withdraw started", "ShadowWire");
 
     // standard 6 decimals
     const smallestUnit = Math.floor(amount * 1_000_000);

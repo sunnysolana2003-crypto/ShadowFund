@@ -7,6 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { MarketSignals } from "./signals";
 import { RiskLimits } from "./risk";
 import { Allocation } from "./strategy";
+import { logger } from "../logger";
 
 // Initialize Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -48,15 +49,10 @@ export async function getGeminiStrategy(
     limits: RiskLimits,
     riskProfile: "low" | "medium" | "high"
 ): Promise<GeminiStrategyResult> {
-    console.log("\x1b[35m[GEMINI AI]\x1b[0m 🧠 Starting AI strategy generation...");
-    console.log("\x1b[35m[GEMINI AI]\x1b[0m 📊 Input signals:", JSON.stringify(signals));
-    console.log("\x1b[35m[GEMINI AI]\x1b[0m 🎯 Risk profile:", riskProfile);
-    console.log("\x1b[35m[GEMINI AI]\x1b[0m 📏 Risk limits:", JSON.stringify(limits));
-
+    logger.info("Starting AI strategy generation", "Gemini");
     const startTime = Date.now();
 
     try {
-        console.log("\x1b[35m[GEMINI AI]\x1b[0m 🔗 Connecting to Gemini 3 Flash Preview...");
 
         const model = genAI.getGenerativeModel({
             model: "gemini-3-flash-preview",
@@ -107,7 +103,7 @@ Return your response as valid JSON only, no markdown formatting.`;
         // Parse the JSON response - try to find the JSON object
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-            console.error("[Gemini AI] Raw response:", response);
+            logger.error("Failed to parse Gemini response", "Gemini");
             throw new Error("Failed to parse Gemini response as JSON");
         }
 
@@ -119,7 +115,7 @@ Return your response as valid JSON only, no markdown formatting.`;
 
         // Normalize to 100% if needed
         if (Math.abs(total - 100) > 0.1) {
-            console.log("\x1b[35m[GEMINI AI]\x1b[0m ⚖️ Normalizing allocation (was", total.toFixed(1) + "%)");
+            logger.info("Normalizing allocation", "Gemini");
             allocation.reserve = (allocation.reserve / total) * 100;
             allocation.yield = (allocation.yield / total) * 100;
             allocation.growth = (allocation.growth / total) * 100;
@@ -184,7 +180,7 @@ Be concise and actionable. No markdown, just plain text.`;
         const result = await model.generateContent(prompt);
         return result.response.text().trim();
     } catch (error) {
-        console.error("[Gemini AI] Market analysis error:", error);
+        logger.error("Market analysis error", "Gemini");
         return "Market analysis temporarily unavailable.";
     }
 }

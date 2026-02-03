@@ -9,19 +9,15 @@
 import { Connection, VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { getServerWallet, getWalletInfo } from '../wallet';
 import { SwapParams, SwapQuote, TxResult, TOKENS, TokenInfo } from "./types";
+import { logger } from "../logger";
 
 const JUPITER_API = "https://quote-api.jup.ag/v6";
 const JUPITER_PRICE_API = "https://price.jup.ag/v6";
 
-// Solana connection
 const getRpcUrl = () => process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(getRpcUrl(), 'confirmed');
 
-// Color-coded logging
-const log = (msg: string, data?: any) => {
-    console.log(`\x1b[34m[JUPITER]\x1b[0m ${msg}`);
-    if (data) console.log(`\x1b[34m  └─\x1b[0m`, data);
-};
+const log = (msg: string) => logger.info(msg, "Jupiter");
 
 /**
  * Check if we're in demo mode
@@ -46,15 +42,19 @@ export async function getTokenPrice(mint: string): Promise<number> {
             const price = data.data?.[mint]?.price || 0;
             if (price > 0) return price;
         }
-    } catch (error) {
-        console.warn("[Jupiter] Price fetch error, using fallback");
+    } catch {
+        logger.warn("Price fetch fallback", "Jupiter");
     }
 
-    // Fallback for devnet testing
+    // Fallback for devnet / when price API misses (RADR Labs supported tokens)
     const m = mint.toLowerCase();
     if (m === TOKENS.SOL.toLowerCase()) return 145.20;
     if (m === TOKENS.RADR.toLowerCase()) return 0.15;
     if (m === TOKENS.BONK.toLowerCase()) return 0.00002;
+    if (m === TOKENS.ORE?.toLowerCase()) return 0.02;
+    if (m === TOKENS.ANON?.toLowerCase()) return 0.01;
+    if (m === TOKENS.JIM?.toLowerCase()) return 0.005;
+    if (m === TOKENS.POKI?.toLowerCase()) return 0.001;
 
     return 0;
 }
@@ -77,8 +77,8 @@ export async function getTokenPrices(mints: string[]): Promise<Record<string, nu
                 if (price > 0) prices[mint] = price;
             }
         }
-    } catch (error) {
-        console.warn("[Jupiter] Multi-price fetch error, using fallbacks");
+    } catch {
+        logger.warn("Multi-price fetch fallback", "Jupiter");
     }
 
     // Ensure every mint has a price (fallback or default)
@@ -88,6 +88,10 @@ export async function getTokenPrices(mints: string[]): Promise<Record<string, nu
             if (m === TOKENS.SOL.toLowerCase()) prices[mint] = 145.20;
             else if (m === TOKENS.RADR.toLowerCase()) prices[mint] = 0.15;
             else if (m === TOKENS.BONK.toLowerCase()) prices[mint] = 0.00002;
+            else if (TOKENS.ORE && m === TOKENS.ORE.toLowerCase()) prices[mint] = 0.02;
+            else if (TOKENS.ANON && m === TOKENS.ANON.toLowerCase()) prices[mint] = 0.01;
+            else if (TOKENS.JIM && m === TOKENS.JIM.toLowerCase()) prices[mint] = 0.005;
+            else if (TOKENS.POKI && m === TOKENS.POKI.toLowerCase()) prices[mint] = 0.001;
             else prices[mint] = 0;
         }
     }
@@ -103,7 +107,7 @@ export async function getSwapQuote(params: SwapParams): Promise<SwapQuote | null
     try {
         const { inputMint, outputMint, amount, slippageBps = 50 } = params;
 
-        log(`Getting quote: ${amount} ${inputMint.slice(0, 8)}... → ${outputMint.slice(0, 8)}...`);
+        log("Getting quote");
 
         const response = await fetch(
             `${JUPITER_API}/quote?` +
@@ -134,15 +138,11 @@ export async function getSwapQuote(params: SwapParams): Promise<SwapQuote | null
             route: quote.routePlan?.map((r: any) => r.swapInfo?.label).join(" → ") || "Direct"
         };
 
-        log(`Quote received:`, {
-            output: result.outputAmount.toFixed(6),
-            priceImpact: `${result.priceImpact.toFixed(2)}%`,
-            route: result.route
-        });
+        log("Quote received");
 
         return result;
-    } catch (error) {
-        console.error("[Jupiter] Quote error:", error);
+    } catch {
+        logger.error("Quote error", "Jupiter");
         return null;
     }
 }
@@ -154,7 +154,7 @@ export async function getSwapQuote(params: SwapParams): Promise<SwapQuote | null
  */
 export async function executeSwap(params: SwapParams): Promise<TxResult> {
     try {
-        log(`Executing swap: ${params.amount} ${params.inputMint.slice(0, 4)}... → ${params.outputMint.slice(0, 4)}...`);
+        log("Executing swap");
 
         let quoteData;
         if (isDemoMode() || getRpcUrl().includes('devnet')) {
@@ -176,15 +176,11 @@ export async function executeSwap(params: SwapParams): Promise<TxResult> {
             quoteData = await quoteResponse.json();
         }
 
-        log(`Quote received`, {
-            input: params.amount,
-            output: (Number(quoteData.outAmount) / 1e9).toFixed(6),
-            priceImpact: `${(Number(quoteData.priceImpactPct) * 100).toFixed(2)}%`
-        });
+        log("Quote received");
 
         if (isDemoMode() || getRpcUrl().includes('devnet')) {
             // DEMO OR DEVNET MODE: Simulate execution
-            log(`⚠️  ${getRpcUrl().includes('devnet') ? 'Devnet' : 'Demo'} mode - simulating swap`);
+            log("Simulating swap");
             await new Promise(resolve => setTimeout(resolve, 800));
 
             return {
@@ -225,7 +221,7 @@ export async function executeSwap(params: SwapParams): Promise<TxResult> {
             transaction.sign([wallet]);
 
             // Step 5: Send and confirm
-            log(`🔧 Sending real transaction...`);
+            log("Sending transaction");
             const signature = await connection.sendRawTransaction(
                 transaction.serialize(),
                 {
@@ -234,19 +230,18 @@ export async function executeSwap(params: SwapParams): Promise<TxResult> {
                 }
             );
 
-            log(`⏳ Confirming transaction...`);
+            log("Confirming transaction");
             await connection.confirmTransaction(signature, 'confirmed');
 
-            log(`✅ Swap successful`, { signature });
+            log("Swap successful");
 
             return {
                 success: true,
                 txSignature: signature,
                 timestamp: Date.now()
             };
-        } catch (realError) {
-            log(`❌ Real swap failed, falling back to demo`);
-            console.error(realError);
+        } catch {
+            logger.warn("Real swap failed, fallback", "Jupiter");
 
             // Fallback to demo
             return {
@@ -255,8 +250,8 @@ export async function executeSwap(params: SwapParams): Promise<TxResult> {
                 timestamp: Date.now()
             };
         }
-    } catch (error) {
-        console.error("[Jupiter] Swap execution error:", error);
+    } catch {
+        logger.error("Swap execution error", "Jupiter");
         return {
             success: false,
             error: error instanceof Error ? error.message : "Swap failed",
