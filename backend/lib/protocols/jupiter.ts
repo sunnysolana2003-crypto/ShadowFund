@@ -149,38 +149,22 @@ export async function getSwapQuote(params: SwapParams): Promise<SwapQuote | null
 
 /**
  * Execute a swap via Jupiter
- * REAL mode: Executes actual on-chain swap
- * DEMO mode: Gets real quote but simulates execution
+ * 
+ * Three modes:
+ * 1. Server wallet configured: Signs and sends transaction server-side
+ * 2. User wallet mode: Returns unsigned transaction for user to sign in browser
+ * 3. Demo/Devnet mode: Simulates execution
  */
-export async function executeSwap(params: SwapParams): Promise<TxResult> {
+export async function executeSwap(
+    params: SwapParams,
+    userWalletAddress?: string
+): Promise<TxResult & { unsigned_tx_base64?: string }> {
     try {
         log("Executing swap");
 
-        let quoteData;
-        if (isDemoMode() || getRpcUrl().includes('devnet')) {
-            quoteData = { outAmount: Math.floor(params.amount * 1e6).toString(), priceImpactPct: "0.001" };
-        } else {
-            // Step 1: Get quote (always real)
-            const quoteResponse = await fetch(
-                `${JUPITER_API}/quote?` +
-                `inputMint=${params.inputMint}&` +
-                `outputMint=${params.outputMint}&` +
-                `amount=${Math.floor(params.amount * 1e6)}&` +
-                `slippageBps=${params.slippageBps || 50}`
-            );
-
-            if (!quoteResponse.ok) {
-                throw new Error(`Quote failed: ${quoteResponse.statusText}`);
-            }
-
-            quoteData = await quoteResponse.json();
-        }
-
-        log("Quote received");
-
-        if (isDemoMode() || getRpcUrl().includes('devnet')) {
-            // DEMO OR DEVNET MODE: Simulate execution
-            log("Simulating swap");
+        // DEMO OR DEVNET MODE: Simulate execution
+        if (getRpcUrl().includes('devnet')) {
+            log("Simulating swap (devnet)");
             await new Promise(resolve => setTimeout(resolve, 800));
 
             return {
@@ -190,44 +174,67 @@ export async function executeSwap(params: SwapParams): Promise<TxResult> {
             };
         }
 
-        // REAL MODE: Execute actual swap
-        try {
-            const wallet = getServerWallet();
+        // Step 1: Get quote (always real)
+        const quoteResponse = await fetch(
+            `${JUPITER_API}/quote?` +
+            `inputMint=${params.inputMint}&` +
+            `outputMint=${params.outputMint}&` +
+            `amount=${Math.floor(params.amount * 1e6)}&` +
+            `slippageBps=${params.slippageBps || 50}`
+        );
 
-            // Step 2: Get swap transaction
-            const swapResponse = await fetch(`${JUPITER_API}/swap`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    quoteResponse: quoteData,
-                    userPublicKey: wallet.publicKey.toBase58(),
-                    wrapAndUnwrapSol: true,
-                    dynamicComputeUnitLimit: true,
-                    prioritizationFeeLamports: 'auto'
-                })
-            });
+        if (!quoteResponse.ok) {
+            throw new Error(`Quote failed: ${quoteResponse.statusText}`);
+        }
 
-            if (!swapResponse.ok) {
-                throw new Error(`Swap API error: ${swapResponse.statusText}`);
-            }
+        const quoteData = await quoteResponse.json();
+        log("Quote received");
 
-            const { swapTransaction } = await swapResponse.json();
+        // Determine which wallet to use
+        const serverWallet = isDemoMode() ? null : getServerWallet();
+        const walletPubkey = serverWallet?.publicKey.toBase58() || userWalletAddress;
 
-            // Step 3: Deserialize transaction
-            const transactionBuf = Buffer.from(swapTransaction, 'base64');
-            const transaction = VersionedTransaction.deserialize(transactionBuf);
+        if (!walletPubkey) {
+            // No wallet available - simulate
+            log("No wallet configured, simulating");
+            return {
+                success: true,
+                txSignature: `jupiter_sim_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                timestamp: Date.now()
+            };
+        }
 
-            // Step 4: Sign transaction
-            transaction.sign([wallet]);
+        // Step 2: Get swap transaction
+        const swapResponse = await fetch(`${JUPITER_API}/swap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                quoteResponse: quoteData,
+                userPublicKey: walletPubkey,
+                wrapAndUnwrapSol: true,
+                dynamicComputeUnitLimit: true,
+                prioritizationFeeLamports: 'auto'
+            })
+        });
 
-            // Step 5: Send and confirm
-            log("Sending transaction");
+        if (!swapResponse.ok) {
+            throw new Error(`Swap API error: ${swapResponse.statusText}`);
+        }
+
+        const { swapTransaction } = await swapResponse.json();
+
+        // Step 3: Deserialize transaction
+        const transactionBuf = Buffer.from(swapTransaction, 'base64');
+        const transaction = VersionedTransaction.deserialize(transactionBuf);
+
+        if (serverWallet) {
+            // SERVER MODE: Sign and send transaction
+            log("Executing swap (server wallet)");
+            transaction.sign([serverWallet]);
+
             const signature = await connection.sendRawTransaction(
                 transaction.serialize(),
-                {
-                    skipPreflight: false,
-                    maxRetries: 3
-                }
+                { skipPreflight: false, maxRetries: 3 }
             );
 
             log("Confirming transaction");
@@ -240,17 +247,18 @@ export async function executeSwap(params: SwapParams): Promise<TxResult> {
                 txSignature: signature,
                 timestamp: Date.now()
             };
-        } catch {
-            logger.warn("Real swap failed, fallback", "Jupiter");
+        } else {
+            // USER WALLET MODE: Return unsigned transaction for frontend signing
+            log("Returning unsigned swap transaction for user signing");
 
-            // Fallback to demo
             return {
                 success: true,
-                txSignature: `jupiter_fallback_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                txSignature: `pending_user_sign_${Date.now()}`,
+                unsigned_tx_base64: swapTransaction, // Already base64 from Jupiter
                 timestamp: Date.now()
             };
         }
-    } catch {
+    } catch (error) {
         logger.error("Swap execution error", "Jupiter");
         return {
             success: false,

@@ -12,7 +12,7 @@ import * as fs from 'fs';
 import { logger } from '../logger';
 
 const KAMINO_MAIN_MARKET = new PublicKey('7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF');
-const USD1_MINT = new PublicKey('USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB');
+const USD1_MINT = new PublicKey('USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB'); // Correct USD1 mint
 const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
 
 const getRpcUrl = () => process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
@@ -23,9 +23,16 @@ const positionCache: Map<string, LendingPosition> = new Map();
 const log = (msg: string) => logger.info(msg, "Kamino");
 
 /**
- * Load wallet keypair from file
+ * Check if server wallet is configured
  */
-function loadWalletKeypair(): Keypair {
+function hasServerWallet(): boolean {
+    return !!(process.env.KAMINO_WALLET_KEYPAIR_PATH || process.env.KAMINO_WALLET_PRIVATE_KEY);
+}
+
+/**
+ * Load wallet keypair from file (only if configured)
+ */
+function loadWalletKeypair(): Keypair | null {
     const keypairPath = process.env.KAMINO_WALLET_KEYPAIR_PATH;
 
     if (keypairPath && fs.existsSync(keypairPath)) {
@@ -40,8 +47,7 @@ function loadWalletKeypair(): Keypair {
         return Keypair.fromSecretKey(Uint8Array.from(secretKey));
     }
 
-    logger.warn("No wallet configured, using ephemeral", "Kamino");
-    return Keypair.generate();
+    return null;
 }
 
 /**
@@ -97,12 +103,16 @@ async function getStablecoinReserve(market: KaminoMarket): Promise<{ mint: Publi
 
 /**
  * Deposit into Kamino lending pool
+ * 
+ * Two modes:
+ * 1. Server wallet configured: Signs and sends transaction server-side
+ * 2. No server wallet: Returns unsigned transaction for user to sign in browser
  */
 export async function deposit(
     walletAddress: string,
     amount: number,
     strategy: string = "USD1-LENDING"
-): Promise<TxResult> {
+): Promise<TxResult & { unsigned_tx_base64?: string }> {
     try {
         log("Depositing into Kamino");
 
@@ -114,7 +124,6 @@ export async function deposit(
 
         log(`Using ${symbol} reserve`);
 
-        const signer = loadWalletKeypair();
         const walletPubkey = new PublicKey(walletAddress);
         const amountLamports = Math.floor(amount * 1_000_000);
 
@@ -135,43 +144,56 @@ export async function deposit(
 
         log("Deposit instructions created");
 
-        // PRODUCTION: Execute transactions
+        // Build transaction
         const transaction = new Transaction();
         transaction.add(...depositAction.setupIxs);
         transaction.add(...depositAction.lendingIxs);
         transaction.add(...depositAction.cleanupIxs);
 
-        log("Sending deposit transaction");
-        const signature = await sendAndConfirmTransaction(
-            connection,
-            transaction,
-            [signer],
-            {
-                skipPreflight: true,
-                commitment: 'confirmed'
-            }
-        );
-        log("Transaction confirmed");
+        // Get recent blockhash
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = walletPubkey;
 
+        // Check if server wallet is configured
+        const signer = loadWalletKeypair();
 
-        // Update cache
-        const positionKey = `${walletAddress}:${strategy}`;
-        const existing = positionCache.get(positionKey);
+        if (signer) {
+            // SERVER MODE: Sign and send transaction
+            log("Sending deposit transaction (server wallet)");
+            const signature = await sendAndConfirmTransaction(
+                connection,
+                transaction,
+                [signer],
+                { skipPreflight: true, commitment: 'confirmed' }
+            );
+            log("Transaction confirmed");
 
-        positionCache.set(positionKey, {
-            protocol: "Kamino",
-            asset: symbol,
-            deposited: (existing?.deposited || 0) + amount,
-            currentValue: (existing?.currentValue || 0) + amount,
-            apy: currentAPY,
-            earnedYield: existing?.earnedYield || 0
-        });
+            // Update cache
+            updatePositionCache(walletAddress, strategy, symbol, amount, currentAPY);
 
-        return {
-            success: true,
-            txSignature: `kamino_deposit_ready_${Date.now()}`,
-            timestamp: Date.now()
-        };
+            return {
+                success: true,
+                txSignature: signature,
+                timestamp: Date.now()
+            };
+        } else {
+            // USER WALLET MODE: Return unsigned transaction for frontend signing
+            log("Returning unsigned transaction for user signing");
+
+            const serialized = transaction.serialize({ requireAllSignatures: false });
+            const base64Tx = serialized.toString('base64');
+
+            // Update cache optimistically (will be confirmed when tx succeeds)
+            updatePositionCache(walletAddress, strategy, symbol, amount, currentAPY);
+
+            return {
+                success: true,
+                txSignature: `pending_user_sign_${Date.now()}`,
+                unsigned_tx_base64: base64Tx,
+                timestamp: Date.now()
+            };
+        }
 
     } catch (error) {
         if (error instanceof Error && error.message.includes('0x17a3')) {
@@ -190,13 +212,40 @@ export async function deposit(
 }
 
 /**
+ * Helper to update position cache
+ */
+function updatePositionCache(
+    walletAddress: string,
+    strategy: string,
+    symbol: string,
+    amount: number,
+    currentAPY: number
+) {
+    const positionKey = `${walletAddress}:${strategy}`;
+    const existing = positionCache.get(positionKey);
+
+    positionCache.set(positionKey, {
+        protocol: "Kamino",
+        asset: symbol,
+        deposited: (existing?.deposited || 0) + amount,
+        currentValue: (existing?.currentValue || 0) + amount,
+        apy: currentAPY,
+        earnedYield: existing?.earnedYield || 0
+    });
+}
+
+/**
  * Withdraw from Kamino lending pool
+ * 
+ * Two modes:
+ * 1. Server wallet configured: Signs and sends transaction server-side
+ * 2. No server wallet: Returns unsigned transaction for user to sign in browser
  */
 export async function withdraw(
     walletAddress: string,
     amount: number,
     strategy: string = "USD1-LENDING"
-): Promise<TxResult> {
+): Promise<TxResult & { unsigned_tx_base64?: string }> {
     try {
         log("Withdrawing from Kamino");
 
@@ -212,9 +261,8 @@ export async function withdraw(
         }
 
         const market = await initializeMarket();
-        const { mint, reserve, symbol } = await getStablecoinReserve(market);
+        const { mint, symbol } = await getStablecoinReserve(market);
 
-        const signer = loadWalletKeypair();
         const walletPubkey = new PublicKey(walletAddress);
         const amountLamports = Math.floor(amount * 1_000_000);
 
@@ -235,40 +283,56 @@ export async function withdraw(
 
         log("Withdrawal instructions created");
 
-        // PRODUCTION: Execute transactions
+        // Build transaction
         const transaction = new Transaction();
         transaction.add(...withdrawAction.setupIxs);
         transaction.add(...withdrawAction.lendingIxs);
         transaction.add(...withdrawAction.cleanupIxs);
 
-        log("Sending withdrawal transaction");
-        const signature = await sendAndConfirmTransaction(
-            connection,
-            transaction,
-            [signer],
-            {
-                skipPreflight: true,
-                commitment: 'confirmed'
-            }
-        );
-        log("Transaction confirmed");
+        // Get recent blockhash
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = walletPubkey;
 
+        // Check if server wallet is configured
+        const signer = loadWalletKeypair();
 
-        // Update position
-        position.deposited = Math.max(0, position.deposited - amount);
-        position.currentValue = Math.max(0, position.currentValue - amount);
+        if (signer) {
+            // SERVER MODE: Sign and send transaction
+            log("Sending withdrawal transaction (server wallet)");
+            const signature = await sendAndConfirmTransaction(
+                connection,
+                transaction,
+                [signer],
+                { skipPreflight: true, commitment: 'confirmed' }
+            );
+            log("Transaction confirmed");
 
-        if (position.deposited <= 0) {
-            positionCache.delete(positionKey);
+            // Update position
+            reducePositionCache(walletAddress, strategy, amount);
+
+            return {
+                success: true,
+                txSignature: signature,
+                timestamp: Date.now()
+            };
         } else {
-            positionCache.set(positionKey, position);
-        }
+            // USER WALLET MODE: Return unsigned transaction for frontend signing
+            log("Returning unsigned transaction for user signing");
 
-        return {
-            success: true,
-            txSignature: `kamino_withdraw_ready_${Date.now()}`,
-            timestamp: Date.now()
-        };
+            const serialized = transaction.serialize({ requireAllSignatures: false });
+            const base64Tx = serialized.toString('base64');
+
+            // Update cache optimistically
+            reducePositionCache(walletAddress, strategy, amount);
+
+            return {
+                success: true,
+                txSignature: `pending_user_sign_${Date.now()}`,
+                unsigned_tx_base64: base64Tx,
+                timestamp: Date.now()
+            };
+        }
 
     } catch (error) {
         if (error instanceof Error && error.message.includes('0x17a3')) {
@@ -283,6 +347,25 @@ export async function withdraw(
             error: error instanceof Error ? error.message : 'Withdrawal failed',
             timestamp: Date.now()
         };
+    }
+}
+
+/**
+ * Helper to reduce position cache on withdraw
+ */
+function reducePositionCache(walletAddress: string, strategy: string, amount: number) {
+    const positionKey = `${walletAddress}:${strategy}`;
+    const position = positionCache.get(positionKey);
+
+    if (position) {
+        position.deposited = Math.max(0, position.deposited - amount);
+        position.currentValue = Math.max(0, position.currentValue - amount);
+
+        if (position.deposited <= 0) {
+            positionCache.delete(positionKey);
+        } else {
+            positionCache.set(positionKey, position);
+        }
     }
 }
 

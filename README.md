@@ -203,119 +203,104 @@ SERVER_WALLET_SECRET=base64_encoded_keypair
 
 ---
 
-## 🌾 SETTING UP KAMINO YIELD FARMING
+## 🎯 USER ONBOARDING — NO SERVER WALLET REQUIRED
 
-The Yield vault uses **Kamino Finance** (Klend SDK) for lending.
+**Good news:** Users can use Kamino and Jupiter with their own wallet — no server configuration needed.
 
-### Step 1: Create a Dedicated Wallet
+### How It Works (User Wallet Mode)
 
-```bash
-# Generate a new Solana keypair
-solana-keygen new --outfile kamino-wallet.json
+1. **Backend builds transaction** (unsigned)
+2. **Returns base64 transaction** to frontend
+3. **User signs** with their browser wallet (Phantom, Solflare)
+4. **Frontend sends** the signed transaction
 
-# Get the public key
-solana-keygen pubkey kamino-wallet.json
-```
+This means:
+- ✅ Users keep their private keys
+- ✅ No server wallet funding required
+- ✅ Works immediately for any user
+- ✅ True non-custodial operation
 
-### Step 2: Fund the Wallet
+---
 
-Transfer SOL (for transaction fees) and USD1 (for deposits) to this wallet.
+## 🌾 KAMINO YIELD FARMING
 
-- **Minimum SOL**: 0.1 SOL for transaction fees
-- **USD1**: Amount you want to deploy to Kamino
+The Yield vault uses **Kamino Finance** (Klend SDK) for USD1 lending.
 
-### Step 3: Export Private Key
+### For Users (Automatic)
 
-```bash
-# Get the private key as base58
-cat kamino-wallet.json
-# Copy the array, convert to base58, or use directly
-```
+Users just need:
+- **USD1 in their wallet** (to deposit)
+- **~0.01 SOL** (for transaction fees)
 
-### Step 4: Set Environment Variable
+When they click "Deposit to Yield":
+1. Backend builds Kamino deposit transaction
+2. User signs with their wallet
+3. USD1 earns yield automatically
+
+**Typical APY:** 5-15% on USD1/USDC deposits
+
+### For Operators (Optional Server Wallet)
+
+If you want the backend to execute transactions automatically (no user signing):
 
 ```env
 # Option A: Path to keypair file
 KAMINO_WALLET_KEYPAIR_PATH=/path/to/kamino-wallet.json
 
-# Option B: Private key directly (base58)
-KAMINO_WALLET_PRIVATE_KEY=your_base58_private_key
+# Option B: Private key as JSON array
+KAMINO_WALLET_PRIVATE_KEY=[1,2,3,...,64]
 ```
 
-### How It Works
-
-1. **Rebalance** moves USD1 to the Yield vault PDA via ShadowWire
-2. **Yield strategy** calls Kamino `deposit()` from the configured wallet
-3. **Position tracked**: deposited amount, current value, APY, earned yield
-4. **Withdraw**: Kamino `redeem()` returns funds to the wallet
-
-### Kamino Markets
-
-The integration uses Kamino's **main market** by default. Typical APY: 5-15% on stablecoin deposits.
+Fund this wallet with SOL (fees) and USD1 (deposits).
 
 ---
 
-## 📈 SETTING UP JUPITER SWAPS (Growth/Degen)
+## 📈 JUPITER SWAPS (Growth/Degen)
 
 Growth and Degen vaults use **Jupiter Aggregator** for best-price swaps.
 
-### Step 1: Create a Server Wallet
+### For Users (Automatic)
 
-```bash
-# Generate keypair
-solana-keygen new --outfile server-wallet.json
+Users just need:
+- **USD1 in their wallet** (to swap)
+- **~0.01 SOL** (for transaction fees)
 
-# Get public key
-solana-keygen pubkey server-wallet.json
-```
+When they rebalance to Growth/Degen:
+1. Backend gets Jupiter quote (real prices)
+2. Builds swap transaction
+3. User signs with their wallet
+4. Swap executes via Jupiter
 
-### Step 2: Fund the Wallet
+### For Operators (Optional Server Wallet)
 
-- **SOL**: 0.5+ SOL for transaction fees (swaps are frequent)
-- **USD1**: Initial capital for swaps (or leave empty, rebalance will fund it)
-
-### Step 3: Convert to Base64
-
-```bash
-# Convert keypair JSON to base64
-cat server-wallet.json | base64
-```
-
-### Step 4: Set Environment Variable
+If you want automated server-side swaps:
 
 ```env
-SERVER_WALLET_SECRET=your_base64_encoded_keypair
+SERVER_WALLET_SECRET=base64_encoded_keypair
 ```
-
-### How It Works
-
-**Growth Vault:**
-1. Rebalance allocates USD1 to Growth vault PDA
-2. Strategy swaps USD1 → target tokens (SOL, WETH, WBTC)
-3. Jupiter finds best route across all Solana DEXs
-4. Positions tracked with entry price, current price, P&L
-
-**Degen Vault:**
-1. Rebalance allocates USD1 to Degen vault PDA
-2. Strategy swaps USD1 → meme tokens (BONK, RADR, etc.)
-3. Higher slippage tolerance (1% vs 0.5% for Growth)
-4. Positions tracked with stop-loss levels
 
 ### Token Allocations
 
-**Growth (Low Risk):**
-```typescript
-SOL: 40%, WETH: 30%, WBTC: 30%
-```
+**Growth Vault (Lower Risk):**
+| Token | Allocation |
+|-------|------------|
+| SOL | 40% |
+| RADR | 25% |
+| ORE | 20% |
+| ANON | 15% |
 
-**Degen (High Risk):**
-```typescript
-SOL: 30%, BONK: 25%, RADR: 20%, JIM: 15%, POKI: 10%
-```
+**Degen Vault (Higher Risk):**
+| Token | Allocation |
+|-------|------------|
+| SOL | 30% |
+| BONK | 25% |
+| RADR | 20% |
+| JIM | 15% |
+| POKI | 10% |
 
-### Setting Custom Token Mints
+### Custom Token Mints
 
-For RADR-shielded tokens, set mints in environment:
+For RADR-shielded tokens, optionally set mints:
 
 ```env
 RADR_MINT=your_radr_mint_address
@@ -324,6 +309,14 @@ ANON_MINT=your_anon_mint_address
 JIM_MINT=your_jim_mint_address
 POKI_MINT=your_poki_mint_address
 ```
+
+---
+
+## 🔑 USD1 MINT ADDRESS
+
+**Mainnet USD1:** `USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB`
+
+This is hardcoded in the backend. Users need USD1 tokens to use ShadowFund.
 
 ---
 
