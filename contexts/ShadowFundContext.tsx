@@ -46,6 +46,8 @@ interface ShadowFundContextType {
     isDepositing: boolean;
     withdraw: (amount: number) => Promise<boolean>;
     isWithdrawing: boolean;
+    withdrawFromVault: (vault: "reserve" | "yield" | "growth" | "degen", amount: number) => Promise<boolean>;
+    isWithdrawingFromVault: string | null;
     signMessage: (message: string) => Promise<{ signature: string; timestamp: number } | null>;
 }
 
@@ -88,6 +90,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
     const [isRebalancing, setIsRebalancing] = useState(false);
     const [isDepositing, setIsDepositing] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [isWithdrawingFromVault, setIsWithdrawingFromVault] = useState<string | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -264,6 +267,43 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         }
     }, [wallet.address, signMessage, fetchTreasury, sendTransaction]);
 
+    const withdrawFromVault = useCallback(async (
+        vault: "reserve" | "yield" | "growth" | "degen",
+        amount: number
+    ): Promise<boolean> => {
+        if (!wallet.address || !sendTransaction) return false;
+        setIsWithdrawingFromVault(vault);
+        try {
+            const signatureData = await signMessage(`vault-withdraw-${vault}`);
+            const response = await api.withdrawFromVault(wallet.address, vault, amount, signatureData || undefined);
+
+            // Handle unsigned transactions that need user signing
+            if (response.unsigned_txs && response.unsigned_txs.length > 0) {
+                for (const unsignedTx of response.unsigned_txs) {
+                    const txData = Buffer.from(unsignedTx, 'base64');
+                    const transaction = VersionedTransaction.deserialize(txData);
+                    const signature = await sendTransaction(transaction, connection);
+
+                    // Wait for confirmation
+                    for (let i = 0; i < 30; i++) {
+                        const status = await connection.getSignatureStatus(signature);
+                        if (status.value?.confirmationStatus === 'confirmed' || status.value?.confirmationStatus === 'finalized') {
+                            break;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }
+
+            await fetchTreasury();
+            return true;
+        } catch {
+            return false;
+        } finally {
+            setIsWithdrawingFromVault(null);
+        }
+    }, [wallet.address, signMessage, fetchTreasury, sendTransaction]);
+
     const value: ShadowFundContextType = {
         wallet,
         connectWallet,
@@ -281,6 +321,8 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         isDepositing,
         withdraw,
         isWithdrawing,
+        withdrawFromVault,
+        isWithdrawingFromVault,
         signMessage
     };
 

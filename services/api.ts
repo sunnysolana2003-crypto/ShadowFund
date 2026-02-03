@@ -296,6 +296,45 @@ class ShadowFundAPI {
             decimals: 6
         };
     }
+
+    /**
+     * Withdraw from a specific vault back to shielded USD1 pool
+     */
+    async withdrawFromVault(
+        wallet: string,
+        vault: "reserve" | "yield" | "growth" | "degen",
+        amount: number,
+        signature?: { timestamp: number; signature: string }
+    ): Promise<{
+        ok: boolean;
+        vault: string;
+        amountRequested: number;
+        usd1Received: number;
+        txSignature?: string;
+        unsigned_txs?: string[];
+        message: string;
+    }> {
+        const response = await fetch(`${this.baseUrl}/api/vault-withdraw`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                wallet,
+                vault,
+                amount,
+                ...signature,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error || `Vault withdrawal failed: ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+
+        return response.json();
+    }
 }
 
 // Export singleton instance

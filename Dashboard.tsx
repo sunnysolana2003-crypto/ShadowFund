@@ -13,6 +13,7 @@ import {
   Brain,
   Sparkles,
   ArrowRight,
+  ArrowLeftRight,
   Info,
   Loader2
 } from 'lucide-react';
@@ -48,6 +49,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');
+  const [vaultWithdrawAmounts, setVaultWithdrawAmounts] = useState<Record<string, string>>({});
   const {
     wallet,
     treasury,
@@ -60,6 +62,8 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     isDepositing,
     isWithdrawing,
     withdraw,
+    withdrawFromVault,
+    isWithdrawingFromVault,
     isSimulationMode
   } = useShadowFund();
 
@@ -120,6 +124,19 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
       if (window.confirm(`Withdraw $${amount.toFixed(2)} to public wallet?`)) {
         await withdraw(amount);
         setWithdrawAmount('');
+      }
+    }
+  };
+
+  const handleVaultWithdraw = async (vaultId: 'reserve' | 'yield' | 'growth' | 'degen', vaultBalance: number) => {
+    const amountStr = vaultWithdrawAmounts[vaultId] || '';
+    const amount = amountStr ? parseFloat(amountStr) : vaultBalance;
+    if (amount > 0 && amount <= vaultBalance) {
+      if (window.confirm(`Withdraw $${amount.toFixed(2)} from ${vaultId} vault back to shielded USD1 pool?`)) {
+        const success = await withdrawFromVault(vaultId, amount);
+        if (success) {
+          setVaultWithdrawAmounts(prev => ({ ...prev, [vaultId]: '' }));
+        }
       }
     }
   };
@@ -450,6 +467,37 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                             </div>
                           )}
                         </div>
+
+                        {/* VAULT WITHDRAW SECTION */}
+                        {vault.balance > 0 && (
+                          <div className="pt-4 mt-4 border-t border-white/5">
+                            <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest mb-2">
+                              Withdraw to Shielded Pool
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                placeholder={`Max: ${vault.balance.toFixed(2)}`}
+                                value={vaultWithdrawAmounts[vault.id] || ''}
+                                onChange={(e) => setVaultWithdrawAmounts(prev => ({ ...prev, [vault.id]: e.target.value }))}
+                                className="flex-1 bg-shadow-gray-900/50 border border-white/10 text-white text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-shadow-purple/50 rounded-lg"
+                                max={vault.balance}
+                                min={0}
+                                step="0.01"
+                              />
+                              <ShadowButton
+                                variant="secondary"
+                                size="sm"
+                                className="bg-shadow-purple/10 text-shadow-purple hover:bg-shadow-purple/20 border-shadow-purple/20"
+                                icon={isWithdrawingFromVault === vault.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowLeftRight className="w-3 h-3" />}
+                                onClick={() => handleVaultWithdraw(vault.id as any, vault.balance)}
+                                disabled={isWithdrawingFromVault === vault.id || (vaultWithdrawAmounts[vault.id] ? parseFloat(vaultWithdrawAmounts[vault.id]) > vault.balance : false)}
+                              >
+                                {isWithdrawingFromVault === vault.id ? '...' : '→ USD1'}
+                              </ShadowButton>
+                            </div>
+                          </div>
+                        )}
 
                       </div>
                     </div>

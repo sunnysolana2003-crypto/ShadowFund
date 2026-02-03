@@ -37,7 +37,7 @@ export const config: EnvConfig = {
     shadowwireCluster: getEnvVar('SHADOWWIRE_CLUSTER', false, 'mainnet-beta') as string,
     geminiApiKey: getEnvVar('GEMINI_API_KEY'),
     shadowwireApiKey: getEnvVar('SHADOWWIRE_API_KEY'),
-    shadowwireMock: (getEnvVar('SHADOWWIRE_MOCK', false, 'false') as string) === 'true',
+    shadowwireMock: (getEnvVar('SHADOWWIRE_MOCK', false, 'true') as string) === 'true',
 };
 
 export function isProduction(): boolean {
