@@ -159,14 +159,9 @@ npm run dev
 | **AI Strategy (Gemini)** | ✅ Ready | Real API calls with market data |
 | **Wallet signatures** | ✅ Ready | Ed25519 verification, 60s expiry |
 | **Reserve vault** | ✅ Ready | USD1 only, no swaps needed |
-
-### ⚠️ WORKS WITH CONFIGURATION
-
-| Component | Requirement | How to Enable |
-|-----------|-------------|---------------|
-| **Yield vault (Kamino)** | Funded server wallet | Set `KAMINO_WALLET_PRIVATE_KEY` |
-| **Growth vault (Jupiter)** | Funded server wallet | Set `SERVER_WALLET_SECRET` |
-| **Degen vault (Jupiter)** | Funded server wallet | Set `SERVER_WALLET_SECRET` |
+| **Yield vault (Kamino)** | ✅ Ready | User signs with their own wallet |
+| **Growth vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
+| **Degen vault (Jupiter)** | ✅ Ready | User signs with their own wallet |
 
 ### ❌ NOT YET IMPLEMENTED
 
@@ -193,13 +188,9 @@ GEMINI_API_KEY=your_gemini_api_key
 
 # === SECURITY ===
 CORS_ORIGINS=https://your-frontend.vercel.app
-
-# === YIELD VAULT (Kamino) ===
-KAMINO_WALLET_PRIVATE_KEY=base58_encoded_private_key
-
-# === GROWTH/DEGEN VAULTS (Jupiter) ===
-SERVER_WALLET_SECRET=base64_encoded_keypair
 ```
+
+**Note:** No server wallet required! Users sign transactions with their own wallet (Phantom, Solflare, etc.).
 
 ---
 
