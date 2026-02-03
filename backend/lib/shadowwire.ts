@@ -50,19 +50,35 @@ export async function getPrivateBalance(wallet: string): Promise<number> {
 // Helper to get PUBLIC SPL token balance for USD1
 export async function getPublicBalance(wallet: string): Promise<number> {
     try {
+        logger.info(`Fetching USD1 balance for wallet`, "ShadowWire");
         const pubkey = new PublicKey(wallet);
         const mint = new PublicKey(USD1_MINT);
+
+        logger.info(`USD1 Mint: ${USD1_MINT}`, "ShadowWire");
+        logger.info(`Network: ${isDevnet() ? "devnet" : "mainnet"}`, "ShadowWire");
 
         const accounts = await connection.getParsedTokenAccountsByOwner(pubkey, {
             mint: mint
         });
 
-        if (accounts.value.length === 0) return 0;
+        logger.info(`Found ${accounts.value.length} USD1 token accounts`, "ShadowWire");
+
+        if (accounts.value.length === 0) {
+            logger.warn("No USD1 token account found for wallet", "ShadowWire");
+            return 0;
+        }
 
         const amount = accounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-        return typeof amount === "number" ? amount : 0;
-    } catch {
-        logger.error("Error fetching public balance", "ShadowWire");
+        const balance = typeof amount === "number" ? amount : 0;
+
+        logger.info(`USD1 balance retrieved: ${balance}`, "ShadowWire");
+        return balance;
+    } catch (error) {
+        logger.error("Error fetching public balance", "ShadowWire", {
+            error: error instanceof Error ? error.message : String(error),
+            mint: USD1_MINT,
+            wallet: `${wallet.slice(0, 8)}...${wallet.slice(-8)}`
+        });
         return 0;
     }
 }
