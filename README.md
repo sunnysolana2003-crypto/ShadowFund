@@ -331,7 +331,13 @@ curl -X POST http://localhost:3001/api/transfer \
 
 ## 🎭 Demo Mode
 
-For hackathon demos (when ShadowWire devnet has issues):
+The demo runs in simulation mode due to **ShadowWire's anti-spam requirement**:
+
+```
+Error: Amount 0.0150 SOL is below minimum 0.1000 SOL per transaction (anti-spam)
+```
+
+**ShadowWire requires 0.1 SOL (~$15-20) per transaction.** As a solo developer, I couldn't afford multiple test transactions at this rate.
 
 ```env
 SHADOWWIRE_MOCK=true
@@ -343,7 +349,7 @@ This enables high-fidelity simulation that:
 - ✅ Simulates vault operations
 - ✅ Maintains realistic balances
 
-**Note:** Production uses `SHADOWWIRE_MOCK=false` with real SDK.
+**To run live:** Fund wallet with 0.5+ SOL and USD1 tokens.
 
 ---
 

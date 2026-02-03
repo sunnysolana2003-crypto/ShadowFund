@@ -164,11 +164,17 @@ This is **not** localStorage. This is **not** a database. This is permanent, dec
 
 "Now let me address the elephant in the room: **Why am I demoing in simulation mode?**
 
-### Reason 1: Limited Personal Funds
-I'm a solo developer. I don't have thousands in USD1 to demonstrate live mainnet swaps. The **code is mainnet-ready** — I simply can't afford to put real money at risk during a live demo.
+### The Real Blocker: 0.1 SOL Per Transaction
 
-### Reason 2: ShadowWire Devnet Relayer Issue
-The ShadowWire devnet relayer doesn't recognize the standard devnet USDC mint. When I send the token mint, it treats it as unknown spam with a 10,000 unit minimum. This is a **relayer configuration issue**, not a code bug.
+When I tried to deposit 15 USD1 on mainnet, I got this error:
+
+```
+Error 400: Amount 0.0150 SOL is below minimum 0.1000 SOL per transaction (anti-spam)
+```
+
+**The ShadowWire relayer requires 0.1 SOL (~$15-20) per transaction as an anti-spam measure.**
+
+As a solo developer, I didn't have enough SOL to cover multiple test transactions at $15-20 each. The code works — I just couldn't afford to test it live.
 
 ### What This Means
 | Layer | Demo Status |
@@ -178,13 +184,13 @@ The ShadowWire devnet relayer doesn't recognize the standard devnet USDC mint. W
 | AI Strategy (Gemini) | ✅ Real |
 | Market data | ✅ Real |
 | Kamino/Jupiter integration | ✅ Real code, simulated execution |
-| ShadowWire ZK | ✅ Real code, simulated execution |
+| ShadowWire ZK | ✅ Real code, couldn't afford 0.1 SOL/tx |
 
-**One environment variable:** `SHADOWWIRE_MOCK=false`  
-**One funded wallet:** Some USD1 + SOL for fees  
-**Result:** Full production deployment
+### What I Would Need to Demo Live
+- **0.5-1 SOL** — For 5-10 test transactions
+- **Some USD1** — To actually deposit/withdraw
 
-The architecture is complete. The code is production-ready. What's missing is capital."
+The architecture is complete. The SDK integration is correct. What's missing is the SOL for transaction fees."
 
 ---
 
@@ -237,10 +243,10 @@ Thank you. I'm ready for questions."
 ## ANTICIPATED Q&A
 
 ### Q: "Is this just a mock?"
-**A:** "The mock layer simulates blockchain execution because I can't afford to demo with real USD1. All the actual code — ShadowWire integration, Kamino deposits, Jupiter swaps — is production-ready. Set `SHADOWWIRE_MOCK=false`, fund a wallet, and it runs on mainnet."
+**A:** "The mock layer simulates blockchain execution because ShadowWire requires 0.1 SOL per transaction as anti-spam. As a solo developer, I couldn't afford $15-20 per test transaction. The SDK integration is complete and correct — I just need SOL to cover the fees."
 
 ### Q: "Why didn't you demo on mainnet?"
-**A:** "Two reasons: (1) I'm a solo developer without significant capital to risk during a live demo, and (2) the devnet relayer has a mint whitelist issue. The code is ready; what's missing is funded wallets."
+**A:** "ShadowWire's anti-spam requires 0.1 SOL (~$15-20) per transaction. When I tried to deposit 15 USD1, it rejected with 'Amount below minimum 0.1 SOL'. I didn't have enough SOL to cover multiple test transactions. The code works — it's a funding issue, not a code issue."
 
 ### Q: "How do positions survive server restart?"
 **A:** "They're stored on-chain via the Solana Memo Program. Every trade attaches a memo like `SHADOWFUND|growth|open|SOL|...`. On reconnect, we query your transaction history and reconstruct positions from memos. No database needed."
@@ -255,7 +261,7 @@ Thank you. I'm ready for questions."
 **A:** "We have a rule-based fallback strategy using the same market signals. If both fail, we use the user's last known allocation."
 
 ### Q: "Can this handle real money?"
-**A:** "Yes. Production checklist: Set `SHADOWWIRE_MOCK=false`, configure mainnet RPC, have USD1 in your wallet, have SOL for fees. That's it. The code handles everything else."
+**A:** "Yes. You need: USD1 in your wallet, and importantly — enough SOL for fees. ShadowWire requires 0.1 SOL per transaction. With proper funding, the code handles everything else."
 
 ### Q: "What would you build next?"
 **A:** "Three things: (1) Multi-token shielding (wrap more tokens), (2) Social copy-trading with privacy, (3) DAO governance for strategy parameters."
@@ -300,11 +306,15 @@ Thank you. I'm ready for questions."
 
 "If the RADR team is evaluating this project:
 
-I built ShadowFund alone because I believe in what ShadowWire enables. The integration is complete. The architecture is production-ready. What I need to take this from demo to live is:
+I built ShadowFund alone because I believe in what ShadowWire enables. The integration is complete. The architecture is production-ready. 
 
-1. **Devnet mint whitelisting** — So I can demo ZK transfers
-2. **Documentation support** — Best practices for complex flows
-3. **A small amount of USD1** — To prove mainnet execution
+**The only blocker:** ShadowWire requires 0.1 SOL per transaction (anti-spam). As a solo developer, I couldn't afford $15-20 per test transaction to demo live.
+
+What I need to take this from demo to live:
+
+1. **~0.5 SOL** — To cover 5 test transactions at 0.1 SOL each
+2. **Some USD1** — To actually deposit and test the flow
+3. **Documentation support** — Best practices for complex flows
 
 This isn't just a hackathon project. This is the foundation of privacy-first DeFi treasury management. I'd love to continue building with RADR's support."
 

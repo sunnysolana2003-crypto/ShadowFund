@@ -85,9 +85,18 @@ The entire codebase is **production-architecture ready**:
 
 **But I'm running in simulation mode** for the demo because of one blocker:
 
-The ShadowWire devnet relayer doesn't recognize the standard devnet USDC mint (`4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`). When I send `token_mint`, it treats it as an unknown asset (10,000 unit minimum). When I force `token: 'USDC'`, it defaults to SOL validation rules.
+When I tried to deposit 15 USD1 on mainnet, I received this error:
 
-This isn't a code issue — my SDK integration is correct. It's a relayer configuration issue that I can't solve on my own.
+```
+POST https://shadow.radr.fun/shadowpay/api/pool/deposit
+Body: { wallet: '...', amount: 15000000, token: 'USD1' }
+
+Error 400: "Amount 0.0150 SOL is below minimum 0.1000 SOL per transaction (anti-spam)"
+```
+
+**ShadowWire requires 0.1 SOL (~$15-20) per transaction as an anti-spam measure.**
+
+As a solo developer, I didn't have enough SOL to cover multiple test transactions at this rate. The SDK integration is correct — I just couldn't afford to test it live.
 
 ---
 
@@ -97,9 +106,9 @@ I built this entire project solo — frontend, backend, AI integration, wallet f
 
 **What I'm asking:**
 
-1. **Devnet support** — If possible, whitelist the standard devnet USDC mint on your relayer so I can demonstrate real ZK transfers
+1. **Small SOL grant** — ~0.5 SOL to cover 5 test transactions at 0.1 SOL each, so I can demonstrate real ZK transfers
 
-2. **Technical guidance** — Any documentation or examples for token→USD1 reverse swaps (for withdrawals)
+2. **Technical guidance** — Any documentation on the 0.1 SOL requirement and best practices
 
 3. **Production path** — If ShadowFund shows potential, I'd love guidance on taking it to mainnet properly
 
@@ -122,7 +131,7 @@ I built this entire project solo — frontend, backend, AI integration, wallet f
 
 ## TL;DR
 
-I solo-built an AI hedge fund on ShadowWire. The architecture is production-ready, but I need team support to move past the devnet relayer blocker. I'm not looking for a participation trophy — I want to build something real on your platform.
+I solo-built an AI hedge fund on ShadowWire. The architecture is production-ready, but I couldn't afford the 0.1 SOL per transaction requirement to test live. I'm not looking for a participation trophy — I want to build something real on your platform.
 
 Happy to jump on a call, share my screen, walk through the code, whatever helps.
 

@@ -10,7 +10,7 @@ I just built the first AI-managed, privacy-preserving hedge fund on Solana.
 
 It uses @GoogleAI Gemini for strategy and @AnonRADR ShadowWire for ZK privacy.
 
-Here's how ShadowFund works 🧵👇
+Here's how ShadowFund works 🧵
 
 [ATTACH: Screenshot of Dashboard with 4 vaults]
 
