@@ -75,7 +75,7 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <Navbar currentView={currentView} onNavigate={onNavigate} />
 
-        <div className="p-xl md:p-2xl space-y-2xl max-w-7xl mx-auto w-full">
+        <div className="p-8 md:p-12 space-y-12 max-w-7xl mx-auto w-full">
           {/* Header */}
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-4">
@@ -99,7 +99,7 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
               >
-                <ShadowCard className="h-full p-xl border-white/5 bg-shadow-gray-900/30">
+                <ShadowCard className="h-full p-8 border-white/5 bg-shadow-gray-900/30">
                   <div className="flex items-center gap-4 mb-8">
                     <div className="p-3 rounded-xl bg-white/5">
                       {cat.icon}
@@ -126,7 +126,7 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
           </div>
 
           {/* System Flow Section */}
-          <ShadowCard className="p-2xl border-[#FF7A00]/20 bg-gradient-to-br from-[#FF7A00]/5 to-transparent">
+          <ShadowCard className="p-12 border-[#FF7A00]/20 bg-gradient-to-br from-[#FF7A00]/5 to-transparent">
             <div className="flex flex-col md:flex-row gap-12 items-center">
               <div className="flex-1 space-y-6">
                 <div className="flex items-center gap-3">

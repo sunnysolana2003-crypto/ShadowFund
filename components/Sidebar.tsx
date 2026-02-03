@@ -28,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView = 'dashboard', onN
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 glass-panel border-r border-white/5 hidden lg:flex flex-col z-50">
-      <div className="p-2xl flex items-center gap-3">
+      <div className="p-12 flex items-center gap-3">
         <div className="w-10 h-10 bg-shadow-black border-2 border-shadow-green flex items-center justify-center rounded-sm glow-green">
           <Shield className="w-6 h-6 text-shadow-green" fill="currentColor" fillOpacity={0.1} />
         </div>
@@ -37,13 +37,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView = 'dashboard', onN
         </ShadowTypography>
       </div>
 
-      <nav className="flex-1 px-lg py-md space-y-2">
+      <nav className="flex-1 px-6 py-4 space-y-2">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-shadow-600 px-md py-4">Financial Dashboard</p>
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onNavigate?.(item.id)}
-            className={`w-full flex items-center gap-md px-md py-3 rounded-lg transition-all duration-300 group cursor-pointer ${currentView === item.id
+            className={`w-full flex items-center gap-4 px-md py-3 rounded-lg transition-all duration-300 group cursor-pointer ${currentView === item.id
               ? 'bg-shadow-green/5 text-shadow-green'
               : 'text-shadow-500 hover:text-shadow-300 hover:bg-white/5'
               }`}
@@ -57,8 +57,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView = 'dashboard', onN
         ))}
       </nav>
 
-      <div className="p-lg mt-auto space-y-md">
-        <div className="p-md rounded-xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border border-shadow-gray-800 space-y-sm">
+      <div className="p-6 mt-auto space-y-4">
+        <div className="p-4 rounded-xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border border-shadow-gray-800 space-y-sm">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-shadow-gold tracking-widest uppercase">Premium Tier</span>
             <Zap className="w-3 h-3 text-shadow-gold" />

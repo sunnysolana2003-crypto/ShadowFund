@@ -107,8 +107,6 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   };
 
   const handleBridge = async () => {
-    console.log("[Dashboard] handleBridge called");
-    console.trace("[Dashboard] Trace for handleBridge");
     const amount = depositAmount ? parseFloat(depositAmount) : publicBalance;
     if (amount > 0 && amount <= publicBalance) {
       await deposit(amount);
@@ -141,7 +139,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
         {/* Mode banner: always visible when simulation; shows USD1 zero-log and link to Technology */}
         {isSimulationMode && (
           <div className="bg-gradient-to-r from-shadow-purple/20 via-shadow-gold/20 to-shadow-purple/20 border-b border-shadow-purple/30">
-            <div className="max-w-7xl mx-auto px-xl py-md">
+            <div className="max-w-7xl mx-auto px-8 py-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-4 h-4 text-shadow-purple animate-pulse shrink-0" />
@@ -158,9 +156,9 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
           </div>
         )}
 
-        <div className="p-xl md:p-2xl space-y-xl max-w-7xl mx-auto w-full">
+        <div className="p-8 md:p-12 space-y-8 max-w-7xl mx-auto w-full">
           {/* Header */}
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-xl">
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div>
               <ShadowTypography variant="h1" className="text-white mb-2">My Portfolio</ShadowTypography>
               <div className="flex items-center gap-3">
@@ -170,7 +168,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
               </div>
             </div>
 
-            <div className="flex gap-md flex-wrap items-center">
+            <div className="flex gap-4 flex-wrap items-center">
               <ShadowButton
                 variant="secondary"
                 icon={balanceVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -190,15 +188,15 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
           </header>
 
           {/* Core Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Primary Balance Area */}
-            <div className="lg:col-span-8 space-y-xl">
+            <div className="lg:col-span-8 space-y-8">
               {/* Two-Column Balance Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Public USD1 Balance - Left Card */}
-                <ShadowCard className="p-xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-shadow-gold/20 overflow-hidden relative">
+                <ShadowCard className="p-8 bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-shadow-gold/20 overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-shadow-gold/5 to-transparent pointer-events-none" />
-                  <div className="relative z-10 space-y-lg">
+                  <div className="relative z-10 space-y-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="p-2 rounded-lg bg-shadow-gold/20">
@@ -230,7 +228,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                     </div>
 
                     {/* Shield Controls */}
-                    <div className="space-y-md pt-md">
+                    <div className="space-y-4 pt-4">
                       <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest">Shield Your USD1</p>
                       <div className="flex items-center gap-2">
                         <input
@@ -266,9 +264,9 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                 </ShadowCard>
 
                 {/* Shielded Balance - Right Card */}
-                <ShadowCard className="p-xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-shadow-green/20 overflow-hidden relative">
+                <ShadowCard className="p-8 bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-shadow-green/20 overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-shadow-green/5 to-transparent pointer-events-none" />
-                  <div className="relative z-10 space-y-lg">
+                  <div className="relative z-10 space-y-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="p-2 rounded-lg bg-shadow-green/20">
@@ -291,7 +289,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                     {treasury.loading && <p className="text-xs text-shadow-green animate-pulse">Updating from ShadowWire...</p>}
 
                     {/* Yield Stats */}
-                    <div className="grid grid-cols-2 gap-md pt-md border-t border-white/5">
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                       <div>
                         <p className="text-[10px] font-bold text-shadow-600 uppercase mb-1">Yield Earned</p>
                         <p className={`text-lg font-display ${(vaultStats.data?.yield?.earnedYield ?? 0) > 0 ? 'text-shadow-green' : 'text-shadow-400'}`}>
@@ -312,7 +310,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
 
                     {/* Unshield Control */}
                     {totalBalance > 0 && (
-                      <div className="flex items-center gap-2 pt-md border-t border-white/5">
+                      <div className="flex items-center gap-2 pt-4 border-t border-white/5">
                         <input
                           type="number"
                           placeholder={`Max: ${totalBalance.toFixed(2)}`}
@@ -339,14 +337,14 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
               </div>
 
               {/* Vaults Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {vaults.map((vault) => (
-                  <ShadowCard key={vault.id} className="p-xl border-white/5 bg-shadow-black hover:border-white/10 transition-colors relative overflow-hidden group">
+                  <ShadowCard key={vault.id} className="p-8 border-white/5 bg-shadow-black hover:border-white/10 transition-colors relative overflow-hidden group">
                     {/* Background Gradient based on vault color */}
                     <div className={`absolute inset-0 bg-gradient-to-br from-${vault.color}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
                     <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-xl">
+                      <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded bg-${vault.color}/10 text-${vault.color}`}>
                             {vault.icon}
@@ -362,7 +360,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                         </div>
                       </div>
 
-                      <div className="space-y-md">
+                      <div className="space-y-4">
                         {/* Progress Bar */}
                         <div>
                           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest mb-1">
@@ -381,7 +379,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                         </div>
 
                         {/* GRANULAR VAULT DETAILS */}
-                        <div className="pt-md border-t border-white/5 min-h-[60px]">
+                        <div className="pt-4 border-t border-white/5 min-h-[60px]">
 
                           {/* YIELD VAULT: Live Ticker */}
                           {vault.id === 'yield' && (
@@ -461,27 +459,27 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
             </div>
 
             {/* AI Reasoning Side Panel */}
-            <div className="lg:col-span-4 space-y-xl">
-              <ShadowCard className="p-xl border-shadow-green/20 bg-shadow-green/[0.02]">
-                <div className="flex items-center gap-3 mb-xl">
+            <div className="lg:col-span-4 space-y-8">
+              <ShadowCard className="p-8 border-shadow-green/20 bg-shadow-green/[0.02]">
+                <div className="flex items-center gap-3 mb-8">
                   <div className="p-2 bg-shadow-green/20 rounded-lg">
                     <Brain className="w-5 h-5 text-shadow-green" />
                   </div>
                   <ShadowTypography variant="h4" className="text-white">AI Reasoning</ShadowTypography>
                 </div>
 
-                <div className="space-y-xl">
-                  <div className="p-md rounded-lg bg-shadow-black border border-white/5">
-                    <p className="text-xs text-shadow-400 leading-relaxed italic mb-md">
+                <div className="space-y-8">
+                  <div className="p-4 rounded-lg bg-shadow-black border border-white/5">
+                    <p className="text-xs text-shadow-400 leading-relaxed italic mb-4">
                       "{strategy.data?.reasoning || "Analyzing market conditions to provide optimal allocation advice..."}"
                     </p>
-                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-shadow-600 border-t border-white/5 pt-md">
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-shadow-600 border-t border-white/5 pt-4">
                       <span>Gemini 3 Flash Preview</span>
                       <span>Confidence: {strategy.data?.confidence ?? '--'}%</span>
                     </div>
                   </div>
 
-                  <div className="space-y-md">
+                  <div className="space-y-4">
                     <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest flex items-center gap-2">
                       <Info className="w-3 h-3" /> Key Strategic Insights
                     </p>
@@ -495,8 +493,8 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                     </div>
                   </div>
 
-                  <div className="pt-xl border-t border-white/5">
-                    <div className="flex items-center justify-between mb-md">
+                  <div className="pt-8 border-t border-white/5">
+                    <div className="flex items-center justify-between mb-4">
                       <p className="text-[10px] font-bold text-shadow-500 uppercase">Market Mood</p>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${strategy.data?.mood === 'risk-on' ? 'bg-shadow-green/20 text-shadow-green' :
                         strategy.data?.mood === 'risk-off' ? 'bg-shadow-error/20 text-shadow-error' :
@@ -513,7 +511,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
               </ShadowCard>
 
               {/* Secure Node Status */}
-              <ShadowCard className="p-xl border-white/5 bg-shadow-black">
+              <ShadowCard className="p-8 border-white/5 bg-shadow-black">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-white/5 rounded-full">
                     <Shield className="w-6 h-6 text-shadow-green" />

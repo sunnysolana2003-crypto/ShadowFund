@@ -149,7 +149,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.2 }}
-            className="p-xl rounded-2xl glass-panel-light border-white/5 space-y-md group hover:border-shadow-green/20 transition-all duration-500"
+            className="p-8 rounded-2xl glass-panel-light border-white/5 space-y-4 group hover:border-shadow-green/20 transition-all duration-500"
           >
             <div className={`${feature.color} group-hover:scale-110 transition-transform duration-500`}>
               {feature.icon}
@@ -160,9 +160,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         ))}
       </section>
 
-      <footer className="relative z-10 w-full max-w-7xl px-lg py-xl flex flex-col md:flex-row items-center justify-between border-t border-white/5 text-[10px] font-bold uppercase tracking-widest text-shadow-700">
+      <footer className="relative z-10 w-full max-w-7xl px-6 py-8 flex flex-col md:flex-row items-center justify-between border-t border-white/5 text-[10px] font-bold uppercase tracking-widest text-shadow-700">
         <div className="mb-4 md:mb-0">© 2024 ShadowFund protocol. All rights reserved.</div>
-        <div className="flex gap-xl">
+        <div className="flex gap-8">
           <a href="#" className="hover:text-shadow-green transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-shadow-green transition-colors">Term of Use</a>
           <a href="#" className="hover:text-shadow-green transition-colors">Documentation</a>

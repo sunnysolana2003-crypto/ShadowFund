@@ -17,7 +17,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
 
   return (
     <header className="glass-panel border-b border-white/5 sticky top-0 z-40">
-      <div className="h-20 flex items-center justify-between px-lg md:px-2xl">
+      <div className="h-20 flex items-center justify-between px-6 md:px-12">
         <div className="flex-1 max-w-xl hidden md:flex">
           <div className="relative w-full">
             <Search className="absolute left-md top-1/2 -translate-y-1/2 w-4 h-4 text-shadow-600" />
@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-md ml-auto">
+        <div className="flex items-center gap-4 ml-auto">
           <button className="p-sm text-shadow-500 hover:text-shadow-green transition-colors relative" aria-label="Notifications">
             <Bell className="w-5 h-5" />
             <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-shadow-error rounded-full" />
@@ -49,7 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
 
       {/* Mobile navigation (since sidebar is desktop-only) */}
       {onNavigate && (
-        <nav className="md:hidden flex gap-2 px-lg pb-md overflow-x-auto no-scrollbar">
+        <nav className="md:hidden flex gap-2 px-6 pb-md overflow-x-auto no-scrollbar">
           {navItems.map((item) => {
             const active = currentView === item.id;
             return (

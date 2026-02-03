@@ -34,7 +34,7 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <Navbar currentView={currentView} onNavigate={onNavigate} />
 
-        <div className="p-xl md:p-2xl space-y-xl max-w-7xl mx-auto w-full">
+        <div className="p-8 md:p-12 space-y-8 max-w-7xl mx-auto w-full">
           {/* Header */}
           <header className="space-y-2">
             <ShadowTypography variant="h1" className="text-white">AI Strategy Engine</ShadowTypography>
@@ -42,7 +42,7 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
           </header>
 
           {/* Signals Grid */}
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg">
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <SignalCard
               label="SOL Trend"
               value={signals?.solTrend || '...'}
@@ -67,15 +67,15 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
           </section>
 
           {/* Analysis & Reasoning Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Deep Analysis */}
-            <ShadowCard className="lg:col-span-12 p-2xl bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-white/5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-lg opacity-10 pointer-events-none">
+            <ShadowCard className="lg:col-span-12 p-12 bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-white/5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
                 <Brain className="w-64 h-64 text-shadow-green" />
               </div>
 
-              <div className="relative z-10 space-y-xl">
-                <div className="flex items-center gap-4 border-b border-white/10 pb-xl">
+              <div className="relative z-10 space-y-8">
+                <div className="flex items-center gap-4 border-b border-white/10 pb-8">
                   <div className="p-4 rounded-2xl bg-shadow-green/10">
                     <Sparkles className="w-8 h-8 text-shadow-green" />
                   </div>
@@ -85,13 +85,13 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2xl">
-                  <div className="space-y-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  <div className="space-y-6">
                     <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-[0.3em]">AI Summary</p>
                     <p className="text-xl text-white font-medium leading-relaxed">
                       {strategy.data?.marketAnalysis || "Awaiting signals from the Solana mainnet..."}
                     </p>
-                    <div className="p-xl rounded-xl bg-white/[0.02] border border-white/5">
+                    <div className="p-8 rounded-xl bg-white/[0.02] border border-white/5">
                       <p className="text-sm font-bold text-shadow-green mb-3 uppercase tracking-widest">Strategic Logic</p>
                       <p className="text-sm text-shadow-400 leading-relaxed italic">
                         "{strategy.data?.reasoning || "Calculating optimal yield-to-risk vector based on current volatility coefficients..."}"
@@ -99,11 +99,11 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
                     </div>
                   </div>
 
-                  <div className="space-y-lg">
+                  <div className="space-y-6">
                     <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-[0.3em]">Execution Insights</p>
-                    <div className="space-y-md">
+                    <div className="space-y-4">
                       {strategy.data?.keyInsights?.map((insight, i) => (
-                        <div key={i} className="flex gap-4 p-lg rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
+                        <div key={i} className="flex gap-4 p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
                           <div className="w-8 h-8 rounded-full bg-shadow-green/10 flex items-center justify-center text-shadow-green font-mono text-sm shrink-0">
                             {i + 1}
                           </div>
@@ -117,17 +117,17 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
             </ShadowCard>
 
             {/* Performance Correlation */}
-            <ShadowCard className="lg:col-span-8 p-xl">
-              <div className="flex items-center justify-between mb-xl">
+            <ShadowCard className="lg:col-span-8 p-8">
+              <div className="flex items-center justify-between mb-8">
                 <ShadowTypography variant="h4" className="text-white">Risk Profile Correlation</ShadowTypography>
                 <Shield className="w-5 h-5 text-shadow-green" />
               </div>
 
-              <div className="space-y-xl">
+              <div className="space-y-8">
                 {['Reserve', 'Yield', 'Growth', 'Degen'].map((vault) => {
                   const val = strategy.data?.allocation[vault.toLowerCase() as keyof typeof strategy.data.allocation] || 0;
                   return (
-                    <div key={vault} className="space-y-md">
+                    <div key={vault} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-white uppercase tracking-widest">{vault}</span>
                         <span className="text-sm font-mono text-shadow-green">{val.toFixed(1)}% Target</span>
@@ -146,12 +146,12 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
             </ShadowCard>
 
             {/* System Integrity */}
-            <ShadowCard className="lg:col-span-4 p-xl flex flex-col justify-center text-center">
-              <div className="p-4 rounded-full bg-white/5 mx-auto mb-lg">
+            <ShadowCard className="lg:col-span-4 p-8 flex flex-col justify-center text-center">
+              <div className="p-4 rounded-full bg-white/5 mx-auto mb-6">
                 <Cpu className="w-12 h-12 text-shadow-gold animate-pulse" />
               </div>
               <ShadowTypography variant="h3" className="text-white">100% ZK-Verifiable</ShadowTypography>
-              <p className="text-xs text-shadow-500 mt-md leading-relaxed px-lg">
+              <p className="text-xs text-shadow-500 mt-4 leading-relaxed px-6">
                 Every rebalance action is calculated on-chain via ZK-Rollups. No private keys are ever stored on our servers.
               </p>
             </ShadowCard>
@@ -163,8 +163,8 @@ const AIStrategy: React.FC<{ onNavigate: (v: string) => void; currentView: strin
 };
 
 const SignalCard = ({ label, value, icon, subValue }: any) => (
-  <ShadowCard className="p-xl border-white/5 bg-shadow-black/50 hover:bg-shadow-black transition-all">
-    <div className="flex items-center justify-between mb-lg">
+  <ShadowCard className="p-8 border-white/5 bg-shadow-black/50 hover:bg-shadow-black transition-all">
+    <div className="flex items-center justify-between mb-6">
       <p className="text-[10px] font-bold text-shadow-600 uppercase tracking-widest">{label}</p>
       {icon}
     </div>

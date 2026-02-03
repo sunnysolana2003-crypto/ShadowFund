@@ -1,8 +1,8 @@
-/* ShadowFund Design System Styles - Tailwind v4 */
+/* ShadowFund Design System - Tailwind v4 */
 @import "tailwindcss";
 
 @theme {
-  /* Custom palette so utilities like bg-shadow-green, text-shadow-black work */
+  /* Custom colors */
   --color-shadow-black: #050505;
   --color-shadow-dark: #0a0a0a;
   --color-shadow-gray-900: #111111;
@@ -14,7 +14,6 @@
   --color-shadow-gray-300: #d4d4d4;
   --color-shadow-green: #ff7a00;
   --color-shadow-green-muted: #3b1d00;
-  --color-shadow-green-glow: rgba(255, 122, 0, 0.18);
   --color-shadow-gold: #c5a059;
   --color-shadow-gold-light: #e5c58d;
   --color-shadow-gold-dark: #8a6d3b;
@@ -22,14 +21,7 @@
   --color-shadow-error-muted: #4d1210;
   --color-shadow-purple: #9945ff;
   --color-shadow-blue: #627eea;
-  /* Spacing used in components */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 48px;
-  --spacing-3xl: 64px;
+  /* Fonts */
   --font-sans: "Inter", sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
@@ -41,28 +33,23 @@
   --shadow-gold: #c5a059;
 }
 
-html {
-  min-height: 100%;
+html, body, #root {
+  min-height: 100vh;
 }
 
 body {
-  min-height: 100vh;
   background-color: var(--shadow-black);
-  color: #D4D4D4;
+  color: #d4d4d4;
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Glassmorphism & utilities */
+/* Glass effects */
 .glass-panel {
   background: rgba(17, 17, 17, 0.6);
   backdrop-filter: blur(12px);
@@ -75,6 +62,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
+/* Glows */
 .glow-green {
   box-shadow: 0 0 25px -5px rgba(255, 122, 0, 0.35);
 }
@@ -83,25 +71,12 @@ body {
   box-shadow: 0 0 25px -5px rgba(197, 160, 89, 0.2);
 }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Custom Scrollbar (also in index.html, but keep for consistency) */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #050505;
-}
-::-webkit-scrollbar-thumb {
-  background: #262626;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #333333;
-}
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #050505; }
+::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #333333; }

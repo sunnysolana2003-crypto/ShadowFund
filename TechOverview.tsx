@@ -129,7 +129,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       <main className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <Navbar currentView={currentView} onNavigate={onNavigate} />
 
-        <div className="p-xl md:p-2xl space-y-2xl max-w-7xl mx-auto w-full">
+        <div className="p-8 md:p-12 space-y-12 max-w-7xl mx-auto w-full">
           {/* Hero Section */}
           <header className="relative py-12 text-center space-y-6">
             <motion.div
@@ -151,7 +151,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
             </p>
 
             {/* Always-visible key facts for judges and users */}
-            <ShadowCard className="mt-10 mx-auto max-w-4xl p-xl border-[#FF7A00]/20 bg-gradient-to-r from-[#FF7A00]/5 to-transparent">
+            <ShadowCard className="mt-10 mx-auto max-w-4xl p-8 border-[#FF7A00]/20 bg-gradient-to-r from-[#FF7A00]/5 to-transparent">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
                 <div className="flex flex-col items-center md:items-start gap-2">
                   <span className="text-[9px] font-bold text-[#FF7A00] uppercase tracking-widest">Mainnet & real funds</span>
@@ -193,7 +193,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
                 >
-                  <ShadowCard className="h-full p-xl border-white/5 bg-shadow-gray-900/50 hover:border-[#FF7A00]/20 transition-all group">
+                  <ShadowCard className="h-full p-8 border-white/5 bg-shadow-gray-900/50 hover:border-[#FF7A00]/20 transition-all group">
                     <div className="flex items-start gap-5">
                       <div className="p-3 rounded-xl bg-white/5 tech-icon-float">
                         {tech.icon}
@@ -233,7 +233,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                     className="absolute -inset-0.5 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 blur-sm"
                     style={{ backgroundColor: vault.color }}
                   />
-                  <ShadowCard className="relative h-full p-xl bg-shadow-black border-white/5 flex flex-col items-center text-center space-y-6">
+                  <ShadowCard className="relative h-full p-8 bg-shadow-black border-white/5 flex flex-col items-center text-center space-y-6">
                     <div 
                       className={`p-4 rounded-full bg-white/5 text-white shadow-[0_0_20px_rgba(0,0,0,0.5)] tech-icon-float`}
                       style={{ color: vault.color }}
@@ -273,7 +273,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
 
           {/* ZK Proof Visualization */}
           <section className="py-12">
-            <ShadowCard className="p-2xl bg-gradient-to-br from-[#FF7A00]/10 to-transparent border-[#FF7A00]/20 relative overflow-hidden">
+            <ShadowCard className="p-12 bg-gradient-to-br from-[#FF7A00]/10 to-transparent border-[#FF7A00]/20 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                 <Network className="w-96 h-96 text-white" />
               </div>
@@ -434,7 +434,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                     />
                   </div>
 
-                  <ShadowCard className="mt-8 p-xl border-[#FF7A00]/30 bg-gradient-to-br from-[#FF7A00]/10 to-transparent relative overflow-hidden">
+                  <ShadowCard className="mt-8 p-8 border-[#FF7A00]/30 bg-gradient-to-br from-[#FF7A00]/10 to-transparent relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                       <Fingerprint className="w-32 h-32 text-[#FF7A00]" />
                     </div>
@@ -459,7 +459,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                     </div>
                   </ShadowCard>
 
-                  <ShadowCard className="mt-8 p-xl border-red-500/20 bg-red-500/[0.02]">
+                  <ShadowCard className="mt-8 p-8 border-red-500/20 bg-red-500/[0.02]">
                     <div className="flex items-start gap-4">
                       <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-1" />
                       <div className="space-y-2">
@@ -503,7 +503,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden space-y-8"
                 >
-                  <ShadowCard className="p-xl border-[#FF7A00]/20 bg-gradient-to-br from-[#FF7A00]/5 to-transparent">
+                  <ShadowCard className="p-8 border-[#FF7A00]/20 bg-gradient-to-br from-[#FF7A00]/5 to-transparent">
                     <div className="space-y-4">
                       <p className="text-sm font-bold text-white">
                         Is the project ready for mainnet and real funds?
@@ -515,7 +515,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                   </ShadowCard>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ShadowCard className="p-xl border-white/5 bg-shadow-black/50">
+                    <ShadowCard className="p-8 border-white/5 bg-shadow-black/50">
                       <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-green-500" /> What works on mainnet today
                       </h4>
@@ -529,7 +529,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         <li>• Non-logging policy: no wallets, amounts, or tx hashes in logs</li>
                       </ul>
                     </ShadowCard>
-                    <ShadowCard className="p-xl border-white/5 bg-shadow-black/50">
+                    <ShadowCard className="p-8 border-white/5 bg-shadow-black/50">
                       <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 text-amber-500" /> Caveats (accept before going live)
                       </h4>
@@ -552,31 +552,31 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                       For full production readiness, we will address each gap as follows.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                      <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
                         <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Growth / Degen withdraw</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
                           Wire token→USD1 via Jupiter: compute sell amount in token smallest units, call <code className="text-[10px]">executeSwap</code> for token→USDC/USD1, then update ShadowWire balance. Remove simulated-withdraw path once live.
                         </p>
                       </ShadowCard>
-                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                      <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
                         <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">In-memory positions</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
                           Persist Growth/Degen positions in a DB (e.g. Postgres or Redis) keyed by vault id and wallet, or derive positions from on-chain token accounts where possible. Rebuild state on startup from DB/chain.
                         </p>
                       </ShadowCard>
-                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                      <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
                         <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Yield vault vs PDA</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
                           Either (a) document and keep the current model (one funded Kamino wallet per deployment; “yield vault” = that wallet’s Kamino position), or (b) support vault PDA as Kamino depositor via programmatic signer and wire custody.
                         </p>
                       </ShadowCard>
-                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50">
+                      <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
                         <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Rate limit (multi-instance)</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
                           Replace in-memory rate limiter with a shared store (e.g. Redis). Wire <code className="text-[10px]">checkRateLimit</code> to Redis increments and TTLs so all backend instances share the same limits.
                         </p>
                       </ShadowCard>
-                      <ShadowCard className="p-xl border-[#FF7A00]/10 bg-shadow-black/50 md:col-span-2">
+                      <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50 md:col-span-2">
                         <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Env & operations</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
                           Production env: mainnet RPC, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, all RADR token mints set, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>, API and wallet keys in secrets manager. Fund server and Kamino wallets; optional: runbooks and monitoring for rebalance and withdraw flows.
@@ -619,7 +619,7 @@ const Step = ({ num, title, desc }: { num: string, title: string, desc: string }
 );
 
 const AuditCard = ({ title, status, score, details }: { title: string, status: string, score: number, details: string[] }) => (
-  <ShadowCard className="p-xl border-white/5 bg-shadow-black/50">
+  <ShadowCard className="p-8 border-white/5 bg-shadow-black/50">
     <div className="space-y-4">
       <div className="flex justify-between items-start">
         <h4 className="text-xs font-bold text-white uppercase tracking-widest">{title}</h4>
