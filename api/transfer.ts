@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { verifySignature } from "../../utils/verifySignature";
-import { deposit, withdraw } from "../../lib/shadowwire";
-import { getUSD1Fees } from "../../lib/usd1";
-import { applyCors } from "../../lib/cors";
-import { logger } from "../../lib/logger";
+import { deposit, withdraw } from "../lib/shadowwire";
+import { getUSD1Fees } from "../lib/usd1";
+import { applyCors } from "../lib/cors";
+import { logger } from "../lib/logger";
 import {
     InsufficientBalanceError,
     TransferError

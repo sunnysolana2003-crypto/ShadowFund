@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { applyCors } from "../../lib/cors";
-import { logger } from "../../lib/logger";
+import { applyCors } from "../lib/cors";
+import { logger } from "../lib/logger";
 
 /**
  * Verify Transaction Proof

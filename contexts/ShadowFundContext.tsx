@@ -109,7 +109,8 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
                     if (isMounted) {
                         setWallet(prev => ({ ...prev, solBalance: balance / 1e9 }));
                     }
-                } catch {
+                } catch (err: any) {
+                    console.warn("Solana RPC rate limited or blocked (403). Using cached balance.", err.message);
                     if (isMounted) {
                         setWallet(prev => ({ ...prev, solBalance: 0 }));
                     }

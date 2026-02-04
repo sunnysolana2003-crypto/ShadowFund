@@ -6,9 +6,9 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { strategies } from '../../lib/strategies';
-import { shadowwire } from '../../lib/shadowwire';
-import { logger } from '../../lib/logger';
+import { strategies } from '../lib/strategies';
+import { shadowwire } from '../lib/shadowwire';
+import { logger } from '../lib/logger';
 
 const log = (msg: string) => logger.info(msg, 'API:VaultWithdraw');
 

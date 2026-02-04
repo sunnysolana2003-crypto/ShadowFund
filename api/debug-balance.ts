@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getPublicUSD1Balance } from "../../lib/usd1";
-import { applyCors } from "../../lib/cors";
-import logger from "../../lib/logger";
+import { getPublicUSD1Balance } from "../lib/usd1";
+import { applyCors } from "../lib/cors";
+import logger from "../lib/logger";
 
 /**
  * Debug endpoint to test USD1 balance fetching
