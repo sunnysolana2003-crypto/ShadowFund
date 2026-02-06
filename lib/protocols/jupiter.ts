@@ -7,9 +7,9 @@
  */
 
 import { Connection, VersionedTransaction, PublicKey } from '@solana/web3.js';
-import { getServerWallet, getWalletInfo } from '../wallet';
-import { SwapParams, SwapQuote, TxResult, TOKENS, TokenInfo } from "./types";
-import { logger } from "../logger";
+import { getServerWallet, getWalletInfo } from '../wallet.js';
+import { SwapParams, SwapQuote, TxResult, TOKENS, TokenInfo } from "./types.js";
+import { logger } from "../logger.js";
 
 const JUPITER_API = "https://quote-api.jup.ag/v6";
 const JUPITER_PRICE_API = "https://price.jup.ag/v6";

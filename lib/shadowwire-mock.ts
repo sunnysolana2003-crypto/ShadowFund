@@ -5,7 +5,7 @@
  * Non-logging policy: no wallets, amounts, or balances in logs.
  */
 
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 // In-memory balance storage (persists for server lifetime)
 // Maps wallet address -> private balance in smallest units (6 decimals)

@@ -3,7 +3,7 @@
  * Validates and exports environment variables.
  * Non-logging policy: no RPC URLs or secrets in logs.
  */
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 interface EnvConfig {
     // Required

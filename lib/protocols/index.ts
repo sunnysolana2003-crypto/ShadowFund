@@ -2,20 +2,20 @@
  * Protocol Integration Index
  * Central export point for all DeFi protocol integrations
  */
-import { logger } from "../logger";
+import { logger } from "../logger.js";
 
-export * from "./types";
+export * from "./types.js";
 
 // Jupiter - DEX Aggregator
-import * as jupiter from "./jupiter";
+import * as jupiter from "./jupiter.js";
 export { jupiter };
 
 // Kamino - Yield Farming
-import * as kamino from "./kamino";
+import * as kamino from "./kamino.js";
 export { kamino };
 
 // DexScreener - Token Discovery
-import * as dexscreener from "./dexscreener";
+import * as dexscreener from "./dexscreener.js";
 export { dexscreener };
 
 // Protocol status check

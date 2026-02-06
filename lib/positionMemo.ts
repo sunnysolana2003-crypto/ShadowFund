@@ -9,7 +9,7 @@
 
 import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { createMemoInstruction } from '@solana/spl-memo';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 const MEMO_PREFIX = 'SHADOWFUND';
 const log = (msg: string) => logger.info(msg, 'PositionMemo');

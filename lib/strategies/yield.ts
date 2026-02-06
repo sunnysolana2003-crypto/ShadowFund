@@ -5,11 +5,11 @@
  * rebalance moves USD1 to vault PDAs via ShadowWire separately.
  */
 
-import { YieldStrategy, VaultStatus, StrategyExecutionResult } from "./types";
-import { TxResult, LendingPosition } from "../protocols/types";
-import { kamino } from "../protocols";
-import { getVaultAddress } from "../vaults";
-import { logger } from "../logger";
+import { YieldStrategy, VaultStatus, StrategyExecutionResult } from "./types.js";
+import { TxResult, LendingPosition } from "../protocols/types.js";
+import { kamino } from "../protocols/index.js";
+import { getVaultAddress } from "../vaults.js";
+import { logger } from "../logger.js";
 
 const log = (msg: string) => logger.info(msg, "YIELD");
 

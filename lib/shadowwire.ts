@@ -1,10 +1,10 @@
 import { ShadowWireClient, TokenUtils } from "@radr/shadowwire";
 import { PublicKey } from "@solana/web3.js";
-import { connection } from "./rpc";
-import { config } from "./config";
-import { MockShadowWireClient, MockTokenUtils } from "./shadowwire-mock";
-import { TOKENS } from "./protocols/types";
-import { logger } from "./logger";
+import { connection } from "./rpc.js";
+import { config } from "./config.js";
+import { MockShadowWireClient, MockTokenUtils } from "./shadowwire-mock.js";
+import { TOKENS } from "./protocols/types.js";
+import { logger } from "./logger.js";
 
 const USD1_MINT = TOKENS.USD1;
 

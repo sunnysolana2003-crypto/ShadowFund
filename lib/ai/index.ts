@@ -3,12 +3,12 @@
  * Combines market signals with Gemini AI for intelligent allocation decisions.
  * Non-logging policy: no risk/signals/allocation in logs.
  */
-import { logger } from "../logger";
-import { getMarketSignals, MarketSignals } from "./signals";
-import { getRiskLimits, RiskProfile } from "./risk";
-import { getMacroMood, MacroMood } from "./macro";
-import { buildStrategy, Allocation } from "./strategy";
-import { getGeminiStrategy, getMarketAnalysis, isGeminiAvailable, GeminiStrategyResult } from "./gemini";
+import { logger } from "../logger.js";
+import { getMarketSignals, MarketSignals } from "./signals.js";
+import { getRiskLimits, RiskProfile } from "./risk.js";
+import { getMacroMood, MacroMood } from "./macro.js";
+import { buildStrategy, Allocation } from "./strategy.js";
+import { getGeminiStrategy, getMarketAnalysis, isGeminiAvailable, GeminiStrategyResult } from "./gemini.js";
 
 export interface AIStrategyResult {
     signals: MarketSignals;

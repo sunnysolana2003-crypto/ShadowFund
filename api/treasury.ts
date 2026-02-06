@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "../types/api.js";
 import { loadTreasury } from "../lib/treasury.js";
-import { RiskProfile } from "../lib/ai.js";
+import { RiskProfile } from "../lib/ai/index.js";
 import { applyCors } from "../lib/cors.js";
 import logger from "../lib/logger.js";
 

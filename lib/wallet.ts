@@ -5,7 +5,7 @@
  */
 import { Keypair, PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { logger } from './logger';
+import { logger } from './logger.js';
 
 /**
  * Get server wallet from environment variable

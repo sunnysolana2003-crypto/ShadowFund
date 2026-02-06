@@ -3,8 +3,8 @@
  * Used for meme coin discovery and trading signals in the Degen vault.
  * Non-logging policy: no addresses or amounts in logs.
  */
-import { MemeToken } from "./types";
-import { logger } from "../logger";
+import { MemeToken } from "./types.js";
+import { logger } from "../logger.js";
 
 const DEXSCREENER_API = "https://api.dexscreener.com/latest/dex";
 

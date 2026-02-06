@@ -4,8 +4,8 @@ import { loadTreasury } from "../lib/treasury.js";
 import { getVaultAddress } from "../lib/vaults.js";
 import { moveUSD1, getUSD1Fees } from "../lib/usd1.js";
 import { deposit, withdraw } from "../lib/shadowwire.js";
-import { getAIStrategy } from "../lib/ai.js";
-import { executeAllStrategies, getVaultStats, getAllTransactions } from "../lib/strategies.js";
+import { getAIStrategy } from "../lib/ai/index.js";
+import { executeAllStrategies, getVaultStats, getAllTransactions } from "../lib/strategies/index.js";
 import { applyCors } from "../lib/cors.js";
 import { logger } from "../lib/logger.js";
 

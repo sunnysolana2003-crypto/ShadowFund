@@ -4,10 +4,10 @@
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { MarketSignals } from "./signals";
-import { RiskLimits } from "./risk";
-import { Allocation } from "./strategy";
-import { logger } from "../logger";
+import { MarketSignals } from "./signals.js";
+import { RiskLimits } from "./risk.js";
+import { Allocation } from "./strategy.js";
+import { logger } from "../logger.js";
 
 // Initialize Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");

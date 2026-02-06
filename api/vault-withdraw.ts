@@ -5,13 +5,13 @@
  * Withdraws funds from a specific vault back to the shielded USD1 pool.
  */
 
-import type { NextApiRequest, NextApiResponse } from '../types/api';
-import { reserveStrategy } from '../lib/strategies/reserve';
-import { yieldStrategy } from '../lib/strategies/yield';
-import { growthStrategy } from '../lib/strategies/growth';
-import { degenStrategy } from '../lib/strategies/degen';
-import { shadowwire } from '../lib/shadowwire';
-import { logger } from '../lib/logger';
+import type { NextApiRequest, NextApiResponse } from '../types/api.js';
+import { reserveStrategy } from '../lib/strategies/reserve.js';
+import { yieldStrategy } from '../lib/strategies/yield.js';
+import { growthStrategy } from '../lib/strategies/growth.js';
+import { degenStrategy } from '../lib/strategies/degen.js';
+import { shadowwire } from '../lib/shadowwire.js';
+import { logger } from '../lib/logger.js';
 
 const log = (msg: string) => logger.info(msg, 'API:VaultWithdraw');
 

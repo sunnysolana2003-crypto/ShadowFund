@@ -7,16 +7,16 @@
  */
 
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
-import { GrowthStrategy, VaultStatus, StrategyExecutionResult } from "./types";
-import { TxResult, Position, TOKENS, GROWTH_ALLOCATION, getRADRDecimals } from "../protocols/types";
-import { jupiter } from "../protocols";
-import { getVaultAddress } from "../vaults";
-import { logger } from "../logger";
+import { GrowthStrategy, VaultStatus, StrategyExecutionResult } from "./types.js";
+import { TxResult, Position, TOKENS, GROWTH_ALLOCATION, getRADRDecimals } from "../protocols/types.js";
+import { jupiter } from "../protocols/index.js";
+import { getVaultAddress } from "../vaults.js";
+import { logger } from "../logger.js";
 import { 
     reconstructPositions, 
     ReconstructedPosition,
     PositionMemo 
-} from "../positionMemo";
+} from "../positionMemo.js";
 
 const log = (msg: string) => logger.info(msg, "GROWTH");
 
@@ -295,7 +295,7 @@ class GrowthVaultStrategy implements GrowthStrategy {
 
         // GET SHADOWWIRE CASH BALANCE FOR THIS VAULT
         const vaultAddress = await getVaultAddress(walletAddress, "growth");
-        const { getPrivateBalance } = await import("../shadowwire");
+        const { getPrivateBalance } = await import("../shadowwire.js");
         const cashBalance = await getPrivateBalance(vaultAddress);
 
         if (userPositions.length === 0) return cashBalance;

@@ -7,15 +7,15 @@
  */
 
 import { Connection, clusterApiUrl } from "@solana/web3.js";
-import { DegenStrategy, VaultStatus, StrategyExecutionResult } from "./types";
-import { TxResult, Position, TOKENS, DEGEN_TOKENS, getRADRDecimals } from "../protocols/types";
-import { jupiter } from "../protocols";
-import { getVaultAddress } from "../vaults";
-import { logger } from "../logger";
+import { DegenStrategy, VaultStatus, StrategyExecutionResult } from "./types.js";
+import { TxResult, Position, TOKENS, DEGEN_TOKENS, getRADRDecimals } from "../protocols/types.js";
+import { jupiter } from "../protocols/index.js";
+import { getVaultAddress } from "../vaults.js";
+import { logger } from "../logger.js";
 import { 
     reconstructPositions, 
     PositionMemo 
-} from "../positionMemo";
+} from "../positionMemo.js";
 
 const log = (msg: string) => logger.info(msg, "DEGEN");
 
@@ -277,7 +277,7 @@ class DegenVaultStrategy implements DegenStrategy {
         const vaultAddress = await getVaultAddress(walletAddress, "degen");
 
         // Include any uninvested USD1 in the private vault
-        const { getPrivateBalance } = await import("../shadowwire");
+        const { getPrivateBalance } = await import("../shadowwire.js");
         const cashBalance = await getPrivateBalance(vaultAddress);
 
         if (userPositions.length === 0) return cashBalance;

@@ -1,4 +1,4 @@
-import { MarketSignals } from "./signals";
+import { MarketSignals } from "./signals.js";
 
 export type MacroMood = "risk-on" | "risk-off" | "neutral";
 

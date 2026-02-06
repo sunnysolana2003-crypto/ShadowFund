@@ -4,20 +4,20 @@
  */
 
 // Types
-export * from "./types";
+export * from "./types.js";
 
 // Individual strategies
-export { reserveStrategy, executeReserveStrategy } from "./reserve";
-export { yieldStrategy, executeYieldStrategy, getYieldAnalytics } from "./yield";
-export { growthStrategy, executeGrowthStrategy } from "./growth";
-export { degenStrategy, executeDegenStrategy } from "./degen";
+export { reserveStrategy, executeReserveStrategy } from "./reserve.js";
+export { yieldStrategy, executeYieldStrategy, getYieldAnalytics } from "./yield.js";
+export { growthStrategy, executeGrowthStrategy } from "./growth.js";
+export { degenStrategy, executeDegenStrategy } from "./degen.js";
 
-import { reserveStrategy } from "./reserve";
-import { yieldStrategy, getYieldAnalytics } from "./yield";
-import { growthStrategy } from "./growth";
-import { degenStrategy } from "./degen";
-import { VaultStats, StrategyExecutionResult } from "./types";
-import { logger } from "../logger";
+import { reserveStrategy } from "./reserve.js";
+import { yieldStrategy, getYieldAnalytics } from "./yield.js";
+import { growthStrategy } from "./growth.js";
+import { degenStrategy } from "./degen.js";
+import { VaultStats, StrategyExecutionResult } from "./types.js";
+import { logger } from "../logger.js";
 
 const log = (msg: string) => logger.info(msg, "STRATEGY");
 
@@ -60,7 +60,7 @@ export async function executeAllStrategies(
     try {
         // 1. Reserve Strategy
         log("Reserve vault");
-        const { executeReserveStrategy } = await import("./reserve");
+        const { executeReserveStrategy } = await import("./reserve.js");
         results.reserve = await executeReserveStrategy(walletAddress, targets.reserve);
     } catch (error) {
         errors.push(`Reserve: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -69,7 +69,7 @@ export async function executeAllStrategies(
     try {
         // 2. Yield Strategy
         log("Yield vault");
-        const { executeYieldStrategy } = await import("./yield");
+        const { executeYieldStrategy } = await import("./yield.js");
         results.yield = await executeYieldStrategy(walletAddress, targets.yield, "low");
     } catch (error) {
         errors.push(`Yield: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -78,7 +78,7 @@ export async function executeAllStrategies(
     try {
         // 3. Growth Strategy
         log("Growth vault");
-        const { executeGrowthStrategy } = await import("./growth");
+        const { executeGrowthStrategy } = await import("./growth.js");
         results.growth = await executeGrowthStrategy(walletAddress, targets.growth);
     } catch (error) {
         errors.push(`Growth: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -87,7 +87,7 @@ export async function executeAllStrategies(
     try {
         // 4. Degen Strategy
         log("Degen vault");
-        const { executeDegenStrategy } = await import("./degen");
+        const { executeDegenStrategy } = await import("./degen.js");
         results.degen = await executeDegenStrategy(walletAddress, targets.degen, signals.memeHype);
     } catch (error) {
         errors.push(`Degen: ${error instanceof Error ? error.message : "Unknown error"}`);

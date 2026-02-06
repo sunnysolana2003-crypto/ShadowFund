@@ -1,7 +1,7 @@
-import { getVaultStats } from "./strategies";
-import { getUSD1Balance, getPublicUSD1Balance } from "./usd1";
-import { Treasury, RiskProfile } from "../types";
-import { logger } from "./logger";
+import { getVaultStats } from "./strategies/index.js";
+import { getUSD1Balance, getPublicUSD1Balance } from "./usd1.js";
+import { Treasury, RiskProfile } from "../types.js";
+import { logger } from "./logger.js";
 
 export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<Treasury> {
     // Fetch high-fidelity vault stats (Cash + Positions)

@@ -7,9 +7,9 @@
 
 import { Connection, PublicKey, Transaction, Keypair, sendAndConfirmTransaction } from '@solana/web3.js';
 import { KaminoMarket, KaminoAction, VanillaObligation } from '@kamino-finance/klend-sdk';
-import { LendingPosition, TxResult } from './types';
+import { LendingPosition, TxResult } from './types.js';
 import * as fs from 'fs';
-import { logger } from '../logger';
+import { logger } from '../logger.js';
 
 const KAMINO_MAIN_MARKET = new PublicKey('7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF');
 const USD1_MINT = new PublicKey('USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB'); // Correct USD1 mint

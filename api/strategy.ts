@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "../types/api.js";
-import { getAIStrategy, RiskProfile } from "../lib/ai.js";
+import { getAIStrategy, RiskProfile } from "../lib/ai/index.js";
 import { applyCors } from "../lib/cors.js";
 import logger from "../lib/logger.js";
 

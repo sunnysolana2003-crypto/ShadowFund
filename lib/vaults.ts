@@ -3,8 +3,8 @@
  * Handles deterministic vault address derivation using ShadowWire.
  * Non-logging policy: no wallet or address in logs.
  */
-import { VaultId } from "../types";
-import { logger } from "./logger";
+import { VaultId } from "../types.js";
+import { logger } from "./logger.js";
 import { PublicKey } from "@solana/web3.js";
 import crypto from "crypto";
 import bs58 from "bs58";

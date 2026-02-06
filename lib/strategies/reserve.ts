@@ -3,11 +3,11 @@
  * Simple USD1 stablecoin holding - no additional complexity
  */
 
-import { ReserveStrategy, VaultStatus, StrategyExecutionResult } from "./types";
-import { TxResult } from "../protocols/types";
-import { getUSD1Balance, moveUSD1 } from "../usd1";
-import { getVaultAddress } from "../vaults";
-import { logger } from "../logger";
+import { ReserveStrategy, VaultStatus, StrategyExecutionResult } from "./types.js";
+import { TxResult } from "../protocols/types.js";
+import { getUSD1Balance, moveUSD1 } from "../usd1.js";
+import { getVaultAddress } from "../vaults.js";
+import { logger } from "../logger.js";
 
 const log = (msg: string) => logger.info(msg, "RESERVE");
 

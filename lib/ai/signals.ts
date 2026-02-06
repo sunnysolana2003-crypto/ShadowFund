@@ -1,4 +1,4 @@
-import { logger } from "../logger";
+import { logger } from "../logger.js";
 
 const COINGECKO = "https://api.coingecko.com/api/v3";
 const DEXSCREENER = "https://api.dexscreener.com/latest/dex";

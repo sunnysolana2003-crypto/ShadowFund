@@ -3,7 +3,7 @@
  * Interfaces for all vault strategies
  */
 
-import { TxResult, Position, LendingPosition, MemeToken, DegenPosition } from "../protocols/types";
+import { TxResult, Position, LendingPosition, MemeToken, DegenPosition } from "../protocols/types.js";
 
 // Base strategy interface
 export interface VaultStrategy {

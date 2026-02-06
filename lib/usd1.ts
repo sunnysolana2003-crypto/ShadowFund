@@ -9,8 +9,8 @@ import {
     privateTransfer,
     USD1Utils,
     TokenUtils
-} from "./shadowwire";
-import { logger } from "./logger";
+} from "./shadowwire.js";
+import { logger } from "./logger.js";
 
 const DECIMALS = 6; // USD1 has 6 decimals
 
@@ -33,7 +33,7 @@ export async function getUSD1Balance(addr: string): Promise<number> {
  */
 export async function getPublicUSD1Balance(addr: string): Promise<number> {
     try {
-        const { getPublicBalance } = await import("./shadowwire");
+        const { getPublicBalance } = await import("./shadowwire.js");
         return await getPublicBalance(addr);
     } catch {
         logger.error("Error fetching public USD1 balance", "USD1");
