@@ -142,8 +142,15 @@ Return your response as valid JSON only, no markdown formatting.`;
         }
 
         return parsed;
-    } catch (error) {
-        console.error("[Gemini AI] Error generating strategy:", error);
+    } catch (error: any) {
+        const status = error?.status;
+        if (status === 429) {
+            logger.warn("Gemini rate-limited", "Gemini");
+        } else {
+            logger.error("Gemini strategy error", "Gemini", {
+                message: error instanceof Error ? error.message : String(error)
+            });
+        }
         throw error;
     }
 }

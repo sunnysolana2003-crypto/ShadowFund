@@ -67,10 +67,11 @@ if (fs.existsSync(rootPkgPath)) {
 
 function patchFile(filePath) {
     let src = fs.readFileSync(filePath, "utf8");
-    if (!src.includes("settler_wasm") || !src.includes("require")) {
-        return false;
-    }
-    if (src.includes("__shadowwire_dynamic_wasm__")) {
+    const hasWasm = src.includes("settler_wasm");
+    const hasRequire = src.includes("require(");
+    const hasSafeRequire = src.includes("__safeRequireWasm");
+
+    if (!hasWasm || (!hasRequire && !hasSafeRequire)) {
         return false;
     }
 
@@ -93,11 +94,16 @@ function patchFile(filePath) {
     ].join("\n");
 
     const requireRegex = /require\((['"])([^'"]*settler_wasm(?:\.[a-z]+)?)\1\)/g;
-    if (!requireRegex.test(src)) {
+    const safeRequireRegex = /__safeRequireWasm\((['"])([^'"]*settler_wasm(?:\.[a-z]+)?)\1\)/g;
+    if (!requireRegex.test(src) && !safeRequireRegex.test(src)) {
         return false;
     }
 
-    src = helper + src.replace(requireRegex, (_m, quote, relPath) => {
+    if (!src.includes("__shadowwire_dynamic_wasm__")) {
+        src = helper + src;
+    }
+
+    const replaceToDynamic = (_m, quote, relPath) => {
         let normalized = relPath;
         if (relPath.endsWith("settler_wasm")) {
             normalized = `${relPath}${wasmEntryExt}`;
@@ -105,7 +111,10 @@ function patchFile(filePath) {
             normalized = relPath.replace(/settler_wasm\.[a-z]+$/, `settler_wasm${wasmEntryExt}`);
         }
         return `__shadowwireImport(${quote}${normalized}${quote})`;
-    });
+    };
+
+    src = src.replace(requireRegex, replaceToDynamic);
+    src = src.replace(safeRequireRegex, replaceToDynamic);
 
     fs.writeFileSync(filePath, src, "utf8");
     return true;
