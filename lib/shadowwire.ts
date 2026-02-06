@@ -56,19 +56,35 @@ async function loadShadowwireSdk(): Promise<ShadowwireSdk | null> {
         try {
             const mod = await import("@radr/shadowwire");
             return mod as unknown as ShadowwireSdk;
-        } catch (error) {
-            if (getRuntimeMode() === "real") {
+        } catch (error: any) {
+            // Check for specific ESM/require incompatibility errors
+            const errorMessage = error?.message || String(error);
+            const isEsmError =
+                error?.code === 'ERR_REQUIRE_ESM' ||
+                errorMessage.includes('require() of ES Module') ||
+                errorMessage.includes('ERR_REQUIRE_ESM') ||
+                errorMessage.includes('not supported');
+
+            if (isEsmError) {
+                logger.warn("ShadowWire SDK has ESM/WASM compatibility issue, using mock", "ShadowWire");
+            } else {
+                logger.error("Failed to load ShadowWire SDK", "ShadowWire", {
+                    message: errorMessage
+                });
+            }
+
+            // In "real" mode, only throw if it's not an ESM compatibility error
+            if (getRuntimeMode() === "real" && !isEsmError) {
                 throw error;
             }
-            logger.error("Failed to load ShadowWire SDK, falling back to mock", "ShadowWire", {
-                message: error instanceof Error ? error.message : String(error)
-            });
+
             return null;
         }
     })();
 
     return sdkPromise;
 }
+
 
 async function getShadowwireClient(): Promise<any> {
     if (isMockMode()) {
