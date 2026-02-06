@@ -199,28 +199,42 @@ export async function privateTransfer(params: PrivateTransferParams) {
 
     logger.info("ZK-Transfer executing", "ShadowWire");
 
-    return await shadowwire.transfer({
-        sender,
-        recipient,
-        amount,
-        token: "USDC",
-        type: "internal", // Hidden amount using ZK proofs
-        wallet
-    });
+    try {
+        return await shadowwire.transfer({
+            sender,
+            recipient,
+            amount,
+            token: "USDC",
+            type: "internal", // Hidden amount using ZK proofs
+            wallet
+        });
+    } catch (error) {
+        logger.error("ZK-Transfer failed", "ShadowWire", {
+            message: error instanceof Error ? error.message : String(error)
+        });
+        throw error;
+    }
 }
 
 // Execute an external transfer (visible amount, anonymous sender)
 export async function externalTransfer(params: PrivateTransferParams) {
     const { sender, recipient, amount, wallet } = params;
 
-    return await shadowwire.transfer({
-        sender,
-        recipient,
-        amount,
-        token: "USDC",
-        type: "external",
-        wallet
-    });
+    try {
+        return await shadowwire.transfer({
+            sender,
+            recipient,
+            amount,
+            token: "USDC",
+            type: "external",
+            wallet
+        });
+    } catch (error) {
+        logger.error("External transfer failed", "ShadowWire", {
+            message: error instanceof Error ? error.message : String(error)
+        });
+        throw error;
+    }
 }
 
 // Deposit USD1 into ShadowWire
@@ -243,7 +257,9 @@ export async function deposit(wallet: string, amount: number) {
 
         return response;
     } catch (error) {
-        logger.error("Deposit failed", "ShadowWire");
+        logger.error("Deposit failed", "ShadowWire", {
+            message: error instanceof Error ? error.message : String(error)
+        });
         throw error;
     }
 }
@@ -254,13 +270,20 @@ export async function withdraw(wallet: string, amount: number) {
 
     // standard 6 decimals
     const smallestUnit = Math.floor(amount * 1_000_000);
-    return await shadowwire.withdraw({
-        wallet,
-        // @ts-ignore
-        token: "USDC",
-        token_mint: USD1_MINT,
-        amount: smallestUnit
-    });
+    try {
+        return await shadowwire.withdraw({
+            wallet,
+            // @ts-ignore
+            token: "USDC",
+            token_mint: USD1_MINT,
+            amount: smallestUnit
+        });
+    } catch (error) {
+        logger.error("Withdraw failed", "ShadowWire", {
+            message: error instanceof Error ? error.message : String(error)
+        });
+        throw error;
+    }
 }
 
 // Export the client and utils
