@@ -57,6 +57,9 @@ async function loadShadowwireSdk(): Promise<ShadowwireSdk | null> {
             const mod = await import("@radr/shadowwire");
             return mod as unknown as ShadowwireSdk;
         } catch (error) {
+            if (getRuntimeMode() === "real") {
+                throw error;
+            }
             logger.error("Failed to load ShadowWire SDK, falling back to mock", "ShadowWire", {
                 message: error instanceof Error ? error.message : String(error)
             });
@@ -76,6 +79,9 @@ async function getShadowwireClient(): Promise<any> {
         clientPromise = (async () => {
             const sdk = await loadShadowwireSdk();
             if (!sdk?.ShadowWireClient) {
+                if (getRuntimeMode() === "real") {
+                    throw new Error("ShadowWire SDK unavailable in real mode");
+                }
                 return getMockClient();
             }
 

@@ -43,5 +43,18 @@ function setTypeModule(pkgPath, label) {
     log(`Applied ESM scope to ${label}.`);
 }
 
-setTypeModule(rootPkgPath, "package.json");
+if (fs.existsSync(rootPkgPath)) {
+    try {
+        const raw = fs.readFileSync(rootPkgPath, "utf8");
+        const rootPkg = raw.trim() ? JSON.parse(raw) : {};
+        if (rootPkg?.name === "@radr/shadowwire" && rootPkg.type === "module") {
+            delete rootPkg.type;
+            fs.writeFileSync(rootPkgPath, JSON.stringify(rootPkg, null, 2) + "\n", "utf8");
+            log("Removed ESM scope from package.json to keep SDK in CJS.");
+        }
+    } catch {
+        log("Failed to adjust root package.json type.");
+    }
+}
+
 setTypeModule(wasmPkgPath, "wasm/package.json");
