@@ -6,7 +6,7 @@
  * Positions are reconstructed from transaction history - fully decentralized.
  */
 
-import { Connection, clusterApiUrl } from "@solana/web3.js";
+import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 import { DegenStrategy, VaultStatus, StrategyExecutionResult } from "./types.js";
 import { TxResult, Position, TOKENS, DEGEN_TOKENS, getRADRDecimals } from "../protocols/types.js";
 import { jupiter } from "../protocols/index.js";
@@ -83,7 +83,10 @@ class DegenVaultStrategy implements DegenStrategy {
         pendingMemos.delete(walletAddress);
     }
 
-    async deposit(walletAddress: string, amount: number): Promise<TxResult & { positionMemos?: PositionMemo[] }> {
+    async deposit(
+        walletAddress: string,
+        amount: number
+    ): Promise<TxResult & { positionMemos?: PositionMemo[]; memo_tx_base64?: string }> {
         log("Deploying into degen assets");
 
         // Load existing positions from chain

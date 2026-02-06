@@ -93,7 +93,10 @@ class GrowthVaultStrategy implements GrowthStrategy {
         pendingMemos.delete(walletAddress);
     }
 
-    async deposit(walletAddress: string, amount: number): Promise<TxResult & { positionMemos?: PositionMemo[] }> {
+    async deposit(
+        walletAddress: string,
+        amount: number
+    ): Promise<TxResult & { positionMemos?: PositionMemo[]; memo_tx_base64?: string }> {
         log("Distributing into RADR shielded assets");
 
         // Load existing positions from chain first
