@@ -25,6 +25,31 @@ export interface AIStrategyResult {
 // Simple in-memory cache to prevent hitting Gemini rate limits
 const strategyCache: Record<string, { result: AIStrategyResult; timestamp: number }> = {};
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let geminiCooldownUntil = 0;
+
+function parseRetryDelayMs(error: any): number | null {
+    const details = error?.errorDetails;
+    if (!Array.isArray(details)) return null;
+    for (const detail of details) {
+        const retry = detail?.retryDelay;
+        if (typeof retry === "string") {
+            const match = retry.match(/(\d+(?:\.\d+)?)(s|ms)?/i);
+            if (match) {
+                const value = Number(match[1]);
+                const unit = match[2]?.toLowerCase() || "s";
+                return unit === "ms" ? value : value * 1000;
+            }
+        }
+    }
+    return null;
+}
+
+function isRateLimitError(error: any): boolean {
+    const status = error?.status;
+    if (status === 429) return true;
+    const msg = String(error?.message || "").toLowerCase();
+    return msg.includes("too many requests") || msg.includes("quota") || msg.includes("rate limit");
+}
 
 /**
  * Get AI-powered strategy recommendation
@@ -42,15 +67,13 @@ export async function getAIStrategy(risk: RiskProfile): Promise<AIStrategyResult
     const limits = getRiskLimits(risk);
     const mood = getMacroMood(signals);
 
-    // Check if Gemini AI is available
-    if (isGeminiAvailable()) {
+    // Check if Gemini AI is available and not in cooldown
+    if (isGeminiAvailable() && Date.now() >= geminiCooldownUntil) {
         try {
             logger.info("Using Gemini AI", "AI");
 
             // Get AI-powered strategy
             const geminiResult = await getGeminiStrategy(signals, limits, risk);
-
-            // Get market analysis
             const marketAnalysis = await getMarketAnalysis(signals);
 
             const result = {
@@ -67,7 +90,13 @@ export async function getAIStrategy(risk: RiskProfile): Promise<AIStrategyResult
             strategyCache[risk] = { result, timestamp: now };
             return result;
         } catch (error) {
-            logger.warn("Gemini AI failed, falling back to rules", "AI");
+            if (isRateLimitError(error)) {
+                const retryMs = parseRetryDelayMs(error) ?? 60_000;
+                geminiCooldownUntil = Date.now() + retryMs;
+                logger.warn(`Gemini rate-limited. Cooling down for ${Math.ceil(retryMs / 1000)}s`, "AI");
+            } else {
+                logger.warn("Gemini AI failed, falling back to rules", "AI");
+            }
         }
     }
 

@@ -97,6 +97,9 @@ export default async function handler(
             const runtimeMode = getRuntimeMode();
 
             for (const vault of treasury.vaults) {
+                if (vault.id === "reserve") {
+                    continue;
+                }
                 const targetPercent = allocation[vault.id as keyof typeof allocation];
                 const currentPercent = treasury.totalUSD1 > 0 ? (vault.balance / treasury.totalUSD1) * 100 : 0;
                 const target = (targetPercent / 100) * treasury.totalUSD1;
@@ -113,6 +116,10 @@ export default async function handler(
                     // This handles the "Initial Deposit" scenario where funds sit in Wallet before allocation
                     if (diff > 0 && treasury.walletBalance > 0 && vault.id !== 'reserve') {
                         from = wallet;
+                    }
+
+                    if (from === to) {
+                        continue;
                     }
 
                     let result;

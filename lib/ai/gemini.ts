@@ -144,20 +144,7 @@ Return your response as valid JSON only, no markdown formatting.`;
         return parsed;
     } catch (error) {
         console.error("[Gemini AI] Error generating strategy:", error);
-
-        // Fallback to conservative allocation on error
-        return {
-            allocation: {
-                reserve: 50,
-                yield: 30,
-                growth: 15,
-                degen: 5
-            },
-            reasoning: "Fallback to conservative allocation due to AI service error",
-            confidence: 50,
-            marketMood: "neutral",
-            keyInsights: ["AI service temporarily unavailable", "Using conservative defaults"]
-        };
+        throw error;
     }
 }
 
@@ -179,8 +166,8 @@ Be concise and actionable. No markdown, just plain text.`;
 
         const result = await model.generateContent(prompt);
         return result.response.text().trim();
-    } catch (error) {
-        logger.error("Market analysis error", "Gemini");
+    } catch {
+        logger.warn("Market analysis error", "Gemini");
         return "Market analysis temporarily unavailable.";
     }
 }

@@ -51,6 +51,13 @@ export async function moveUSD1(
     wallet?: { signMessage: (message: Uint8Array) => Promise<Uint8Array> }
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
     try {
+        if (from === to) {
+            return {
+                success: true,
+                txHash: "noop_self_transfer"
+            };
+        }
+
         // Use the minimum amount check
         let minimum = USD1Utils.getMinimum();
 
