@@ -89,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Growth/Degen return actual USD1 received from swaps
         if ('totalUSD1' in result && result.totalUSD1) {
-            usd1Received = result.totalUSD1;
+            usd1Received = Number(result.totalUSD1);
         }
 
         log(`Vault withdrawal complete`);
