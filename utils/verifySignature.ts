@@ -19,11 +19,19 @@ export function verifySignature(
     publicKey: string
 ): boolean {
     try {
+        if (!signature || !publicKey) return false;
+
         const messageBytes = new TextEncoder().encode(message);
         const signatureBytes = bs58.decode(signature);
         const publicKeyBytes = new PublicKey(publicKey).toBytes();
 
-        return nacl.sign.detached.verify(
+        const naclLib: any = (nacl as any).sign ? nacl : (nacl as any).default || nacl;
+        if (!naclLib?.sign?.detached?.verify) {
+            console.error("Signature verification failed: tweetnacl sign.verify unavailable");
+            return false;
+        }
+
+        return naclLib.sign.detached.verify(
             messageBytes,
             signatureBytes,
             publicKeyBytes
