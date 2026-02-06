@@ -14,7 +14,8 @@ import { getVaultAddress } from "../vaults.js";
 import { logger } from "../logger.js";
 import { 
     reconstructPositions, 
-    PositionMemo 
+    PositionMemo,
+    buildPositionMemoTransaction
 } from "../positionMemo.js";
 
 const log = (msg: string) => logger.info(msg, "DEGEN");
@@ -168,10 +169,23 @@ class DegenVaultStrategy implements DegenStrategy {
         // Store pending memos
         pendingMemos.set(walletAddress, memos);
 
+        let memoTxBase64: string | undefined;
+        if (memos.length > 0) {
+            try {
+                const walletPubkey = new PublicKey(walletAddress);
+                const memoTx = await buildPositionMemoTransaction(connection, walletPubkey, memos);
+                const serialized = memoTx.serialize({ requireAllSignatures: false });
+                memoTxBase64 = serialized.toString('base64');
+            } catch {
+                log("Memo transaction build failed");
+            }
+        }
+
         return {
             success: true,
             txSignature: txSignatures.join(","),
             positionMemos: memos,
+            memo_tx_base64: memoTxBase64,
             timestamp: Date.now()
         };
     }
@@ -254,6 +268,17 @@ class DegenVaultStrategy implements DegenStrategy {
         // Store pending memos
         const existingMemos = pendingMemos.get(walletAddress) || [];
         pendingMemos.set(walletAddress, [...existingMemos, ...memos]);
+
+        if (memos.length > 0) {
+            try {
+                const walletPubkey = new PublicKey(walletAddress);
+                const memoTx = await buildPositionMemoTransaction(connection, walletPubkey, memos);
+                const serialized = memoTx.serialize({ requireAllSignatures: false });
+                unsignedTxs.push(serialized.toString('base64'));
+            } catch {
+                log("Memo transaction build failed");
+            }
+        }
 
         return {
             success: true,
@@ -383,15 +408,22 @@ export async function executeDegenStrategy(
     const currentValue = await degenStrategy.getValue(walletAddress);
     const difference = targetAmount - currentValue;
     const txSignatures: string[] = [];
+    const unsignedTxs: string[] = [];
 
     if (difference > 1) { // Deploy more capital if target is higher
         log(`Deploying additional capital: $${difference.toFixed(2)}`);
         const res = await degenStrategy.deposit(walletAddress, difference);
         if (res.txSignature) txSignatures.push(...res.txSignature.split(","));
+        if ((res as any).memo_tx_base64) {
+            unsignedTxs.push((res as any).memo_tx_base64);
+        }
     } else if (difference < -1) { // Withdraw capital if target is lower
         log("De-risking");
         const res = await degenStrategy.withdraw(walletAddress, Math.abs(difference));
         if (res.txSignature) txSignatures.push(...res.txSignature.split(","));
+        if (res.unsigned_txs && res.unsigned_txs.length > 0) {
+            unsignedTxs.push(...res.unsigned_txs);
+        }
     }
 
     // No active trading logic (scanning, entering/exiting positions based on signals)
@@ -407,6 +439,7 @@ export async function executeDegenStrategy(
         amountIn: targetAmount,
         amountOut: finalValue,
         txSignatures: txSignatures.filter(Boolean),
+        unsignedTxs: unsignedTxs.length > 0 ? unsignedTxs : undefined,
         positions: posList,
         timestamp: Date.now()
     };

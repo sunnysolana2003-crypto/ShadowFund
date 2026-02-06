@@ -32,22 +32,22 @@ Inspection of each vault’s **input (USD1)**, **swapping (if any)**, and **with
 
 | Phase | Implementation |
 |-------|----------------|
-| **Input (USD1)** | Rebalance moves USD1 to growth vault PDA via `moveUSD1`. Strategy `deposit(walletAddress, amount)` splits `amount` by `GROWTH_ALLOCATION` (SOL, RADR, ORE, ANON in code; `types.ts` only defines SOL/WETH/WBTC). Uses **Jupiter for price only**: `jupiter.getTokenPrice(alloc.token)` → `tokenAmount = investAmount / price`. **No `executeSwap()`**; positions are stored in-memory and logged as “Shielding” for the vault PDA. |
-| **Swapping** | **Simulated only.** No Jupiter swap execution in the strategy. Growth strategy records “positions” and tx signatures like `shadowwire_shield_sol_...` but does not call `jupiter.executeSwap()`. Real swaps would require USD1 → SOL/wETH/wBTC (or RADR/ORE/ANON) via Jupiter. |
-| **Withdrawal (→ USD1)** | `withdraw(walletAddress, amount)` reduces in-memory positions by a proportional `sellPercent`, logs “Unshielding”, and returns success. **No actual swap** (no Jupiter sell). Value is computed as `getPrivateBalance(vaultAddress)` (cash) + sum(position amounts × Jupiter prices). |
+| **Input (USD1)** | Rebalance moves USD1 to growth vault PDA via `moveUSD1`. Strategy `deposit(walletAddress, amount)` splits `amount` by `GROWTH_ALLOCATION` and uses **Jupiter swaps** when a signer is available. A memo transaction is created to persist positions on-chain (no DB). |
+| **Swapping** | **Real when signer available.** Jupiter swaps execute on mainnet with a configured signer; otherwise simulated. |
+| **Withdrawal (→ USD1)** | `withdraw(walletAddress, amount)` executes token→USD1 swaps when signer is available and writes memo updates; otherwise simulated. Value is computed as `getPrivateBalance(vaultAddress)` (cash) + sum(position amounts × Jupiter prices). |
 
-**Summary:** Growth uses **RADR Labs shielded tokens only**: SOL, RADR, ORE, ANON (see `RADR_SUPPORTED_TOKENS` in types). Real USD1→token when server wallet + mainnet. Set `ORE_MINT`, `ANON_MINT`, `RADR_MINT` for real mints.
+**Summary:** Growth uses **RADR Labs shielded tokens only** and persists positions on-chain via Memo transactions (no DB).
 ---
 
 ## 4. Degen Vault
 
 | Phase | Implementation |
 |-------|----------------|
-| **Input (USD1)** | Rebalance moves USD1 to degen vault PDA via `moveUSD1`. Strategy `deposit(walletAddress, amount)` splits across `DEGEN_TOKENS` (e.g. SOL, BONK, RADR). Uses **Jupiter for price only**: `jupiter.getTokenPrice(mint)` → `tokenAmount = investAmount / price`. **No `executeSwap()`**; positions stored in-memory and logged as “Shielding” for the vault PDA. |
-| **Swapping** | **Simulated only.** No Jupiter swap execution. Would require USD1 → meme tokens via Jupiter for real execution. |
-| **Withdrawal (→ USD1)** | `withdraw(walletAddress, amount)` reduces in-memory positions by `sellPercent`, logs “Unshielding”, returns success. **No Jupiter sell.** Value = `getPrivateBalance(vaultAddress)` + sum(positions × Jupiter prices). |
+| **Input (USD1)** | Rebalance moves USD1 to degen vault PDA via `moveUSD1`. Strategy `deposit(walletAddress, amount)` splits across `DEGEN_TOKENS` and uses **Jupiter swaps** when a signer is available. A memo transaction is created to persist positions on-chain (no DB). |
+| **Swapping** | **Real when signer available.** Jupiter swaps execute on mainnet with a configured signer; otherwise simulated. |
+| **Withdrawal (→ USD1)** | `withdraw(walletAddress, amount)` executes token→USD1 swaps when signer is available and writes memo updates; otherwise simulated. Value = `getPrivateBalance(vaultAddress)` + sum(positions × Jupiter prices). |
 
-**Summary:** Degen is **price-based allocation + in-memory positions** for meme tokens. No real swap; “shield/unshield” is simulated. Same pattern as Growth.
+**Summary:** Degen is **price-based allocation + on-chain memo positions** for meme tokens (no DB).
 
 ---
 
@@ -68,8 +68,8 @@ Inspection of each vault’s **input (USD1)**, **swapping (if any)**, and **with
 |---------|------------------------|--------------------|---------------------------------|
 | Reserve | `moveUSD1` → vault PDA | No                 | `moveUSD1` back to reserve/wallet |
 | Yield   | `moveUSD1` → vault PDA; Kamino uses **user wallet** | No (lend/redeem) | Kamino withdraw → user wallet   |
-| Growth  | `moveUSD1` → vault PDA | Real when server wallet + mainnet (SOL, RADR, ORE, ANON) | Simulated withdraw |
-| Degen   | `moveUSD1` → vault PDA | Real when server wallet + mainnet (SOL, BONK, RADR, JIM, POKI) | Simulated withdraw |
+| Growth  | `moveUSD1` → vault PDA | Real when signer available (SOL, RADR, ORE, ANON) | Simulated withdraw |
+| Degen   | `moveUSD1` → vault PDA | Real when signer available (SOL, BONK, RADR, JIM, POKI) | Simulated withdraw |
 
 ---
 

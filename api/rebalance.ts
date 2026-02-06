@@ -156,6 +156,8 @@ export default async function handler(
 
         // Collect all transaction signatures
         const allTransactions = getAllTransactions(strategyExecution.results);
+        const unsignedTxs = Object.values(strategyExecution.results)
+            .flatMap(result => result?.unsignedTxs || []);
 
         log("STEP 7", "Fetching vault statistics");
         const vaultStats = await getVaultStats(wallet);
@@ -176,6 +178,7 @@ export default async function handler(
             },
             execution: {
                 usd1Transfers: transfers,
+                unsignedTxs,
                 strategyResults: {
                     reserve: {
                         success: strategyExecution.results.reserve?.success,

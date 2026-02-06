@@ -67,6 +67,7 @@ export interface StrategyExecutionResult {
     amountIn: number;
     amountOut?: number;
     txSignatures: string[];
+    unsignedTxs?: string[];
     positions?: any[];
     error?: string;
     timestamp: number;

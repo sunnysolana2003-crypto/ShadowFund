@@ -109,6 +109,7 @@ export interface RebalanceResult {
             amount: number;
             txHash: string;
         }>;
+        unsignedTxs?: string[];
         strategyResults: {
             reserve: { success: boolean; transactions: number };
             yield: { success: boolean; apy: number; earned: number; transactions: number };
@@ -342,4 +343,3 @@ export const api = new ShadowFundAPI();
 
 // Export class for custom instances
 export { ShadowFundAPI };
-

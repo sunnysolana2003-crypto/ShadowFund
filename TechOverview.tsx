@@ -509,7 +509,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         Is the project ready for mainnet and real funds?
                       </p>
                       <p className="text-sm text-shadow-300 leading-relaxed">
-                        <span className="text-[#FF7A00] font-semibold">Yes, with conditions.</span> You can run on mainnet with real funds after completing the required env setup (e.g. <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, mainnet RPC, funded server and Kamino wallets, RADR token mints, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>). A few caveats remain that you must accept before going live.
+                        <span className="text-[#FF7A00] font-semibold">Yes, with conditions.</span> You can run on mainnet with real funds after completing the required env setup (e.g. <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, mainnet RPC, RADR token mints, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>). Kamino yield now uses user-signed transactions, so no funded server wallet is required.
                       </p>
                     </div>
                   </ShadowCard>
@@ -525,7 +525,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         <li>• Rebalance: real USD1 moves between vault PDAs</li>
                         <li>• Growth vault: real USD1 → SOL, WETH, WBTC, RADR via Jupiter</li>
                         <li>• Degen vault: real USD1 → SOL, BONK, RADR, JIM, POKI via Jupiter</li>
-                        <li>• Yield vault: real Kamino lend/redeem when wallet is configured</li>
+                        <li>• Yield vault: real Kamino lend/redeem via user-signed transactions (no server wallet required)</li>
                         <li>• Non-logging policy: no wallets, amounts, or tx hashes in logs</li>
                       </ul>
                     </ShadowCard>
@@ -535,8 +535,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                       </h4>
                       <ul className="space-y-2 text-xs text-shadow-400">
                         <li>• <strong>Growth/Degen withdraw</strong>: token→USD1 is simulated only; no Jupiter sell yet</li>
-                        <li>• <strong>In-memory positions</strong>: Growth/Degen positions lost on backend restart</li>
-                        <li>• <strong>Yield vault</strong>: rebalance credits vault PDA; Kamino uses Kamino wallet (one funded wallet per deployment)</li>
+                        <li>• <strong>Position persistence</strong>: Growth/Degen/Yield positions are now written on-chain via Memo transactions (no DB)</li>
                         <li>• <strong>Rate limit</strong>: in-memory; use Redis for multiple backend instances</li>
                         <li>• <strong>Token mints</strong>: set real ORE, ANON, JIM, POKI mints or fallbacks may be wrong</li>
                       </ul>
@@ -559,15 +558,15 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         </p>
                       </ShadowCard>
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
-                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">In-memory positions</h5>
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Position persistence</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
-                          Persist Growth/Degen positions in a DB (e.g. Postgres or Redis) keyed by vault id and wallet, or derive positions from on-chain token accounts where possible. Rebuild state on startup from DB/chain.
+                          Positions are now persisted on-chain via Memo transactions (Growth/Degen/Yield). This removes the need for a database while keeping vault state portable across devices and server restarts.
                         </p>
                       </ShadowCard>
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
-                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Yield vault vs PDA</h5>
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Yield vault signing</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
-                          Either (a) document and keep the current model (one funded Kamino wallet per deployment; “yield vault” = that wallet’s Kamino position), or (b) support vault PDA as Kamino depositor via programmatic signer and wire custody.
+                          Kamino deposits/withdrawals are returned as unsigned transactions and signed by the user wallet in the frontend. This removes the per-deployment funded Kamino wallet requirement.
                         </p>
                       </ShadowCard>
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
@@ -579,7 +578,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50 md:col-span-2">
                         <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Env & operations</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
-                          Production env: mainnet RPC, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, all RADR token mints set, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>, API and wallet keys in secrets manager. Fund server and Kamino wallets; optional: runbooks and monitoring for rebalance and withdraw flows.
+                          Production env: mainnet RPC, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, all RADR token mints set, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>, API and wallet keys in secrets manager. Optional: runbooks and monitoring for rebalance and withdraw flows.
                         </p>
                       </ShadowCard>
                     </div>

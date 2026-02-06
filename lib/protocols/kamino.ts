@@ -10,6 +10,7 @@ import { KaminoMarket, KaminoAction, VanillaObligation } from '@kamino-finance/k
 import { LendingPosition, TxResult } from './types.js';
 import * as fs from 'fs';
 import { logger } from '../logger.js';
+import { createPositionMemoInstruction, reconstructPositions } from '../positionMemo.js';
 
 const KAMINO_MAIN_MARKET = new PublicKey('7u3HeHxYDLhnCoErrtycNokbQYbWGzLs6JSDqGAv5PfF');
 const USD1_MINT = new PublicKey('USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB'); // Correct USD1 mint
@@ -19,6 +20,7 @@ const getRpcUrl = () => process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.
 const connection = new Connection(getRpcUrl(), 'confirmed');
 
 const positionCache: Map<string, LendingPosition> = new Map();
+const positionsLoaded: Set<string> = new Set();
 
 const log = (msg: string) => logger.info(msg, "Kamino");
 
@@ -102,6 +104,37 @@ async function getStablecoinReserve(market: KaminoMarket): Promise<{ mint: Publi
 }
 
 /**
+ * Restore positions from on-chain memos (no DB)
+ * Uses memo history to rebuild deposited amount for USD1/USDC.
+ */
+export async function loadPositionsFromChain(walletAddress: string, strategy: string = "USD1-LENDING"): Promise<void> {
+    const cacheKey = `${walletAddress}:${strategy}`;
+    if (positionsLoaded.has(cacheKey)) return;
+
+    try {
+        const positions = await reconstructPositions(connection, walletAddress, 'yield');
+        if (positions.length > 0) {
+            const totalDeposited = positions.reduce((sum, p) => sum + p.amount, 0);
+            const symbol = positions[0]?.tokenSymbol || "USD1";
+            const apy = await getCurrentAPY(strategy);
+
+            positionCache.set(cacheKey, {
+                protocol: "Kamino",
+                asset: symbol,
+                deposited: totalDeposited,
+                currentValue: totalDeposited,
+                apy,
+                earnedYield: 0
+            });
+        }
+    } catch (error) {
+        logger.warn("Failed to restore Kamino positions from memos", "Kamino");
+    } finally {
+        positionsLoaded.add(cacheKey);
+    }
+}
+
+/**
  * Deposit into Kamino lending pool
  * 
  * Two modes:
@@ -150,6 +183,7 @@ export async function deposit(
         transaction.add(...depositAction.lendingIxs);
         transaction.add(...depositAction.cleanupIxs);
 
+
         // Get recent blockhash
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
@@ -180,6 +214,19 @@ export async function deposit(
         } else {
             // USER WALLET MODE: Return unsigned transaction for frontend signing
             log("Returning unsigned transaction for user signing");
+
+            // Attach on-chain memo for yield position persistence (no DB)
+            transaction.add(
+                createPositionMemoInstruction(walletPubkey, {
+                    vault: 'yield',
+                    action: 'add',
+                    tokenSymbol: symbol,
+                    tokenMint: mint.toBase58(),
+                    amount,
+                    priceUSD: 1,
+                    timestamp: Date.now()
+                })
+            );
 
             const serialized = transaction.serialize({ requireAllSignatures: false });
             const base64Tx = serialized.toString('base64');
@@ -319,6 +366,19 @@ export async function withdraw(
         } else {
             // USER WALLET MODE: Return unsigned transaction for frontend signing
             log("Returning unsigned transaction for user signing");
+
+            // Attach on-chain memo for yield position persistence (no DB)
+            transaction.add(
+                createPositionMemoInstruction(walletPubkey, {
+                    vault: 'yield',
+                    action: 'reduce',
+                    tokenSymbol: symbol,
+                    tokenMint: mint.toBase58(),
+                    amount,
+                    priceUSD: 1,
+                    timestamp: Date.now()
+                })
+            );
 
             const serialized = transaction.serialize({ requireAllSignatures: false });
             const base64Tx = serialized.toString('base64');

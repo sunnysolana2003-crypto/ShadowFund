@@ -8,7 +8,7 @@
  */
 
 import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { createMemoInstruction } from '@solana/spl-memo';
+import { MEMO_PROGRAM_ID } from '@solana/spl-memo';
 import { logger } from './logger.js';
 
 const MEMO_PREFIX = 'SHADOWFUND';
@@ -16,7 +16,7 @@ const log = (msg: string) => logger.info(msg, 'PositionMemo');
 
 // Position data stored in memo
 export interface PositionMemo {
-    vault: 'growth' | 'degen';
+    vault: 'growth' | 'degen' | 'yield';
     action: 'open' | 'close' | 'add' | 'reduce';
     tokenSymbol: string;
     tokenMint: string;
@@ -41,7 +41,8 @@ export interface ReconstructedPosition {
  */
 export function createPositionMemoInstruction(
     wallet: PublicKey,
-    data: Omit<PositionMemo, 'signature'>
+    data: Omit<PositionMemo, 'signature'>,
+    requireSigner: boolean = true
 ): TransactionInstruction {
     const memoString = [
         MEMO_PREFIX,
@@ -54,7 +55,17 @@ export function createPositionMemoInstruction(
         data.timestamp.toString()
     ].join('|');
 
-    return createMemoInstruction(memoString, [wallet]);
+    return new TransactionInstruction({
+        programId: MEMO_PROGRAM_ID,
+        keys: [
+            {
+                pubkey: wallet,
+                isSigner: requireSigner,
+                isWritable: false
+            }
+        ],
+        data: Buffer.from(memoString, 'utf8')
+    });
 }
 
 /**
@@ -63,10 +74,33 @@ export function createPositionMemoInstruction(
 export function addPositionMemoToTransaction(
     transaction: Transaction,
     wallet: PublicKey,
-    data: Omit<PositionMemo, 'signature'>
+    data: Omit<PositionMemo, 'signature'>,
+    requireSigner: boolean = true
 ): Transaction {
-    const memoIx = createPositionMemoInstruction(wallet, data);
+    const memoIx = createPositionMemoInstruction(wallet, data, requireSigner);
     transaction.add(memoIx);
+    return transaction;
+}
+
+/**
+ * Build a standalone memo transaction (useful for user-signed memo-only txs)
+ */
+export async function buildPositionMemoTransaction(
+    connection: Connection,
+    wallet: PublicKey,
+    memos: Array<Omit<PositionMemo, 'signature'>>,
+    requireSigner: boolean = true
+): Promise<Transaction> {
+    const transaction = new Transaction();
+
+    for (const memo of memos) {
+        transaction.add(createPositionMemoInstruction(wallet, memo, requireSigner));
+    }
+
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = wallet;
+
     return transaction;
 }
 
@@ -101,7 +135,7 @@ function parseMemoString(memo: string, signature: string): PositionMemo | null {
 export async function queryPositionMemos(
     connection: Connection,
     wallet: string,
-    vault?: 'growth' | 'degen',
+    vault?: 'growth' | 'degen' | 'yield',
     limit: number = 100
 ): Promise<PositionMemo[]> {
     try {
@@ -178,7 +212,7 @@ export async function queryPositionMemos(
 export async function reconstructPositions(
     connection: Connection,
     wallet: string,
-    vault: 'growth' | 'degen'
+    vault: 'growth' | 'degen' | 'yield'
 ): Promise<ReconstructedPosition[]> {
     log(`Reconstructing ${vault} positions from on-chain memos`);
 

@@ -36,12 +36,14 @@ class YieldVaultStrategy implements YieldStrategy {
     }
 
     async getBalance(walletAddress: string): Promise<number> {
+        await kamino.loadPositionsFromChain(walletAddress);
         const position = kamino.getPosition(walletAddress);
         return position?.deposited || 0;
     }
 
     async getValue(walletAddress: string): Promise<number> {
         // Accrue any pending yield first
+        await kamino.loadPositionsFromChain(walletAddress);
         kamino.accrueYield(walletAddress);
         return kamino.getTotalValue(walletAddress);
     }
@@ -51,6 +53,7 @@ class YieldVaultStrategy implements YieldStrategy {
     }
 
     async getEarnedYield(walletAddress: string): Promise<number> {
+        await kamino.loadPositionsFromChain(walletAddress);
         kamino.accrueYield(walletAddress);
         return kamino.getTotalEarned(walletAddress);
     }
@@ -67,10 +70,12 @@ class YieldVaultStrategy implements YieldStrategy {
     }
 
     async getPositions(walletAddress: string): Promise<LendingPosition[]> {
+        await kamino.loadPositionsFromChain(walletAddress);
         return kamino.getAllPositions(walletAddress);
     }
 
     async getStatus(walletAddress: string): Promise<VaultStatus> {
+        await kamino.loadPositionsFromChain(walletAddress);
         kamino.accrueYield(walletAddress);
 
         const deposited = await this.getBalance(walletAddress);
@@ -100,10 +105,13 @@ export async function executeYieldStrategy(
 ): Promise<StrategyExecutionResult> {
     log("Executing strategy");
 
+    await kamino.loadPositionsFromChain(walletAddress);
+
     const currentValue = await yieldStrategy.getValue(walletAddress);
     const difference = targetAmount - currentValue;
 
     const txSignatures: string[] = [];
+    const unsignedTxs: string[] = [];
 
     if (Math.abs(difference) > 1) { // Only act if difference > $1
         if (difference > 0) {
@@ -113,12 +121,18 @@ export async function executeYieldStrategy(
             if (depositResult.txSignature) {
                 txSignatures.push(depositResult.txSignature);
             }
+            if ((depositResult as any).unsigned_tx_base64) {
+                unsignedTxs.push((depositResult as any).unsigned_tx_base64);
+            }
         } else {
             // Need to withdraw
             log("Withdrawing");
             const withdrawResult = await yieldStrategy.withdraw(walletAddress, Math.abs(difference));
             if (withdrawResult.txSignature) {
                 txSignatures.push(withdrawResult.txSignature);
+            }
+            if ((withdrawResult as any).unsigned_tx_base64) {
+                unsignedTxs.push((withdrawResult as any).unsigned_tx_base64);
             }
         }
     }
@@ -135,6 +149,7 @@ export async function executeYieldStrategy(
         amountIn: targetAmount,
         amountOut: finalValue,
         txSignatures,
+        unsignedTxs: unsignedTxs.length > 0 ? unsignedTxs : undefined,
         positions,
         timestamp: Date.now()
     };

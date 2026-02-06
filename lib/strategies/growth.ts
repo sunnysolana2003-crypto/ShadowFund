@@ -15,7 +15,8 @@ import { logger } from "../logger.js";
 import { 
     reconstructPositions, 
     ReconstructedPosition,
-    PositionMemo 
+    PositionMemo,
+    buildPositionMemoTransaction
 } from "../positionMemo.js";
 
 const log = (msg: string) => logger.info(msg, "GROWTH");
@@ -178,12 +179,25 @@ class GrowthVaultStrategy implements GrowthStrategy {
         // Store pending memos to be attached to transaction
         pendingMemos.set(walletAddress, memos);
 
+        let memoTxBase64: string | undefined;
+        if (memos.length > 0) {
+            try {
+                const walletPubkey = new PublicKey(walletAddress);
+                const memoTx = await buildPositionMemoTransaction(connection, walletPubkey, memos);
+                const serialized = memoTx.serialize({ requireAllSignatures: false });
+                memoTxBase64 = serialized.toString('base64');
+            } catch {
+                log("Memo transaction build failed");
+            }
+        }
+
         log("Growth distribution complete");
 
         return {
             success: true,
             txSignature: txSignatures.join(","),
             positionMemos: memos,
+            memo_tx_base64: memoTxBase64,
             timestamp: Date.now()
         };
     }
@@ -270,6 +284,17 @@ class GrowthVaultStrategy implements GrowthStrategy {
         // Store pending memos
         const existingMemos = pendingMemos.get(walletAddress) || [];
         pendingMemos.set(walletAddress, [...existingMemos, ...memos]);
+
+        if (memos.length > 0) {
+            try {
+                const walletPubkey = new PublicKey(walletAddress);
+                const memoTx = await buildPositionMemoTransaction(connection, walletPubkey, memos);
+                const serialized = memoTx.serialize({ requireAllSignatures: false });
+                unsignedTxs.push(serialized.toString('base64'));
+            } catch {
+                log("Memo transaction build failed");
+            }
+        }
 
         return {
             success: true,
@@ -441,6 +466,7 @@ export async function executeGrowthStrategy(
     const difference = targetAmount - currentValue;
 
     const txSignatures: string[] = [];
+    const unsignedTxs: string[] = [];
 
     if (difference > 10) {
         // Need to buy more
@@ -449,12 +475,18 @@ export async function executeGrowthStrategy(
         if (depositResult.txSignature) {
             txSignatures.push(...depositResult.txSignature.split(","));
         }
+        if ((depositResult as any).memo_tx_base64) {
+            unsignedTxs.push((depositResult as any).memo_tx_base64);
+        }
     } else if (difference < -10) {
         // Need to sell
         log("Selling tokens");
         const withdrawResult = await growthStrategy.withdraw(walletAddress, Math.abs(difference));
         if (withdrawResult.txSignature) {
             txSignatures.push(...withdrawResult.txSignature.split(","));
+        }
+        if (withdrawResult.unsigned_txs && withdrawResult.unsigned_txs.length > 0) {
+            unsignedTxs.push(...withdrawResult.unsigned_txs);
         }
     }
 
@@ -473,6 +505,7 @@ export async function executeGrowthStrategy(
         amountIn: targetAmount,
         amountOut: finalValue,
         txSignatures: txSignatures.filter(Boolean),
+        unsignedTxs: unsignedTxs.length > 0 ? unsignedTxs : undefined,
         positions: positionsList,
         timestamp: Date.now()
     };

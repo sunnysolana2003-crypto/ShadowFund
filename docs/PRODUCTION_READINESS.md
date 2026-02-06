@@ -24,25 +24,23 @@
 ### 1. **Growth / Degen: Real Swaps (Deposit) — Done**
 
 - **Growth** and **Degen** now call `jupiter.executeSwap()` on **deposit** (USD1 → token). When server wallet is configured and not on devnet, real swaps execute; otherwise simulated.
-- **Withdraw** (token → USD1) remains simulated: Jupiter layer uses 6-decimal amount; token→USD1 would need amount in token smallest units. Positions still in-memory (lost on restart).
-- **Remaining:** Persist positions (DB/chain) and/or wire token→USD1 withdraw with correct decimals if desired.
+- **Withdraw** (token → USD1) remains simulated: Jupiter layer uses 6-decimal amount; token→USD1 would need amount in token smallest units.
+- **Positions:** Growth/Degen positions are now persisted on-chain via Memo transactions (no DB).
 
 ### 2. **Growth Vault: Type / Config — Fixed**
 
 - `growth.ts` now uses only **SOL / WETH / WBTC** from `types.ts` (`GROWTH_ALLOCATION` and `TOKENS`). RADR/ORE/ANON references removed; no runtime error.
 
-### 3. **Yield Vault: Wallet vs Vault PDA** (documented)
+### 3. **Yield Vault: User-Signed Kamino**
 
 - Rebalance moves USD1 to the **yield vault PDA** via `moveUSD1`.
-- Kamino is called with the **user wallet** (`kamino.deposit(walletAddress, ...)`), not the vault PDA.
-- So ShadowWire “yield vault” balance and Kamino position are **different** (PDA vs user wallet). Yield strategy balance is Kamino-by-user-wallet only.
-- **Production need:** Decide model: either (a) lend from user wallet only and treat “yield vault” as that Kamino position, or (b) support vault PDA as Kamino depositor (programmatic signer / custody) and wire it.
+- Kamino deposits/withdrawals are returned as **unsigned transactions** and signed by the **user wallet** in the frontend.
+- This removes the requirement for a funded server/Kamino wallet per deployment.
 
-### 4. **Kamino: Server Wallet Required**
+### 4. **Kamino: Server Wallet Optional**
 
-- Kamino builds and sends **signed** transactions. It uses a server-side keypair (`KAMINO_WALLET_KEYPAIR_PATH` or `KAMINO_WALLET_PRIVATE_KEY`).
-- If missing, code uses an **ephemeral** keypair — deposits/withdrawals are not tied to a persistent funded wallet.
-- **Production need:** Configure a dedicated, funded server wallet for Kamino and secure the key material (e.g. secrets manager).
+- Kamino now supports **user-signed** transactions (no funded server wallet required).
+- If you prefer server-signed ops, you can still configure `KAMINO_WALLET_*` and keep keys in a secrets manager.
 
 ### 5. **Jupiter: Demo / Devnet = No Real Swap**
 
@@ -53,8 +51,8 @@
 ### 6. **Persistence**
 
 - **ShadowWire mock:** In-memory balances; lost on restart.
-- **Growth/Degen:** In-memory positions; lost on restart.
-- **Kamino:** In-memory position cache; reload from chain on startup.
+- **Growth/Degen/Yield:** Positions are written on-chain via Memo transactions; no DB required.
+- **Kamino:** Cache is restored from memo history on startup.
 - **Rate limit:** In-memory; does not survive multi-instance scaling.
 - **Production need:** For production, either (a) rely on on-chain + ShadowWire state only (no in-memory position maps), or (b) add a DB/cache (e.g. Redis/DB) for positions and rate limits; replace mock with real ShadowWire so balances are on-chain.
 
@@ -73,23 +71,22 @@
 |-----------|----------------|------------|
 | ShadowWire | Mock or real (configurable) | Real only; `SHADOWWIRE_MOCK=false` |
 | Reserve | ✅ | ✅ |
-| Yield | ✅ (Kamino + user wallet) | ⚠️ Wallet vs PDA model + server wallet |
-| Growth | Real swap on deposit (SOL/WETH/WBTC); in-memory positions | Persist positions; real withdraw (token→USD1) if needed |
-| Degen | Real swap on deposit (SOL/BONK/RADR); in-memory positions | Persist positions; real withdraw if needed |
+| Yield | ✅ (Kamino + user wallet) | ✅ User-signed Kamino txs; no server wallet required |
+| Growth | Real swap on deposit (SOL/WETH/WBTC); on-chain memo positions | Real withdraw (token→USD1) if needed |
+| Degen | Real swap on deposit (SOL/BONK/RADR); on-chain memo positions | Real withdraw if needed |
 | Rebalance USD1 moves | ✅ (PDA fix applied) | ✅ |
-| Kamino | Works if wallet configured | Funded server wallet required |
+| Kamino | Works if wallet configured | User-signed by default; server wallet optional |
 | Jupiter | Quote + simulated swap | Real swap on mainnet with wallet |
 | Rate limit | In-memory | Redis for multi-instance |
-| Positions / mock state | In-memory | On-chain or DB |
+| Positions / mock state | On-chain memos (Growth/Degen/Yield) | On-chain memos (no DB) |
 
 ---
 
 ## Recommended Order to Reach Production
 
 1. **Fix Growth types** — Align `growth.ts` with `types.ts` (SOL/WETH/WBTC) or add RADR/ORE/ANON and allocation.
-2. **Decide Yield model** — Document whether yield = user-wallet Kamino only or vault-PDA custody; configure server wallet for Kamino.
-3. **Wire real Jupiter in Growth/Degen** — Call `executeSwap()` in deposit/withdraw; use a funded signer (server or user-delegated).
-4. **Remove or replace in-memory state** — Use real ShadowWire (no mock) so balances are on-chain; persist Growth/Degen positions in DB or derive from chain if possible.
+2. **Wire real Jupiter in Growth/Degen** — Call `executeSwap()` in deposit/withdraw; use a funded signer (server or user-delegated).
+3. **Remove or replace in-memory state** — Use real ShadowWire (no mock) so balances are on-chain.
 5. **Production env** — Mainnet RPC, `SHADOWWIRE_MOCK=false`, `CORS_ORIGINS`, all API keys and wallet keys in secrets.
 6. **Rate limit** — Move to Redis (or equivalent) if running multiple backend instances.
 

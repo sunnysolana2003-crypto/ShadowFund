@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, VersionedTransaction, clusterApiUrl } from '@solana/web3.js';
+import { Connection, VersionedTransaction, Transaction, clusterApiUrl } from '@solana/web3.js';
 import { api, Treasury, AIStrategy, RebalanceResult, Allocation, VaultStats } from '../services/api';
 import bs58 from 'bs58';
 
@@ -92,6 +92,33 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
     const [isDepositing, setIsDepositing] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [isWithdrawingFromVault, setIsWithdrawingFromVault] = useState<string | null>(null);
+
+    const sendUnsignedTransaction = useCallback(async (base64Tx: string) => {
+        if (!sendTransaction) {
+            throw new Error("Wallet not ready to sign transactions");
+        }
+
+        const txData = Buffer.from(base64Tx, 'base64');
+        let transaction: VersionedTransaction | Transaction;
+
+        try {
+            transaction = VersionedTransaction.deserialize(txData);
+        } catch {
+            transaction = Transaction.from(txData);
+        }
+
+        const signature = await sendTransaction(transaction, connection);
+
+        for (let i = 0; i < 30; i++) {
+            const status = await connection.getSignatureStatus(signature);
+            if (status.value?.confirmationStatus === 'confirmed' || status.value?.confirmationStatus === 'finalized') {
+                break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        return signature;
+    }, [sendTransaction]);
 
     useEffect(() => {
         let isMounted = true;
@@ -195,6 +222,12 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
                 signatureData ? { ...signatureData, action: "rebalance" } : undefined
             );
 
+            if (result.execution?.unsignedTxs && result.execution.unsignedTxs.length > 0) {
+                for (const unsignedTx of result.execution.unsignedTxs) {
+                    await sendUnsignedTransaction(unsignedTx);
+                }
+            }
+
             if (result.vaultStats) {
                 setVaultStats({ loading: false, error: null, data: result.vaultStats });
             }
@@ -207,7 +240,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsRebalancing(false);
         }
-    }, [wallet.address, wallet.risk, signMessage, fetchTreasury]);
+    }, [wallet.address, wallet.risk, signMessage, fetchTreasury, sendUnsignedTransaction]);
 
     const deposit = useCallback(async (amount: number): Promise<boolean> => {
         if (!wallet.address || !sendTransaction) return false;
@@ -217,17 +250,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
             const response = await api.deposit(wallet.address, amount, signatureData || undefined);
 
             if (response.result?.unsigned_tx_base64) {
-                const txData = Buffer.from(response.result.unsigned_tx_base64, 'base64');
-                const transaction = VersionedTransaction.deserialize(txData);
-                const signature = await sendTransaction(transaction, connection);
-
-                for (let i = 0; i < 30; i++) {
-                    const status = await connection.getSignatureStatus(signature);
-                    if (status.value?.confirmationStatus === 'confirmed' || status.value?.confirmationStatus === 'finalized') {
-                        break;
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                await sendUnsignedTransaction(response.result.unsigned_tx_base64);
             }
 
             await fetchTreasury();
@@ -237,7 +260,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsDepositing(false);
         }
-    }, [wallet.address, signMessage, fetchTreasury, sendTransaction]);
+    }, [wallet.address, signMessage, fetchTreasury, sendUnsignedTransaction]);
 
     const withdraw = useCallback(async (amount: number): Promise<boolean> => {
         if (!wallet.address || !sendTransaction) return false;
@@ -247,17 +270,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
             const response = await api.withdraw(wallet.address, amount, signatureData || undefined);
 
             if (response.result?.unsigned_tx_base64) {
-                const txData = Buffer.from(response.result.unsigned_tx_base64, 'base64');
-                const transaction = VersionedTransaction.deserialize(txData);
-                const signature = await sendTransaction(transaction, connection);
-
-                for (let i = 0; i < 30; i++) {
-                    const status = await connection.getSignatureStatus(signature);
-                    if (status.value?.confirmationStatus === 'confirmed' || status.value?.confirmationStatus === 'finalized') {
-                        break;
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
+                await sendUnsignedTransaction(response.result.unsigned_tx_base64);
             }
 
             await fetchTreasury();
@@ -267,7 +280,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsWithdrawing(false);
         }
-    }, [wallet.address, signMessage, fetchTreasury, sendTransaction]);
+    }, [wallet.address, signMessage, fetchTreasury, sendUnsignedTransaction]);
 
     const withdrawFromVault = useCallback(async (
         vault: "reserve" | "yield" | "growth" | "degen",
@@ -282,18 +295,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
             // Handle unsigned transactions that need user signing
             if (response.unsigned_txs && response.unsigned_txs.length > 0) {
                 for (const unsignedTx of response.unsigned_txs) {
-                    const txData = Buffer.from(unsignedTx, 'base64');
-                    const transaction = VersionedTransaction.deserialize(txData);
-                    const signature = await sendTransaction(transaction, connection);
-
-                    // Wait for confirmation
-                    for (let i = 0; i < 30; i++) {
-                        const status = await connection.getSignatureStatus(signature);
-                        if (status.value?.confirmationStatus === 'confirmed' || status.value?.confirmationStatus === 'finalized') {
-                            break;
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
+                    await sendUnsignedTransaction(unsignedTx);
                 }
             }
 
@@ -304,7 +306,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsWithdrawingFromVault(null);
         }
-    }, [wallet.address, signMessage, fetchTreasury, sendTransaction]);
+    }, [wallet.address, signMessage, fetchTreasury, sendUnsignedTransaction]);
 
     const value: ShadowFundContextType = {
         wallet,
