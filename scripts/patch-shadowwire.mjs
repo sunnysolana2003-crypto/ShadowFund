@@ -30,6 +30,7 @@ if (!wasmEntry) {
 }
 
 const wasmEntryExt = path.extname(wasmEntry);
+const wasmEntryPath = path.join(wasmDir, wasmEntry);
 
 // If the wasm entry is .js, make sure the wasm folder is ESM
 if (wasmEntryExt === ".js") {
@@ -62,6 +63,34 @@ if (fs.existsSync(rootPkgPath)) {
         }
     } catch {
         log("Failed to adjust root package.json type.");
+    }
+}
+
+function patchWasmEntry(filePath) {
+    try {
+        let src = fs.readFileSync(filePath, "utf8");
+        if (src.includes("__shadowwire_node_shim__")) return false;
+
+        // Only patch when it looks like the module expects Node helpers.
+        const looksLikeNode = src.includes("Node.js require not available") || src.includes("require(") || src.includes("__dirname");
+        if (!looksLikeNode) return false;
+
+        const shim = [
+            "// __shadowwire_node_shim__",
+            "import { createRequire as __shadowwireCreateRequire } from \"node:module\";",
+            "import { fileURLToPath as __shadowwireFileURLToPath } from \"node:url\";",
+            "import { dirname as __shadowwireDirname } from \"node:path\";",
+            "const require = typeof globalThis.require === \"function\" ? globalThis.require : __shadowwireCreateRequire(import.meta.url);",
+            "const __filename = __shadowwireFileURLToPath(import.meta.url);",
+            "const __dirname = __shadowwireDirname(__filename);",
+            "",
+        ].join("\n");
+
+        src = shim + src;
+        fs.writeFileSync(filePath, src, "utf8");
+        return true;
+    } catch {
+        return false;
     }
 }
 
@@ -122,6 +151,11 @@ function patchFile(filePath) {
 
 let patched = 0;
 if (fs.existsSync(distDir)) {
+    if (patchWasmEntry(wasmEntryPath)) {
+        patched += 1;
+        log(`Patched ${path.basename(wasmEntryPath)} with Node shim for require/__dirname.`); 
+    }
+
     const walk = (dir) => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         for (const entry of entries) {

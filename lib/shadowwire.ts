@@ -1,4 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
+import { createRequire } from "node:module";
 import { connection } from "./rpc.js";
 import { config } from "./config.js";
 import { MockShadowWireClient, MockTokenUtils } from "./shadowwire-mock.js";
@@ -40,6 +41,8 @@ let sdkPromise: Promise<ShadowwireSdk | null> | null = null;
 let clientPromise: Promise<any> | null = null;
 let tokenUtilsImpl = MockTokenUtils;
 
+const nodeRequire = createRequire(import.meta.url);
+
 async function fetchShadowwireBalance(wallet: string, tokenMint: string): Promise<any | null> {
     try {
         const url = `${SHADOWWIRE_API_BASE}/pool/balance/${wallet}?token_mint=${tokenMint}`;
@@ -73,8 +76,30 @@ async function loadShadowwireSdk(): Promise<ShadowwireSdk | null> {
 
     sdkPromise = (async () => {
         try {
-            const mod = await import("@radr/shadowwire");
-            return mod as unknown as ShadowwireSdk;
+            // Prefer CommonJS entrypoints first to avoid ESM/require WASM issues.
+            const requireCandidates = [
+                "@radr/shadowwire/dist/index.cjs",
+                "@radr/shadowwire/dist/index.js",
+                "@radr/shadowwire"
+            ];
+
+            let lastError: unknown = null;
+            for (const spec of requireCandidates) {
+                try {
+                    const mod = nodeRequire(spec);
+                    return mod as ShadowwireSdk;
+                } catch (err) {
+                    lastError = err;
+                }
+            }
+
+            // Fallback to ESM import if require-based loading fails.
+            try {
+                const mod = await import("@radr/shadowwire");
+                return mod as unknown as ShadowwireSdk;
+            } catch (err) {
+                throw lastError || err;
+            }
         } catch (error) {
             if (getRuntimeMode() === "real") {
                 throw error;
