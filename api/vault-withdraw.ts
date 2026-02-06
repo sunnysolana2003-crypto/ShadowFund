@@ -5,8 +5,11 @@
  * Withdraws funds from a specific vault back to the shielded USD1 pool.
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { strategies } from '../lib/strategies';
+import type { NextApiRequest, NextApiResponse } from '../types/api';
+import { reserveStrategy } from '../lib/strategies/reserve';
+import { yieldStrategy } from '../lib/strategies/yield';
+import { growthStrategy } from '../lib/strategies/growth';
+import { degenStrategy } from '../lib/strategies/degen';
 import { shadowwire } from '../lib/shadowwire';
 import { logger } from '../lib/logger';
 
@@ -51,6 +54,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         log(`Vault withdrawal request: ${vault}`);
 
+        const strategies = {
+            reserve: reserveStrategy,
+            yield: yieldStrategy,
+            growth: growthStrategy,
+            degen: degenStrategy
+        };
+
         const strategy = strategies[vault];
         if (!strategy) {
             return res.status(400).json({ error: `Strategy not found for vault: ${vault}` });
@@ -76,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // For non-reserve vaults, tokens are swapped to USD1
         // The USD1 is now back in the shielded pool
         let usd1Received = amount;
-        
+
         // Growth/Degen return actual USD1 received from swaps
         if ('totalUSD1' in result && result.totalUSD1) {
             usd1Received = result.totalUSD1;

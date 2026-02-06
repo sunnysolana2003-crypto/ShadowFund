@@ -1,5 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { verifySignature } from "../../utils/verifySignature";
+import type { NextApiRequest, NextApiResponse } from "../types/api";
+import { verifySignature } from "../utils/verifySignature";
 import { loadTreasury } from "../lib/treasury";
 import { getVaultAddress } from "../lib/vaults";
 import { moveUSD1, getUSD1Fees } from "../lib/usd1";
@@ -232,7 +232,7 @@ export default async function handler(
                 percentage: feeInfo.feePercentage,
                 minimum: feeInfo.minimumAmount
             },
-            duration: `${duration}ms`
+            duration: `${Date.now() - startTime}ms`
         };
 
         res.json(response);

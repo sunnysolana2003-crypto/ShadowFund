@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "../types/api";
 import { getAIStrategy, RiskProfile } from "../lib/ai";
 import { applyCors } from "../lib/cors";
 import logger from "../lib/logger";

@@ -80,11 +80,11 @@ export async function moveUSD1(
             success: true,
             txHash: (result as any)?.tx_signature || "pending"
         };
-    } catch {
+    } catch (err) {
         logger.error("Error moving USD1", "USD1");
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Transfer failed"
+            error: err instanceof Error ? err.message : "Transfer failed"
         };
     }
 }

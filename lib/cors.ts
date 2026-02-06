@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "../types/api";
 
 function parseOrigins(value: string | undefined): string[] {
     if (!value) return [];

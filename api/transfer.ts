@@ -1,5 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { verifySignature } from "../../utils/verifySignature";
+import type { NextApiRequest, NextApiResponse } from "../types/api";
+import { verifySignature } from "../utils/verifySignature";
 import { deposit, withdraw } from "../lib/shadowwire";
 import { getUSD1Fees } from "../lib/usd1";
 import { applyCors } from "../lib/cors";
