@@ -1,6 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from "../types/api";
-import { applyCors } from "../lib/cors";
-import { logger } from "../lib/logger";
+import type { NextApiRequest, NextApiResponse } from "../types/api.js";
+import { applyCors } from "../lib/cors.js";
+import { logger } from "../lib/logger.js";
 
 /**
  * Verify Transaction Proof

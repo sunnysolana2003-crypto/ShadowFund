@@ -1,8 +1,8 @@
-import type { NextApiRequest, NextApiResponse } from "../types/api";
-import { loadTreasury } from "../lib/treasury";
-import { RiskProfile } from "../lib/ai";
-import { applyCors } from "../lib/cors";
-import logger from "../lib/logger";
+import type { NextApiRequest, NextApiResponse } from "../types/api.js";
+import { loadTreasury } from "../lib/treasury.js";
+import { RiskProfile } from "../lib/ai.js";
+import { applyCors } from "../lib/cors.js";
+import logger from "../lib/logger.js";
 
 export default async function handler(
     req: NextApiRequest,

@@ -1,13 +1,13 @@
-import type { NextApiRequest, NextApiResponse } from "../types/api";
-import { verifySignature } from "../utils/verifySignature";
-import { loadTreasury } from "../lib/treasury";
-import { getVaultAddress } from "../lib/vaults";
-import { moveUSD1, getUSD1Fees } from "../lib/usd1";
-import { deposit, withdraw } from "../lib/shadowwire";
-import { getAIStrategy } from "../lib/ai";
-import { executeAllStrategies, getVaultStats, getAllTransactions } from "../lib/strategies";
-import { applyCors } from "../lib/cors";
-import { logger } from "../lib/logger";
+import type { NextApiRequest, NextApiResponse } from "../types/api.js";
+import { verifySignature } from "../utils/verifySignature.js";
+import { loadTreasury } from "../lib/treasury.js";
+import { getVaultAddress } from "../lib/vaults.js";
+import { moveUSD1, getUSD1Fees } from "../lib/usd1.js";
+import { deposit, withdraw } from "../lib/shadowwire.js";
+import { getAIStrategy } from "../lib/ai.js";
+import { executeAllStrategies, getVaultStats, getAllTransactions } from "../lib/strategies.js";
+import { applyCors } from "../lib/cors.js";
+import { logger } from "../lib/logger.js";
 
 function log(step: string, message: string) {
     logger.info(message, "REBALANCE", { step });

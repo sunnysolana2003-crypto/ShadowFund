@@ -1,13 +1,13 @@
-import type { NextApiRequest, NextApiResponse } from "../types/api";
-import { verifySignature } from "../utils/verifySignature";
-import { deposit, withdraw } from "../lib/shadowwire";
-import { getUSD1Fees } from "../lib/usd1";
-import { applyCors } from "../lib/cors";
-import { logger } from "../lib/logger";
+import type { NextApiRequest, NextApiResponse } from "../types/api.js";
+import { verifySignature } from "../utils/verifySignature.js";
+import { deposit, withdraw } from "../lib/shadowwire.js";
+import { getUSD1Fees } from "../lib/usd1.js";
+import { applyCors } from "../lib/cors.js";
+import { logger } from "../lib/logger.js";
 import {
     InsufficientBalanceError,
     TransferError
-} from "@radr/shadowwire";
+} from "@radr/shadowwire.js";
 
 export default async function handler(
     req: NextApiRequest,

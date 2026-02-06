@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from "../types/api";
+import type { NextApiRequest, NextApiResponse } from "../types/api.js";
 
 /**
  * Health check endpoint
