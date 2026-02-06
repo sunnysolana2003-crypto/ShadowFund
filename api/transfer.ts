@@ -4,7 +4,7 @@ import { deposit, withdraw } from "../lib/shadowwire.js";
 import { getUSD1Fees } from "../lib/usd1.js";
 import { applyCors } from "../lib/cors.js";
 import { logger } from "../lib/logger.js";
-import { withRuntimeMode } from "../lib/runtimeMode.js";
+import { getRuntimeMode, withRuntimeMode } from "../lib/runtimeMode.js";
 
 export default async function handler(
     req: NextApiRequest,
@@ -58,13 +58,17 @@ export default async function handler(
             });
         }
 
+        const runtimeMode = getRuntimeMode();
         let result;
         if (action === "deposit") {
             try {
                 result = await deposit(wallet, numAmount);
             } catch (sdkError: any) {
                 // If SDK fails with minimum error, use simulation
-                if (sdkError.message?.includes('below minimum') || sdkError.message?.includes('0.1000 SOL')) {
+                if (
+                    runtimeMode === "demo" &&
+                    (sdkError.message?.includes('below minimum') || sdkError.message?.includes('0.1000 SOL'))
+                ) {
                     logger.info("Deposit SDK fallback to simulation", "TRANSFER");
                     result = {
                         success: true,

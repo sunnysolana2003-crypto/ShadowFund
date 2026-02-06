@@ -8,7 +8,7 @@ import { getAIStrategy } from "../lib/ai/index.js";
 import { executeAllStrategies, getVaultStats, getAllTransactions } from "../lib/strategies/index.js";
 import { applyCors } from "../lib/cors.js";
 import { logger } from "../lib/logger.js";
-import { withRuntimeMode } from "../lib/runtimeMode.js";
+import { getRuntimeMode, withRuntimeMode } from "../lib/runtimeMode.js";
 
 function log(step: string, message: string) {
     logger.info(message, "REBALANCE", { step });
@@ -94,6 +94,7 @@ export default async function handler(
             const transfers = [];
             const usd1Errors = [];
             const feeInfo = getUSD1Fees();
+            const runtimeMode = getRuntimeMode();
 
             for (const vault of treasury.vaults) {
                 const targetPercent = allocation[vault.id as keyof typeof allocation];
@@ -122,13 +123,16 @@ export default async function handler(
                             throw new Error(result.error || 'Transfer failed');
                         }
                     } catch (moveError: any) {
-                        log("STEP 5", "Transfer simulation fallback");
-
-                        result = {
-                            success: true,
-                            txHash: `sim_${vault.id}_${Date.now()}`,
-                            demo: true,
-                        };
+                        if (runtimeMode === "demo") {
+                            log("STEP 5", "Transfer simulation fallback");
+                            result = {
+                                success: true,
+                                txHash: `sim_${vault.id}_${Date.now()}`,
+                                demo: true,
+                            };
+                        } else {
+                            throw moveError;
+                        }
                     }
 
                     if (result.success) {

@@ -69,43 +69,49 @@ function patchZkProofs(filePath) {
         return false;
     }
 
-    const requireRegex = /(const|let|var)\s+(\w+)\s*=\s*require\((['"])([^'"]*settler_wasm\.js)\3\);/;
-    const match = src.match(requireRegex);
-    if (!match) {
+    const helper = [
+        "// __shadowwire_dynamic_wasm__",
+        "function __shadowwireImport(path) {",
+        "  const mod = {};",
+        "  const ready = import(path).then((m) => Object.assign(mod, m));",
+        "  return new Proxy(mod, {",
+        "    get(_target, prop) {",
+        "      if (prop in mod) return mod[prop];",
+        "      return (...args) => ready.then(() => {",
+        "        const value = mod[prop];",
+        "        return typeof value === \"function\" ? value(...args) : value;",
+        "      });",
+        "    }",
+        "  });",
+        "}",
+        ""
+    ].join("\n");
+
+    const requireRegex = /require\((['"])([^'"]*settler_wasm\.js)\1\)/g;
+    if (!requireRegex.test(src)) {
         return false;
     }
 
-    const varName = match[2];
-    const relPath = match[4];
+    src = helper + src.replace(requireRegex, (_m, quote, relPath) => `__shadowwireImport(${quote}${relPath}${quote})`);
 
-    const loader = [
-        `// __shadowwire_dynamic_wasm__`,
-        `const ${varName}Module = {};`,
-        `let ${varName}Ready = import(${match[3]}${relPath}${match[3]}).then((mod) => Object.assign(${varName}Module, mod));`,
-        `const ${varName} = new Proxy(${varName}Module, {`,
-        `  get(_target, prop) {`,
-        `    if (prop in ${varName}Module) return ${varName}Module[prop];`,
-        `    return (...args) => ${varName}Ready.then(() => {`,
-        `      const value = ${varName}Module[prop];`,
-        `      return typeof value === "function" ? value(...args) : value;`,
-        `    });`,
-        `  }`,
-        `});`
-    ].join("\n");
-
-    src = src.replace(requireRegex, loader);
     fs.writeFileSync(filePath, src, "utf8");
     return true;
 }
 
 if (fs.existsSync(distDir)) {
     let patched = 0;
-    for (const entry of fs.readdirSync(distDir, { withFileTypes: true })) {
-        const filePath = path.join(distDir, entry.name);
-        if (entry.isFile() && entry.name.endsWith(".js")) {
-            if (patchZkProofs(filePath)) patched += 1;
+    const walk = (dir) => {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                walk(fullPath);
+            } else if (entry.isFile() && (entry.name.endsWith(".js") || entry.name.endsWith(".cjs"))) {
+                if (patchZkProofs(fullPath)) patched += 1;
+            }
         }
-    }
+    };
+    walk(distDir);
     if (patched > 0) {
         log(`Patched ${patched} zkProofs file(s) for dynamic wasm import.`);
     }

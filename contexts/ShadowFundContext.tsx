@@ -81,6 +81,14 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
 
     const isSimulationMode = runtimeMode === "demo";
 
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const stored = window.localStorage.getItem("shadowfund-mode");
+        if (stored !== runtimeMode) {
+            window.localStorage.setItem("shadowfund-mode", runtimeMode);
+        }
+    }, [runtimeMode]);
+
     const [wallet, setWallet] = useState<WalletState>({
         connected: false,
         address: null,

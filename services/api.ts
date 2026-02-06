@@ -147,8 +147,12 @@ class ShadowFundAPI {
     private getRuntimeHeaders(): Record<string, string> {
         if (typeof window === "undefined") return {};
         try {
-            const mode = window.localStorage.getItem("shadowfund-mode");
-            if (!mode) return {};
+            const stored = window.localStorage.getItem("shadowfund-mode");
+            const fallback =
+                (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SHADOWWIRE_MOCK === "true")
+                    ? "demo"
+                    : "real";
+            const mode = stored === "demo" || stored === "real" ? stored : fallback;
             return { "x-shadowfund-mode": mode };
         } catch {
             return {};
@@ -230,7 +234,10 @@ class ShadowFundAPI {
      */
     async verifyProof(txHash: string): Promise<ProofVerification> {
         const params = new URLSearchParams({ txHash });
-        const response = await fetch(`${this.baseUrl}/api/verify?${params}`);
+        const response = await fetch(
+            `${this.baseUrl}/api/verify?${params}`,
+            this.withRuntimeHeaders()
+        );
 
         if (!response.ok) {
             throw new Error(`Failed to verify proof: ${response.statusText}`);
