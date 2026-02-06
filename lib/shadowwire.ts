@@ -7,6 +7,7 @@ import { logger } from "./logger.js";
 import { getRuntimeMode } from "./runtimeMode.js";
 
 const USD1_MINT = TOKENS.USD1;
+const SHADOWWIRE_API_BASE = process.env.SHADOWWIRE_API_URL || "https://shadow.radr.fun/shadowpay/api";
 
 function isDevnet(): boolean {
     return (
@@ -38,6 +39,24 @@ let mockClient: MockShadowWireClient | null = null;
 let sdkPromise: Promise<ShadowwireSdk | null> | null = null;
 let clientPromise: Promise<any> | null = null;
 let tokenUtilsImpl = MockTokenUtils;
+
+async function fetchShadowwireBalance(wallet: string, tokenMint: string): Promise<any | null> {
+    try {
+        const url = `${SHADOWWIRE_API_BASE}/pool/balance/${wallet}?token_mint=${tokenMint}`;
+        const headers: Record<string, string> = {};
+        if (process.env.SHADOWWIRE_API_KEY) {
+            headers["x-api-key"] = process.env.SHADOWWIRE_API_KEY;
+        }
+
+        const response = await fetch(url, { headers });
+        if (!response.ok) {
+            return null;
+        }
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
 
 function getMockClient(): MockShadowWireClient {
     if (!mockClient) {
@@ -123,6 +142,17 @@ export const shadowwire = {
 // Helper to get USD1 balance for a wallet
 export async function getPrivateBalance(wallet: string): Promise<number> {
     try {
+        const direct = await fetchShadowwireBalance(wallet, USD1_MINT);
+        if (direct) {
+            const rawDirect =
+                typeof direct === "object"
+                    ? (direct.available ?? direct.balance ?? direct.amount ?? direct.deposited ?? 0)
+                    : direct;
+            if (typeof rawDirect === "number" || typeof rawDirect === "string") {
+                return Number(rawDirect) / 1_000_000;
+            }
+        }
+
         const client = await getShadowwireClient();
         const attempts: Array<() => Promise<any>> = [
             () => client.getBalance({ wallet, token: "USDC", token_mint: USD1_MINT }),
