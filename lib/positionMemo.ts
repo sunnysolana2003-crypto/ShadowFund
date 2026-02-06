@@ -14,6 +14,12 @@ import { logger } from './logger.js';
 const MEMO_PREFIX = 'SHADOWFUND';
 const log = (msg: string) => logger.info(msg, 'PositionMemo');
 
+// In-memory memo cache (serverless instance lifetime).
+// This avoids re-scanning the same wallet multiple times per request (yield + growth + degen),
+// which can easily trip public RPC rate limits (429).
+const MEMO_CACHE_TTL_MS = 30_000;
+const memoCache: Map<string, { fetchedAt: number; memos: PositionMemo[] }> = new Map();
+
 // Position data stored in memo
 export interface PositionMemo {
     vault: 'growth' | 'degen' | 'yield';
@@ -115,7 +121,7 @@ function parseMemoString(memo: string, signature: string): PositionMemo | null {
         }
 
         return {
-            vault: parts[1] as 'growth' | 'degen',
+            vault: parts[1] as 'growth' | 'degen' | 'yield',
             action: parts[2] as 'open' | 'close' | 'add' | 'reduce',
             tokenSymbol: parts[3],
             tokenMint: parts[4],
@@ -129,6 +135,94 @@ function parseMemoString(memo: string, signature: string): PositionMemo | null {
     }
 }
 
+async function rpcWithBackoff<T>(
+    fn: () => Promise<T>,
+    retries: number = 5,
+    delayMs: number = 500
+): Promise<T> {
+    try {
+        return await fn();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const isRateLimit =
+            message.includes("429") ||
+            message.toLowerCase().includes("too many requests") ||
+            message.toLowerCase().includes("rate limit");
+
+        if (!isRateLimit || retries <= 0) {
+            throw error;
+        }
+
+        // Exponential backoff with small jitter
+        const jitter = Math.floor(Math.random() * 150);
+        const sleep = delayMs + jitter;
+        await new Promise((r) => setTimeout(r, sleep));
+        return rpcWithBackoff(fn, retries - 1, Math.min(delayMs * 2, 8_000));
+    }
+}
+
+async function fetchAllPositionMemos(
+    connection: Connection,
+    wallet: string,
+    limit: number
+): Promise<PositionMemo[]> {
+    const cacheKey = `${wallet}:${limit}`;
+    const cached = memoCache.get(cacheKey);
+    const now = Date.now();
+    if (cached && now - cached.fetchedAt < MEMO_CACHE_TTL_MS) {
+        return cached.memos;
+    }
+
+    const walletPubkey = new PublicKey(wallet);
+
+    // Get recent transaction signatures for this wallet
+    const signatures = await rpcWithBackoff(() =>
+        connection.getSignaturesForAddress(walletPubkey, { limit })
+    );
+
+    if (signatures.length === 0) {
+        memoCache.set(cacheKey, { fetchedAt: now, memos: [] });
+        return [];
+    }
+
+    const memos: PositionMemo[] = [];
+
+    // Fetch transactions in batches
+    const batchSize = 20;
+    for (let i = 0; i < signatures.length; i += batchSize) {
+        const batch = signatures.slice(i, i + batchSize);
+        const txs = await rpcWithBackoff(() =>
+            connection.getParsedTransactions(
+                batch.map((s) => s.signature),
+                { maxSupportedTransactionVersion: 0 }
+            )
+        );
+
+        for (let j = 0; j < txs.length; j++) {
+            const tx = txs[j];
+            if (!tx?.meta?.logMessages) continue;
+
+            for (const logMsg of tx.meta.logMessages) {
+                if (logMsg.includes('Program log: Memo') || logMsg.includes(MEMO_PREFIX)) {
+                    const memoMatch = logMsg.match(/Memo \(len \d+\): "(.+)"/);
+                    if (memoMatch) {
+                        const parsed = parseMemoString(memoMatch[1], batch[j].signature);
+                        if (parsed) memos.push(parsed);
+                    }
+                    if (logMsg.includes(MEMO_PREFIX)) {
+                        const parsed = parseMemoString(logMsg, batch[j].signature);
+                        if (parsed) memos.push(parsed);
+                    }
+                }
+            }
+        }
+    }
+
+    const sorted = memos.sort((a, b) => a.timestamp - b.timestamp);
+    memoCache.set(cacheKey, { fetchedAt: now, memos: sorted });
+    return sorted;
+}
+
 /**
  * Query all position memos for a wallet from the blockchain
  */
@@ -140,62 +234,10 @@ export async function queryPositionMemos(
 ): Promise<PositionMemo[]> {
     try {
         log('Querying position memos from blockchain');
-
-        const walletPubkey = new PublicKey(wallet);
-
-        // Get recent transaction signatures for this wallet
-        const signatures = await connection.getSignaturesForAddress(
-            walletPubkey,
-            { limit }
-        );
-
-        if (signatures.length === 0) {
-            log('No transactions found');
-            return [];
-        }
-
-        log(`Found ${signatures.length} transactions, parsing memos...`);
-
-        const memos: PositionMemo[] = [];
-
-        // Fetch transactions in batches
-        const batchSize = 20;
-        for (let i = 0; i < signatures.length; i += batchSize) {
-            const batch = signatures.slice(i, i + batchSize);
-            const txs = await connection.getParsedTransactions(
-                batch.map(s => s.signature),
-                { maxSupportedTransactionVersion: 0 }
-            );
-
-            for (let j = 0; j < txs.length; j++) {
-                const tx = txs[j];
-                if (!tx?.meta?.logMessages) continue;
-
-                // Look for memo program logs
-                for (const logMsg of tx.meta.logMessages) {
-                    if (logMsg.includes('Program log: Memo') || logMsg.includes(MEMO_PREFIX)) {
-                        // Extract memo content
-                        const memoMatch = logMsg.match(/Memo \(len \d+\): "(.+)"/);
-                        if (memoMatch) {
-                            const parsed = parseMemoString(memoMatch[1], batch[j].signature);
-                            if (parsed && (!vault || parsed.vault === vault)) {
-                                memos.push(parsed);
-                            }
-                        }
-                        // Also check for raw memo content
-                        if (logMsg.includes(MEMO_PREFIX)) {
-                            const parsed = parseMemoString(logMsg, batch[j].signature);
-                            if (parsed && (!vault || parsed.vault === vault)) {
-                                memos.push(parsed);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        log(`Found ${memos.length} position memos`);
-        return memos.sort((a, b) => a.timestamp - b.timestamp);
+        const memos = await fetchAllPositionMemos(connection, wallet, limit);
+        const filtered = vault ? memos.filter((m) => m.vault === vault) : memos;
+        log(`Found ${filtered.length} position memos`);
+        return filtered;
 
     } catch (error) {
         logger.error('Failed to query position memos', 'PositionMemo');

@@ -151,9 +151,22 @@ function patchFile(filePath) {
 
 let patched = 0;
 if (fs.existsSync(distDir)) {
-    if (patchWasmEntry(wasmEntryPath)) {
-        patched += 1;
-        log(`Patched ${path.basename(wasmEntryPath)} with Node shim for require/__dirname.`); 
+    // Patch all ESM WASM glue files to provide Node helpers (require/__dirname).
+    // The ShadowWire package currently ships WASM glue as ESM, but some paths still
+    // expect Node semantics. This makes it work in Vercel's Node runtime.
+    try {
+        const wasmEntries = fs.readdirSync(wasmDir, { withFileTypes: true });
+        for (const entry of wasmEntries) {
+            if (!entry.isFile()) continue;
+            if (!(entry.name.endsWith(".js") || entry.name.endsWith(".mjs"))) continue;
+            const full = path.join(wasmDir, entry.name);
+            if (patchWasmEntry(full)) {
+                patched += 1;
+                log(`Patched wasm/${entry.name} with Node shim for require/__dirname.`);
+            }
+        }
+    } catch {
+        // non-fatal
     }
 
     const walk = (dir) => {

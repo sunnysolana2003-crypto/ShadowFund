@@ -42,6 +42,12 @@ let clientPromise: Promise<any> | null = null;
 let tokenUtilsImpl = MockTokenUtils;
 
 const nodeRequire = createRequire(import.meta.url);
+// Some dependencies (notably WASM loaders) still probe for a global `require`
+// even when running inside an ESM context. Vercel functions are ESM by default
+// in this repo, so proactively expose one.
+if (typeof (globalThis as any).require !== "function") {
+    (globalThis as any).require = nodeRequire;
+}
 
 async function fetchShadowwireBalance(wallet: string, tokenMint: string): Promise<any | null> {
     try {
@@ -87,7 +93,7 @@ async function loadShadowwireSdk(): Promise<ShadowwireSdk | null> {
             for (const spec of requireCandidates) {
                 try {
                     const mod = nodeRequire(spec);
-                    return mod as ShadowwireSdk;
+                    return mod as unknown as ShadowwireSdk;
                 } catch (err) {
                     lastError = err;
                 }
