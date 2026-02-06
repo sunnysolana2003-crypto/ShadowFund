@@ -123,9 +123,52 @@ export const shadowwire = {
 // Helper to get USD1 balance for a wallet
 export async function getPrivateBalance(wallet: string): Promise<number> {
     try {
-        const balanceResponse = await shadowwire.getBalance(wallet, "USDC");
-        // SDK returns an object with 'available' (current withdrawable) and 'deposited' (lifetime total)
-        const rawBalance = typeof balanceResponse === 'object' ? (balanceResponse as any).available || 0 : balanceResponse;
+        const client = await getShadowwireClient();
+        const attempts: Array<() => Promise<any>> = [
+            () => client.getBalance({ wallet, token: "USDC", token_mint: USD1_MINT }),
+            () => client.getBalance({ wallet, token: "USD1", token_mint: USD1_MINT }),
+            () => client.getBalance(wallet, "USDC", USD1_MINT),
+            () => client.getBalance(wallet, "USD1", USD1_MINT),
+            () => client.getBalance(wallet, "USDC"),
+            () => client.getBalance(wallet, "USD1")
+        ];
+
+        let balanceResponse: any = null;
+        let lastError: unknown = null;
+        for (const attempt of attempts) {
+            try {
+                balanceResponse = await attempt();
+                break;
+            } catch (err) {
+                lastError = err;
+            }
+        }
+
+        if (balanceResponse == null && lastError) {
+            throw lastError;
+        }
+
+        const extract = (value: any): number => {
+            if (value == null) return 0;
+            if (typeof value === "number") return value;
+            if (typeof value === "string") return Number(value) || 0;
+            if (typeof value === "object") {
+                const candidates = [
+                    value.available,
+                    value.balance,
+                    value.amount,
+                    value.deposited,
+                    value.total
+                ];
+                for (const candidate of candidates) {
+                    if (typeof candidate === "number") return candidate;
+                    if (typeof candidate === "string") return Number(candidate) || 0;
+                }
+            }
+            return 0;
+        };
+
+        const rawBalance = extract(balanceResponse);
 
         // Force manual conversion: atomic / 1e6
         return Number(rawBalance) / 1_000_000;
@@ -205,6 +248,7 @@ export async function privateTransfer(params: PrivateTransferParams) {
             recipient,
             amount,
             token: "USDC",
+            token_mint: USD1_MINT,
             type: "internal", // Hidden amount using ZK proofs
             wallet
         });
@@ -226,6 +270,7 @@ export async function externalTransfer(params: PrivateTransferParams) {
             recipient,
             amount,
             token: "USDC",
+            token_mint: USD1_MINT,
             type: "external",
             wallet
         });
