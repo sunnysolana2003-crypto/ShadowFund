@@ -1,4 +1,3 @@
-import { ShadowWireClient, TokenUtils } from "@radr/shadowwire";
 import { PublicKey } from "@solana/web3.js";
 import { connection } from "./rpc.js";
 import { config } from "./config.js";
@@ -23,14 +22,93 @@ function isMockMode(): boolean {
     return config.shadowwireMock === true;
 }
 
-// Initialize the ShadowWire client
-export const shadowwire: any = isMockMode()
-    ? new MockShadowWireClient({ network: shadowwireNetwork(), debug: process.env.NODE_ENV === "development" })
-    : new ShadowWireClient({
-        // @ts-ignore - SDK network enum is not typed for all values
-        network: shadowwireNetwork(),
-        debug: process.env.NODE_ENV === "development",
-    });
+type ShadowwireSdk = {
+    ShadowWireClient: new (options: { network: "devnet" | "mainnet"; debug?: boolean }) => any;
+    TokenUtils: {
+        toSmallestUnit: (amount: number, token: string) => number;
+        fromSmallestUnit: (amount: number, token: string) => number;
+    };
+};
+
+let mockClient: MockShadowWireClient | null = null;
+let sdkPromise: Promise<ShadowwireSdk | null> | null = null;
+let clientPromise: Promise<any> | null = null;
+let tokenUtilsImpl = MockTokenUtils;
+
+function getMockClient(): MockShadowWireClient {
+    if (!mockClient) {
+        mockClient = new MockShadowWireClient({
+            network: shadowwireNetwork(),
+            debug: process.env.NODE_ENV === "development"
+        });
+    }
+    return mockClient;
+}
+
+async function loadShadowwireSdk(): Promise<ShadowwireSdk | null> {
+    if (sdkPromise) return sdkPromise;
+
+    sdkPromise = (async () => {
+        try {
+            const mod = await import("@radr/shadowwire");
+            return mod as ShadowwireSdk;
+        } catch (error) {
+            logger.error("Failed to load ShadowWire SDK, falling back to mock", "ShadowWire", {
+                message: error instanceof Error ? error.message : String(error)
+            });
+            return null;
+        }
+    })();
+
+    return sdkPromise;
+}
+
+async function getShadowwireClient(): Promise<any> {
+    if (isMockMode()) {
+        return getMockClient();
+    }
+
+    if (!clientPromise) {
+        clientPromise = (async () => {
+            const sdk = await loadShadowwireSdk();
+            if (!sdk?.ShadowWireClient) {
+                return getMockClient();
+            }
+
+            if (tokenUtilsImpl === MockTokenUtils && sdk.TokenUtils) {
+                tokenUtilsImpl = sdk.TokenUtils;
+            }
+
+            return new sdk.ShadowWireClient({
+                // @ts-ignore - SDK network enum is not typed for all values
+                network: shadowwireNetwork(),
+                debug: process.env.NODE_ENV === "development"
+            });
+        })();
+    }
+
+    return clientPromise;
+}
+
+// Lazy client wrapper to avoid ESM-only SDK loading in CJS runtimes
+export const shadowwire = {
+    async getBalance(wallet: string, token: string) {
+        const client = await getShadowwireClient();
+        return client.getBalance(wallet, token);
+    },
+    async deposit(params: any) {
+        const client = await getShadowwireClient();
+        return client.deposit(params);
+    },
+    async withdraw(params: any) {
+        const client = await getShadowwireClient();
+        return client.withdraw(params);
+    },
+    async transfer(params: any) {
+        const client = await getShadowwireClient();
+        return client.transfer(params);
+    }
+};
 
 // Helper to get USD1 balance for a wallet
 export async function getPrivateBalance(wallet: string): Promise<number> {
@@ -176,6 +254,7 @@ export async function withdraw(wallet: string, amount: number) {
 }
 
 // Export the client and utils
-export const TokenUtilsImpl = isMockMode() ? MockTokenUtils : TokenUtils;
-export { ShadowWireClient };
-export { TokenUtilsImpl as TokenUtils };
+export const TokenUtils = {
+    toSmallestUnit: (amount: number, token: string) => tokenUtilsImpl.toSmallestUnit(amount, token),
+    fromSmallestUnit: (amount: number, token: string) => tokenUtilsImpl.fromSmallestUnit(amount, token)
+};

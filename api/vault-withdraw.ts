@@ -10,7 +10,6 @@ import { reserveStrategy } from '../lib/strategies/reserve.js';
 import { yieldStrategy } from '../lib/strategies/yield.js';
 import { growthStrategy } from '../lib/strategies/growth.js';
 import { degenStrategy } from '../lib/strategies/degen.js';
-import { shadowwire } from '../lib/shadowwire.js';
 import { logger } from '../lib/logger.js';
 
 const log = (msg: string) => logger.info(msg, 'API:VaultWithdraw');

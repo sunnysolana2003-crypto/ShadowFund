@@ -4,10 +4,6 @@ import { deposit, withdraw } from "../lib/shadowwire.js";
 import { getUSD1Fees } from "../lib/usd1.js";
 import { applyCors } from "../lib/cors.js";
 import { logger } from "../lib/logger.js";
-import {
-    InsufficientBalanceError,
-    TransferError
-} from "@radr/shadowwire.js";
 
 export default async function handler(
     req: NextApiRequest,
@@ -95,18 +91,21 @@ export default async function handler(
             }
         });
     } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const lower = message.toLowerCase();
+
         logger.error("Transfer failed", "TRANSFER");
 
-        if (err instanceof InsufficientBalanceError) {
+        if (lower.includes("insufficient")) {
             return res.status(400).json({ error: "Insufficient balance" });
         }
-        if (err instanceof TransferError) {
-            return res.status(500).json({ error: "Transfer failed: " + err.message });
+        if (lower.includes("below minimum") || lower.includes("minimum")) {
+            return res.status(400).json({ error: message });
         }
 
         res.status(500).json({
             error: "Operation failed",
-            message: err instanceof Error ? err.message : String(err),
+            message,
             stack: process.env.NODE_ENV === "development" ? (err instanceof Error ? err.stack : undefined) : undefined
         });
     }
