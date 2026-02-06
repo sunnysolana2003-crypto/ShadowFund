@@ -47,6 +47,5 @@ export function applyCors(req: NextApiRequest, res: NextApiResponse, methods: st
     }
 
     res.setHeader("Access-Control-Allow-Methods", methods.join(", "));
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Shadowfund-Mode");
 }
-

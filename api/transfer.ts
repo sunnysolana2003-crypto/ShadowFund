@@ -4,6 +4,7 @@ import { deposit, withdraw } from "../lib/shadowwire.js";
 import { getUSD1Fees } from "../lib/usd1.js";
 import { applyCors } from "../lib/cors.js";
 import { logger } from "../lib/logger.js";
+import { withRuntimeMode } from "../lib/runtimeMode.js";
 
 export default async function handler(
     req: NextApiRequest,
@@ -19,10 +20,11 @@ export default async function handler(
         return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const startTime = Date.now();
+    return withRuntimeMode(req, async () => {
+        const startTime = Date.now();
 
-    try {
-        const { wallet, amount, action, timestamp, signature } = req.body;
+        try {
+            const { wallet, amount, action, timestamp, signature } = req.body;
 
         if (!wallet || !amount || !action) {
             return res.status(400).json({
@@ -90,23 +92,24 @@ export default async function handler(
                 minimum: feeInfo.minimumAmount
             }
         });
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        const lower = message.toLowerCase();
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            const lower = message.toLowerCase();
 
-        logger.error("Transfer failed", "TRANSFER");
+            logger.error("Transfer failed", "TRANSFER");
 
-        if (lower.includes("insufficient")) {
-            return res.status(400).json({ error: "Insufficient balance" });
+            if (lower.includes("insufficient")) {
+                return res.status(400).json({ error: "Insufficient balance" });
+            }
+            if (lower.includes("below minimum") || lower.includes("minimum")) {
+                return res.status(400).json({ error: message });
+            }
+
+            res.status(500).json({
+                error: "Operation failed",
+                message,
+                stack: process.env.NODE_ENV === "development" ? (err instanceof Error ? err.stack : undefined) : undefined
+            });
         }
-        if (lower.includes("below minimum") || lower.includes("minimum")) {
-            return res.status(400).json({ error: message });
-        }
-
-        res.status(500).json({
-            error: "Operation failed",
-            message,
-            stack: process.env.NODE_ENV === "development" ? (err instanceof Error ? err.stack : undefined) : undefined
-        });
-    }
+    });
 }

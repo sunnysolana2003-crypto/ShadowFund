@@ -11,6 +11,7 @@ import { yieldStrategy } from '../lib/strategies/yield.js';
 import { growthStrategy } from '../lib/strategies/growth.js';
 import { degenStrategy } from '../lib/strategies/degen.js';
 import { logger } from '../lib/logger.js';
+import { withRuntimeMode } from "../lib/runtimeMode.js";
 
 const log = (msg: string) => logger.info(msg, 'API:VaultWithdraw');
 
@@ -26,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Shadowfund-Mode');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
@@ -36,8 +37,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    try {
-        const { wallet, vault, amount } = req.body as VaultWithdrawRequest;
+    return withRuntimeMode(req, async () => {
+        try {
+            const { wallet, vault, amount } = req.body as VaultWithdrawRequest;
 
         if (!wallet || !vault || typeof amount !== 'number' || amount <= 0) {
             return res.status(400).json({
@@ -93,20 +95,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         log(`Vault withdrawal complete`);
 
-        return res.status(200).json({
-            ok: true,
-            vault,
-            amountRequested: amount,
-            usd1Received,
-            txSignature: result.txSignature,
-            unsigned_txs: (result as any).unsigned_txs,
-            message: `Withdrew from ${vault} vault → ${usd1Received.toFixed(2)} USD1 returned to shielded pool`
-        });
+            return res.status(200).json({
+                ok: true,
+                vault,
+                amountRequested: amount,
+                usd1Received,
+                txSignature: result.txSignature,
+                unsigned_txs: (result as any).unsigned_txs,
+                message: `Withdrew from ${vault} vault → ${usd1Received.toFixed(2)} USD1 returned to shielded pool`
+            });
 
-    } catch (error) {
-        logger.error('Vault withdrawal failed', 'API:VaultWithdraw');
-        return res.status(500).json({
-            error: 'Internal server error'
-        });
-    }
+        } catch (error) {
+            logger.error('Vault withdrawal failed', 'API:VaultWithdraw');
+            return res.status(500).json({
+                error: 'Internal server error'
+            });
+        }
+    });
 }

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "../types/api.js";
 import { applyCors } from "../lib/cors.js";
 import { logger } from "../lib/logger.js";
+import { withRuntimeMode } from "../lib/runtimeMode.js";
 
 /**
  * Verify Transaction Proof
@@ -22,34 +23,36 @@ export default async function handler(
         return res.status(405).json({ error: "Method not allowed" });
     }
 
-    try {
-        const { txHash } = req.query;
+    return withRuntimeMode(req, async () => {
+        try {
+            const { txHash } = req.query;
 
-        if (!txHash || typeof txHash !== "string") {
-            return res.status(400).json({ error: "txHash parameter required" });
-        }
-
-        // ShadowWire proofs are verified on-chain during transfer
-        // The presence of a valid tx_signature indicates successful verification
-        // In production, you could query Solana to verify the transaction exists
-
-        // For now, return verification based on txHash format
-        const isValidFormat = /^[A-Za-z0-9]{64,}$/.test(txHash);
-
-        res.json({
-            verified: isValidFormat,
-            txHash,
-            proof: {
-                type: "bulletproof",
-                verified_on_chain: true,
-                timestamp: Date.now(),
-                message: isValidFormat
-                    ? "Transaction verified via ShadowWire ZK proof"
-                    : "Invalid transaction hash format"
+            if (!txHash || typeof txHash !== "string") {
+                return res.status(400).json({ error: "txHash parameter required" });
             }
-        });
-    } catch {
-        logger.error("Verify failed", "Verify");
-        res.status(500).json({ error: "Unable to verify proof" });
-    }
+
+            // ShadowWire proofs are verified on-chain during transfer
+            // The presence of a valid tx_signature indicates successful verification
+            // In production, you could query Solana to verify the transaction exists
+
+            // For now, return verification based on txHash format
+            const isValidFormat = /^[A-Za-z0-9]{64,}$/.test(txHash);
+
+            res.json({
+                verified: isValidFormat,
+                txHash,
+                proof: {
+                    type: "bulletproof",
+                    verified_on_chain: true,
+                    timestamp: Date.now(),
+                    message: isValidFormat
+                        ? "Transaction verified via ShadowWire ZK proof"
+                        : "Invalid transaction hash format"
+                }
+            });
+        } catch {
+            logger.error("Verify failed", "Verify");
+            res.status(500).json({ error: "Unable to verify proof" });
+        }
+    });
 }

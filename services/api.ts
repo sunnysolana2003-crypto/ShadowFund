@@ -144,12 +144,34 @@ class ShadowFundAPI {
         this.baseUrl = baseUrl;
     }
 
+    private getRuntimeHeaders(): Record<string, string> {
+        if (typeof window === "undefined") return {};
+        try {
+            const mode = window.localStorage.getItem("shadowfund-mode");
+            if (!mode) return {};
+            return { "x-shadowfund-mode": mode };
+        } catch {
+            return {};
+        }
+    }
+
+    private withRuntimeHeaders(init: RequestInit = {}): RequestInit {
+        const headers = {
+            ...(init.headers as Record<string, string> | undefined),
+            ...this.getRuntimeHeaders()
+        };
+        return { ...init, headers };
+    }
+
     /**
      * Fetch treasury data for a wallet
      */
     async getTreasury(wallet: string, risk: "low" | "medium" | "high" = "medium"): Promise<Treasury> {
         const params = new URLSearchParams({ wallet, risk });
-        const response = await fetch(`${this.baseUrl}/api/treasury?${params}`);
+        const response = await fetch(
+            `${this.baseUrl}/api/treasury?${params}`,
+            this.withRuntimeHeaders()
+        );
 
         if (!response.ok) {
             throw new Error(`Failed to fetch treasury: ${response.statusText}`);
@@ -163,7 +185,10 @@ class ShadowFundAPI {
      */
     async getStrategy(risk: "low" | "medium" | "high" = "medium"): Promise<AIStrategy> {
         const params = new URLSearchParams({ risk });
-        const response = await fetch(`${this.baseUrl}/api/strategy?${params}`);
+        const response = await fetch(
+            `${this.baseUrl}/api/strategy?${params}`,
+            this.withRuntimeHeaders()
+        );
 
         if (!response.ok) {
             throw new Error(`Failed to fetch strategy: ${response.statusText}`);
@@ -184,6 +209,7 @@ class ShadowFundAPI {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...this.getRuntimeHeaders()
             },
             body: JSON.stringify({
                 wallet,
@@ -234,6 +260,7 @@ class ShadowFundAPI {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...this.getRuntimeHeaders()
             },
             body: JSON.stringify({
                 wallet,
@@ -264,6 +291,7 @@ class ShadowFundAPI {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...this.getRuntimeHeaders()
             },
             body: JSON.stringify({
                 wallet,
@@ -319,6 +347,7 @@ class ShadowFundAPI {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...this.getRuntimeHeaders()
             },
             body: JSON.stringify({
                 wallet,

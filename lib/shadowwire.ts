@@ -4,6 +4,7 @@ import { config } from "./config.js";
 import { MockShadowWireClient, MockTokenUtils } from "./shadowwire-mock.js";
 import { TOKENS } from "./protocols/types.js";
 import { logger } from "./logger.js";
+import { getRuntimeMode } from "./runtimeMode.js";
 
 const USD1_MINT = TOKENS.USD1;
 
@@ -19,6 +20,9 @@ function shadowwireNetwork(): "devnet" | "mainnet" {
 }
 
 function isMockMode(): boolean {
+    const runtimeMode = getRuntimeMode();
+    if (runtimeMode === "real") return false;
+    if (runtimeMode === "demo") return true;
     return config.shadowwireMock === true;
 }
 

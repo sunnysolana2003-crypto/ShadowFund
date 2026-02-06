@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "../types/api.js";
 import { getAIStrategy, RiskProfile } from "../lib/ai/index.js";
 import { applyCors } from "../lib/cors.js";
 import logger from "../lib/logger.js";
+import { withRuntimeMode } from "../lib/runtimeMode.js";
 
 export default async function handler(
     req: NextApiRequest,
@@ -17,26 +18,28 @@ export default async function handler(
         return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const startTime = Date.now();
+    return withRuntimeMode(req, async () => {
+        const startTime = Date.now();
 
-    try {
-        const { risk } = req.query;
-        const riskLevel = (risk as RiskProfile) || "medium";
+        try {
+            const { risk } = req.query;
+            const riskLevel = (risk as RiskProfile) || "medium";
 
-        logger.info("Strategy request", "STRATEGY", { risk: riskLevel });
+            logger.info("Strategy request", "STRATEGY", { risk: riskLevel });
 
-        const strategy = await getAIStrategy(riskLevel);
+            const strategy = await getAIStrategy(riskLevel);
 
-        const duration = Date.now() - startTime;
-        logger.api(req.method || "GET", "/api/strategy", 200, duration);
+            const duration = Date.now() - startTime;
+            logger.api(req.method || "GET", "/api/strategy", 200, duration);
 
-        res.status(200).json({
-            ok: true,
-            ...strategy,
-            generatedAt: new Date().toISOString()
-        });
-    } catch (err) {
-        logger.error("Strategy error", "STRATEGY", err instanceof Error ? { message: err.message } : { error: String(err) });
-        res.status(500).json({ error: "Failed to get strategy" });
-    }
+            res.status(200).json({
+                ok: true,
+                ...strategy,
+                generatedAt: new Date().toISOString()
+            });
+        } catch (err) {
+            logger.error("Strategy error", "STRATEGY", err instanceof Error ? { message: err.message } : { error: String(err) });
+            res.status(500).json({ error: "Failed to get strategy" });
+        }
+    });
 }

@@ -35,6 +35,8 @@ interface ShadowFundContextType {
     disconnectWallet: () => void;
     setRiskLevel: (risk: "low" | "medium" | "high") => void;
     isSimulationMode: boolean;
+    runtimeMode: "demo" | "real";
+    setRuntimeMode: (mode: "demo" | "real") => void;
     treasury: TreasuryState;
     fetchTreasury: (overrideAddress?: string) => Promise<void>;
     strategy: StrategyState;
@@ -59,9 +61,25 @@ const connection = new Connection(rpcUrl, "confirmed");
 export function ShadowFundProvider({ children }: { children: ReactNode }) {
     const { publicKey, signMessage: walletSignMessage, connected, sendTransaction } = useWallet();
 
-    const isSimulationMode =
-        (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SHADOWWIRE_MOCK === "true") ||
-        false;
+    const defaultMode =
+        (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_SHADOWWIRE_MOCK === "true")
+            ? "demo"
+            : "real";
+
+    const [runtimeMode, setRuntimeModeState] = useState<"demo" | "real">(() => {
+        if (typeof window === "undefined") return defaultMode;
+        const stored = window.localStorage.getItem("shadowfund-mode");
+        return stored === "real" || stored === "demo" ? stored : defaultMode;
+    });
+
+    const setRuntimeMode = useCallback((mode: "demo" | "real") => {
+        setRuntimeModeState(mode);
+        if (typeof window !== "undefined") {
+            window.localStorage.setItem("shadowfund-mode", mode);
+        }
+    }, []);
+
+    const isSimulationMode = runtimeMode === "demo";
 
     const [wallet, setWallet] = useState<WalletState>({
         connected: false,
@@ -208,6 +226,12 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         }
     }, [wallet.risk]);
 
+    useEffect(() => {
+        if (!wallet.address) return;
+        fetchTreasury();
+        fetchStrategy();
+    }, [runtimeMode, wallet.address, fetchTreasury, fetchStrategy]);
+
     const rebalance = useCallback(async (): Promise<RebalanceResult | null> => {
         if (!wallet.address) return null;
 
@@ -314,6 +338,8 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         disconnectWallet,
         setRiskLevel,
         isSimulationMode,
+        runtimeMode,
+        setRuntimeMode,
         treasury,
         fetchTreasury,
         strategy,
