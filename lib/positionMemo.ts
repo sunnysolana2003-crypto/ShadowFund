@@ -17,8 +17,11 @@ const log = (msg: string) => logger.info(msg, 'PositionMemo');
 // In-memory memo cache (serverless instance lifetime).
 // This avoids re-scanning the same wallet multiple times per request (yield + growth + degen),
 // which can easily trip public RPC rate limits (429).
-const MEMO_CACHE_TTL_MS = 30_000;
-const memoCache: Map<string, { fetchedAt: number; memos: PositionMemo[] }> = new Map();
+const MEMO_CACHE_TTL_MS = Number(process.env.POSITION_MEMO_CACHE_TTL_MS) || 120_000;
+type MemoCacheEntry =
+    | { fetchedAt: number; memos: PositionMemo[] }
+    | { fetchedAt: number; inflight: Promise<PositionMemo[]> };
+const memoCache: Map<string, MemoCacheEntry> = new Map();
 
 // Position data stored in memo
 export interface PositionMemo {
@@ -169,58 +172,86 @@ async function fetchAllPositionMemos(
     const cacheKey = `${wallet}:${limit}`;
     const cached = memoCache.get(cacheKey);
     const now = Date.now();
-    if (cached && now - cached.fetchedAt < MEMO_CACHE_TTL_MS) {
-        return cached.memos;
+    if (cached) {
+        if ("memos" in cached && now - cached.fetchedAt < MEMO_CACHE_TTL_MS) {
+            return cached.memos;
+        }
+        if ("inflight" in cached) {
+            return cached.inflight;
+        }
     }
 
-    const walletPubkey = new PublicKey(wallet);
+    const previousMemos = cached && "memos" in cached ? cached.memos : undefined;
 
-    // Get recent transaction signatures for this wallet
-    const signatures = await rpcWithBackoff(() =>
-        connection.getSignaturesForAddress(walletPubkey, { limit })
-    );
+    // De-dupe concurrent scans for the same wallet/limit within a warm serverless instance.
+    // Without this, getVaultStats() triggers three parallel scans (yield + growth + degen),
+    // which often trips public RPC 429 limits.
+    const inflight = (async () => {
+        const walletPubkey = new PublicKey(wallet);
 
-    if (signatures.length === 0) {
-        memoCache.set(cacheKey, { fetchedAt: now, memos: [] });
-        return [];
-    }
-
-    const memos: PositionMemo[] = [];
-
-    // Fetch transactions in batches
-    const batchSize = 20;
-    for (let i = 0; i < signatures.length; i += batchSize) {
-        const batch = signatures.slice(i, i + batchSize);
-        const txs = await rpcWithBackoff(() =>
-            connection.getParsedTransactions(
-                batch.map((s) => s.signature),
-                { maxSupportedTransactionVersion: 0 }
-            )
+        // Get recent transaction signatures for this wallet
+        const signatures = await rpcWithBackoff(() =>
+            connection.getSignaturesForAddress(walletPubkey, { limit })
         );
 
-        for (let j = 0; j < txs.length; j++) {
-            const tx = txs[j];
-            if (!tx?.meta?.logMessages) continue;
+        if (signatures.length === 0) {
+            return [];
+        }
 
-            for (const logMsg of tx.meta.logMessages) {
-                if (logMsg.includes('Program log: Memo') || logMsg.includes(MEMO_PREFIX)) {
-                    const memoMatch = logMsg.match(/Memo \(len \d+\): "(.+)"/);
-                    if (memoMatch) {
-                        const parsed = parseMemoString(memoMatch[1], batch[j].signature);
-                        if (parsed) memos.push(parsed);
-                    }
-                    if (logMsg.includes(MEMO_PREFIX)) {
-                        const parsed = parseMemoString(logMsg, batch[j].signature);
-                        if (parsed) memos.push(parsed);
+        const memos: PositionMemo[] = [];
+
+        // Fetch transactions in batches
+        const batchSize = 20;
+        for (let i = 0; i < signatures.length; i += batchSize) {
+            const batch = signatures.slice(i, i + batchSize);
+            const txs = await rpcWithBackoff(() =>
+                connection.getParsedTransactions(
+                    batch.map((s) => s.signature),
+                    { maxSupportedTransactionVersion: 0 }
+                )
+            );
+
+            for (let j = 0; j < txs.length; j++) {
+                const tx = txs[j];
+                if (!tx?.meta?.logMessages) continue;
+
+                for (const logMsg of tx.meta.logMessages) {
+                    if (logMsg.includes('Program log: Memo') || logMsg.includes(MEMO_PREFIX)) {
+                        const memoMatch = logMsg.match(/Memo \(len \d+\): "(.+)"/);
+                        if (memoMatch) {
+                            const parsed = parseMemoString(memoMatch[1], batch[j].signature);
+                            if (parsed) memos.push(parsed);
+                        }
+                        if (logMsg.includes(MEMO_PREFIX)) {
+                            const parsed = parseMemoString(logMsg, batch[j].signature);
+                            if (parsed) memos.push(parsed);
+                        }
                     }
                 }
             }
         }
-    }
 
-    const sorted = memos.sort((a, b) => a.timestamp - b.timestamp);
-    memoCache.set(cacheKey, { fetchedAt: now, memos: sorted });
-    return sorted;
+        return memos.sort((a, b) => a.timestamp - b.timestamp);
+    })();
+
+    memoCache.set(cacheKey, { fetchedAt: now, inflight });
+
+    try {
+        const memos = await inflight;
+        memoCache.set(cacheKey, { fetchedAt: Date.now(), memos });
+        return memos;
+    } catch (error) {
+        // If we're rate-limited, fall back to the last cached memos (stale but useful)
+        // instead of zeroing out the user's positions.
+        if (previousMemos) {
+            logger.warn("RPC limited while scanning memos; using cached results", "PositionMemo");
+            memoCache.set(cacheKey, { fetchedAt: Date.now(), memos: previousMemos });
+            return previousMemos;
+        }
+
+        memoCache.delete(cacheKey);
+        throw error;
+    }
 }
 
 /**

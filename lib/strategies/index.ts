@@ -106,12 +106,12 @@ export async function executeAllStrategies(
  * Get comprehensive vault statistics
  */
 export async function getVaultStats(walletAddress: string): Promise<VaultStats> {
-    const [reserveStatus, yieldStatus, growthStatus, degenStatus] = await Promise.all([
-        reserveStrategy.getStatus(walletAddress),
-        yieldStrategy.getStatus(walletAddress),
-        growthStrategy.getStatus(walletAddress),
-        degenStrategy.getStatus(walletAddress)
-    ]);
+    // Run sequentially to reduce RPC burstiness (public Solana RPCs are easy to 429).
+    // This is slower but dramatically more reliable for hackathon/demo environments.
+    const reserveStatus = await reserveStrategy.getStatus(walletAddress);
+    const yieldStatus = await yieldStrategy.getStatus(walletAddress);
+    const growthStatus = await growthStrategy.getStatus(walletAddress);
+    const degenStatus = await degenStrategy.getStatus(walletAddress);
 
     const total =
         reserveStatus.currentValue +
