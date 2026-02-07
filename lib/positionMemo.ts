@@ -18,6 +18,8 @@ const log = (msg: string) => logger.info(msg, 'PositionMemo');
 // This avoids re-scanning the same wallet multiple times per request (yield + growth + degen),
 // which can easily trip public RPC rate limits (429).
 const MEMO_CACHE_TTL_MS = Number(process.env.POSITION_MEMO_CACHE_TTL_MS) || 120_000;
+const DEFAULT_MEMO_SIGNATURE_LIMIT =
+    Number(process.env.POSITION_MEMO_SIGNATURE_LIMIT) || 60;
 type MemoCacheEntry =
     | { fetchedAt: number; memos: PositionMemo[] }
     | { fetchedAt: number; inflight: Promise<PositionMemo[]> };
@@ -261,7 +263,7 @@ export async function queryPositionMemos(
     connection: Connection,
     wallet: string,
     vault?: 'growth' | 'degen' | 'yield',
-    limit: number = 100
+    limit: number = DEFAULT_MEMO_SIGNATURE_LIMIT
 ): Promise<PositionMemo[]> {
     try {
         log('Querying position memos from blockchain');

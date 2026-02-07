@@ -50,6 +50,22 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');
   const [vaultWithdrawAmounts, setVaultWithdrawAmounts] = useState<Record<string, string>>({});
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualAmount, setManualAmount] = useState<string>('');
+  const [manualMode, setManualMode] = useState<'equal' | 'custom'>('equal');
+  const [manualVaults, setManualVaults] = useState<Record<VaultId, boolean>>({
+    reserve: false,
+    yield: true,
+    growth: false,
+    degen: false
+  });
+  const [manualPercents, setManualPercents] = useState<Record<VaultId, string>>({
+    reserve: '',
+    yield: '',
+    growth: '',
+    degen: ''
+  });
+  const [manualError, setManualError] = useState<string | null>(null);
   const {
     wallet,
     treasury,
@@ -64,7 +80,10 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     withdraw,
     withdrawFromVault,
     isWithdrawingFromVault,
-    isSimulationMode
+    isSimulationMode,
+    runtimeMode,
+    manualInvest,
+    isInvesting
   } = useShadowFund();
 
   // Live yield ticker simulation
@@ -141,6 +160,63 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     }
   };
 
+  const manualSelectedVaults = vaultOrder.filter(
+    (id) => id !== 'reserve' && manualVaults[id]
+  );
+
+  const manualAmountValue = manualAmount ? parseFloat(manualAmount) : 0;
+  const manualMin = runtimeMode === 'real' ? 5 : 0.01;
+
+  const getManualPercent = (vaultId: VaultId): number => {
+    if (!manualSelectedVaults.includes(vaultId)) return 0;
+    if (manualMode === 'equal') {
+      return manualSelectedVaults.length > 0 ? 100 / manualSelectedVaults.length : 0;
+    }
+    const raw = manualPercents[vaultId];
+    const parsed = raw ? parseFloat(raw) : 0;
+    const sum = manualSelectedVaults.reduce((acc, v) => {
+      const val = manualPercents[v] ? parseFloat(manualPercents[v]) : 0;
+      return acc + (Number.isFinite(val) ? val : 0);
+    }, 0);
+    if (sum <= 0) return 0;
+    return (Number.isFinite(parsed) ? parsed : 0) / sum * 100;
+  };
+
+  const handleManualInvest = async () => {
+    setManualError(null);
+    const amount = manualAmountValue;
+    if (!amount || amount <= 0) {
+      setManualError('Enter a valid amount');
+      return;
+    }
+    if (manualSelectedVaults.length === 0) {
+      setManualError('Select at least one vault');
+      return;
+    }
+    if (amount > totalBalance) {
+      setManualError('Amount exceeds shielded balance');
+      return;
+    }
+    const allocations: Partial<Record<VaultId, number>> = {};
+    for (const id of manualSelectedVaults) {
+      allocations[id] = getManualPercent(id);
+      const vaultAmount = (allocations[id] || 0) / 100 * amount;
+      if (runtimeMode === 'real' && vaultAmount > 0 && vaultAmount < manualMin) {
+        setManualError(`Each selected vault must be at least ${manualMin} USD1 in real mode`);
+        return;
+      }
+    }
+
+    const ok = await manualInvest(amount, allocations);
+    if (ok) {
+      setManualOpen(false);
+      setManualAmount('');
+      setManualError(null);
+    } else {
+      setManualError('Manual invest failed');
+    }
+  };
+
   useEffect(() => {
     if (wallet.address) {
       fetchTreasury();
@@ -200,6 +276,14 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                 disabled={isRebalancing || !wallet.address || totalBalance === 0}
               >
                 {isRebalancing ? 'Optimizing...' : 'Optimize Portfolio'}
+              </ShadowButton>
+              <ShadowButton
+                variant="secondary"
+                icon={<ArrowLeftRight className="w-4 h-4" />}
+                onClick={() => setManualOpen(true)}
+                disabled={!wallet.address || totalBalance === 0}
+              >
+                Manual Invest
               </ShadowButton>
             </div>
           </header>
@@ -578,6 +662,161 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
             </div>
           </div>
         </div>
+        <AnimatePresence>
+          {manualOpen && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div
+                className="absolute inset-0 bg-black/70"
+                onClick={() => setManualOpen(false)}
+              />
+              <motion.div
+                className="relative w-full max-w-2xl"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+              >
+                <ShadowCard className="p-8 bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-white/10">
+                  <div className="flex items-start justify-between gap-4 mb-6">
+                    <div>
+                      <ShadowTypography variant="h3" className="text-white">Manual Invest</ShadowTypography>
+                      <p className="text-xs text-shadow-500 mt-1">
+                        Choose vaults and allocate a specific USD1 amount.
+                      </p>
+                    </div>
+                    <ShadowButton variant="ghost" size="sm" onClick={() => setManualOpen(false)}>
+                      Close
+                    </ShadowButton>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest mb-2">
+                        Amount to Invest
+                      </p>
+                      <input
+                        type="number"
+                        placeholder={totalBalance > 0 ? `Max: ${totalBalance.toFixed(2)}` : '0.00'}
+                        value={manualAmount}
+                        onChange={(e) => setManualAmount(e.target.value)}
+                        className="w-full bg-shadow-gray-900/50 border border-white/10 text-white text-sm px-4 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-shadow-green/40"
+                        min={0}
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest mb-2">
+                        Select Vaults
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {(['yield', 'growth', 'degen'] as VaultId[]).map((id) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setManualVaults(prev => ({ ...prev, [id]: !prev[id] }))}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs uppercase tracking-widest font-bold transition-colors ${
+                              manualVaults[id]
+                                ? 'border-shadow-green text-shadow-green bg-shadow-green/10'
+                                : 'border-white/10 text-shadow-500 hover:border-white/20'
+                            }`}
+                          >
+                            {vaultDisplayInfo[id].icon}
+                            {id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-bold text-shadow-500 uppercase tracking-widest mb-2">
+                        Allocation Mode
+                      </p>
+                      <div className="flex gap-2">
+                        <ShadowButton
+                          variant={manualMode === 'equal' ? 'primary' : 'secondary'}
+                          size="sm"
+                          onClick={() => setManualMode('equal')}
+                        >
+                          Equal Split
+                        </ShadowButton>
+                        <ShadowButton
+                          variant={manualMode === 'custom' ? 'primary' : 'secondary'}
+                          size="sm"
+                          onClick={() => setManualMode('custom')}
+                        >
+                          Custom %
+                        </ShadowButton>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {manualSelectedVaults.length === 0 && (
+                        <p className="text-xs text-shadow-600">Select at least one vault to allocate.</p>
+                      )}
+                      {manualSelectedVaults.map((id) => {
+                        const percent = getManualPercent(id);
+                        const amount = manualAmountValue > 0 ? (percent / 100) * manualAmountValue : 0;
+                        return (
+                          <div key={id} className="flex items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2 text-shadow-300">
+                              <span className={`w-2 h-2 rounded-full bg-${vaultDisplayInfo[id].color}`} />
+                              <span className="uppercase tracking-widest">{id}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {manualMode === 'custom' ? (
+                                <input
+                                  type="number"
+                                  value={manualPercents[id] || ''}
+                                  onChange={(e) => setManualPercents(prev => ({ ...prev, [id]: e.target.value }))}
+                                  className="w-20 bg-shadow-gray-900/50 border border-white/10 text-white text-xs px-2 py-1 rounded"
+                                  min={0}
+                                  step="0.1"
+                                />
+                              ) : (
+                                <span className="w-20 text-right text-shadow-400">{percent.toFixed(1)}%</span>
+                              )}
+                              <span className="text-shadow-600">%</span>
+                              <span className="text-shadow-green font-mono">${amount.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="text-[10px] text-shadow-500">
+                      Minimum per vault in real mode: {manualMin} USD1.
+                    </div>
+
+                    {manualError && (
+                      <p className="text-xs text-shadow-error flex items-center gap-2">
+                        <Info className="w-3 h-3" /> {manualError}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap gap-3 justify-end">
+                      <ShadowButton variant="secondary" onClick={() => setManualOpen(false)}>
+                        Cancel
+                      </ShadowButton>
+                      <ShadowButton
+                        variant="primary"
+                        icon={isInvesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        onClick={handleManualInvest}
+                        disabled={isInvesting || manualSelectedVaults.length === 0 || manualAmountValue <= 0}
+                      >
+                        {isInvesting ? 'Investing...' : 'Invest'}
+                      </ShadowButton>
+                    </div>
+                  </div>
+                </ShadowCard>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

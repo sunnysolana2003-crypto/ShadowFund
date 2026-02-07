@@ -50,6 +50,8 @@ interface ShadowFundContextType {
     isWithdrawing: boolean;
     withdrawFromVault: (vault: "reserve" | "yield" | "growth" | "degen", amount: number) => Promise<boolean>;
     isWithdrawingFromVault: string | null;
+    manualInvest: (amount: number, allocations: Partial<Record<"reserve" | "yield" | "growth" | "degen", number>>) => Promise<boolean>;
+    isInvesting: boolean;
     signMessage: (message: string) => Promise<{ signature: string; timestamp: number } | null>;
 }
 
@@ -118,6 +120,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
     const [isDepositing, setIsDepositing] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [isWithdrawingFromVault, setIsWithdrawingFromVault] = useState<string | null>(null);
+    const [isInvesting, setIsInvesting] = useState(false);
 
     const sendUnsignedTransaction = useCallback(async (base64Tx: string) => {
         if (!sendTransaction) {
@@ -340,6 +343,42 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         }
     }, [wallet.address, signMessage, fetchTreasury, sendUnsignedTransaction]);
 
+    const manualInvest = useCallback(async (
+        amount: number,
+        allocations: Partial<Record<"reserve" | "yield" | "growth" | "degen", number>>
+    ): Promise<boolean> => {
+        if (!wallet.address) return false;
+        setIsInvesting(true);
+        setVaultStats(prev => ({ ...prev, loading: true }));
+        try {
+            const signatureData = await signMessage("invest");
+            const result = await api.invest(
+                wallet.address,
+                amount,
+                allocations,
+                signatureData ? { ...signatureData, action: "invest" } : undefined
+            );
+
+            if (result.execution?.unsignedTxs && result.execution.unsignedTxs.length > 0) {
+                for (const unsignedTx of result.execution.unsignedTxs) {
+                    await sendUnsignedTransaction(unsignedTx);
+                }
+            }
+
+            if (result.vaultStats) {
+                setVaultStats({ loading: false, error: null, data: result.vaultStats });
+            }
+
+            await fetchTreasury();
+            return true;
+        } catch {
+            setVaultStats(prev => ({ ...prev, loading: false, error: 'Manual invest failed' }));
+            return false;
+        } finally {
+            setIsInvesting(false);
+        }
+    }, [wallet.address, signMessage, fetchTreasury, sendUnsignedTransaction]);
+
     const value: ShadowFundContextType = {
         wallet,
         connectWallet,
@@ -361,6 +400,8 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
         isWithdrawing,
         withdrawFromVault,
         isWithdrawingFromVault,
+        manualInvest,
+        isInvesting,
         signMessage
     };
 

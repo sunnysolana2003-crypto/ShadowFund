@@ -12,6 +12,8 @@ export interface Vault {
     balance: number;
 }
 
+type VaultId = "reserve" | "yield" | "growth" | "degen";
+
 export interface Treasury {
     totalUSD1: number;
     walletBalance: number;
@@ -137,6 +139,29 @@ export interface ProofVerification {
     };
 }
 
+export interface ManualInvestResult {
+    ok: boolean;
+    message: string;
+    allocation: Allocation;
+    execution: {
+        investAmount: number;
+        perVaultAmounts: Record<VaultId, number>;
+        usd1Transfers: Array<{
+            vault: string;
+            direction: "in";
+            amount: number;
+            txHash?: string;
+        }>;
+        usd1Errors?: Array<{ vault: string; error: string }>;
+        unsignedTxs?: string[];
+        strategyResults: Record<string, any>;
+        totalTransactions: number;
+    };
+    vaultStats: VaultStats;
+    errors?: string[];
+    duration: string;
+}
+
 class ShadowFundAPI {
     private baseUrl: string;
 
@@ -224,6 +249,38 @@ class ShadowFundAPI {
 
         if (!response.ok) {
             throw new Error(`Failed to rebalance: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Manual invest into selected vaults
+     */
+    async invest(
+        wallet: string,
+        amount: number,
+        allocations: Partial<Record<VaultId, number>>,
+        signature?: { timestamp: number; signature: string; action: string }
+    ): Promise<ManualInvestResult> {
+        const response = await fetch(`${this.baseUrl}/api/invest`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...this.getRuntimeHeaders()
+            },
+            body: JSON.stringify({
+                wallet,
+                amount,
+                allocations,
+                ...signature,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error || `Manual invest failed: ${response.statusText}`;
+            throw new Error(errorMessage);
         }
 
         return response.json();
