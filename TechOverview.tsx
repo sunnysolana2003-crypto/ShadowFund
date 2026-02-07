@@ -56,31 +56,31 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       name: 'USD1 Protocol', 
       icon: <Database className="w-6 h-6 text-[#FF7A00]" />, 
       desc: 'The ultimate highlight: A zero-log, privacy-first stablecoin architecture.',
-      details: 'ShadowAgent is built around the USD1 primitive, ensuring that all fund movements remain strictly private with zero server-side logging of transaction amounts or destinations.'
+      details: 'ShadowAgent is built around USD1 with a zero-log policy. Manual invest lets users choose vaults + amounts while keeping movements private and non-custodial.'
     },
     { 
       name: 'ShadowWire SDK', 
       icon: <Shield className="w-6 h-6 text-[#FF7A00]" />, 
       desc: 'Zero-Knowledge Bulletproofs for private on-chain state transitions.',
-      details: 'Enables "Shielded" balances where amounts and destinations are cryptographically hidden from public explorers.'
+      details: 'Enables shielded balances and internal transfers. Note: ShadowWire mainnet has a 5 USD1 anti-spam minimum per internal transfer.'
     },
     { 
       name: 'Gemini 3 Flash', 
       icon: <Brain className="w-6 h-6 text-shadow-gold" />, 
       desc: 'Autonomous strategy engine processing real-time market signals.',
-      details: 'Analyzes RSI, volume, and sentiment to generate optimal allocation vectors across the 4-vault system.'
+      details: 'Analyzes RSI, volume, and sentiment to generate allocation vectors. If rate-limited, the system falls back to a deterministic rule-based allocator.'
     },
     { 
       name: 'Jupiter Aggregator', 
       icon: <TrendingUp className="w-6 h-6 text-blue-400" />, 
       desc: 'Best-price execution for Growth and Degen vault rebalancing.',
-      details: 'Routes swaps through 100+ liquidity sources on Solana to ensure minimal slippage for fund operations.'
+      details: 'Quotes are always real; swaps are executed via user-signed transactions (or server wallet if configured).'
     },
     { 
       name: 'Kamino Finance', 
       icon: <Zap className="w-6 h-6 text-shadow-gold" />, 
       desc: 'Automated yield optimization for the Yield vault.',
-      details: 'Supplies liquidity to high-efficiency lending markets, generating passive APY for shielded holdings.'
+      details: 'Uses user-signed Kamino transactions (no funded server wallet required), generating passive APY for shielded holdings.'
     }
   ];
 
@@ -91,7 +91,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       icon: <Shield className="w-8 h-8" />,
       color: '#FF7A00',
       tech: 'ShadowWire Cash',
-      logic: 'Maintains 1:1 USD1 liquidity. Acts as the primary gateway for shielding/unshielding funds.',
+      logic: 'Maintains 1:1 USD1 liquidity. Primary gateway for shielding/unshielding and manual invest funding.',
       animation: 'pulse'
     },
     {
@@ -100,7 +100,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       icon: <Zap className="w-8 h-8" />,
       color: '#C5A059',
       tech: 'Kamino Lending',
-      logic: 'Deploys USD1 into automated lending pools. AI monitors utilization rates to maximize APY.',
+      logic: 'Deploys USD1 into Kamino lending. Transactions are returned unsigned and signed by the user wallet.',
       animation: 'bounce'
     },
     {
@@ -108,8 +108,8 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       name: 'Growth Vault',
       icon: <TrendingUp className="w-8 h-8" />,
       color: '#60A5FA',
-      tech: 'Jupiter Blue-Chips',
-      logic: 'Shielded exposure to SOL, ETH, and BTC. AI rebalances based on macro trend signals.',
+      tech: 'Jupiter + RADR Ecosystem',
+      logic: 'Shielded exposure to SOL/RADR/ORE/ANON. Swaps executed via user-signed Jupiter transactions.',
       animation: 'float'
     },
     {
@@ -118,7 +118,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       icon: <Activity className="w-8 h-8" />,
       color: '#EF4444',
       tech: 'RADR Moonshots',
-      logic: 'High-conviction plays on emerging tokens. Uses DexScreener signals for rapid entry/exit.',
+      logic: 'High-conviction plays on emerging RADR tokens (BONK/RADR/JIM/POKI). Swaps are user-signed.',
       animation: 'shake'
     }
   ];
@@ -155,7 +155,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
                 <div className="flex flex-col items-center md:items-start gap-2">
                   <span className="text-[9px] font-bold text-[#FF7A00] uppercase tracking-widest">Mainnet & real funds</span>
-                  <p className="text-sm text-white font-medium">Yes, with conditions. Env setup + caveats; see details below.</p>
+                  <p className="text-sm text-white font-medium">Yes, with conditions. Dedicated RPC strongly recommended.</p>
                 </div>
                 <div className="flex flex-col items-center md:items-start gap-2">
                   <span className="text-[9px] font-bold text-[#FF7A00] uppercase tracking-widest">USD1 + zero-log</span>
@@ -387,13 +387,13 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                     />
                     <AuditCard 
                       title="Protocol Integration" 
-                      status="Partially Ready" 
-                      score={70}
+                      status="Mainnet Ready" 
+                      score={85}
                       details={[
-                        "Real Jupiter Quote & Price APIs integrated",
-                        "Kamino Klend-SDK v5.15.4 active",
-                        "Real swap execution logic implemented",
-                        "ShadowWire SDK v1.1.15 connected"
+                        "Jupiter swaps via user-signed transactions",
+                        "Kamino v5.15.4 user-signed deposits/withdrawals",
+                        "ShadowWire SDK v1.1.15 connected",
+                        "Manual invest endpoint + UI live"
                       ]}
                     />
                     <AuditCard 
@@ -402,8 +402,8 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                       score={90}
                       details={[
                         "Ed25519 Wallet Signatures required",
-                        "5% Hard Slippage Protection active",
-                        "Rate Limiting on all API endpoints",
+                        "ShadowWire min-transfer enforced on mainnet",
+                        "Rate limiting + memo caching",
                         "Non-custodial architecture verified"
                       ]}
                     />
@@ -412,13 +412,13 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <AuditCard 
                       title="Environment State" 
-                      status="Simulation Active" 
-                      score={100}
+                      status="Dual Mode" 
+                      score={92}
                       details={[
-                        "Devnet Simulation Mode enabled",
-                        "Bypasses Devnet Relayer mint issues",
-                        "Mainnet-ready with one config change",
-                        "Zero-error presentation fallback"
+                        "Demo mode uses ShadowWire mock",
+                        "Real mode uses mainnet + USD1",
+                        "Dedicated RPC recommended",
+                        "Memo cache reduces RPC load"
                       ]}
                     />
                     <AuditCard 
@@ -509,7 +509,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         Is the project ready for mainnet and real funds?
                       </p>
                       <p className="text-sm text-shadow-300 leading-relaxed">
-                        <span className="text-[#FF7A00] font-semibold">Yes, with conditions.</span> You can run on mainnet with real funds after completing the required env setup (e.g. <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, mainnet RPC, RADR token mints, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>). Kamino yield now uses user-signed transactions, so no funded server wallet is required.
+                        <span className="text-[#FF7A00] font-semibold">Yes, with conditions.</span> You can run on mainnet with real funds after completing the required env setup (e.g. <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">SHADOWWIRE_MOCK=false</code>, mainnet RPC, RADR token mints, <code className="text-[10px] px-1 py-0.5 rounded bg-white/10">CORS_ORIGINS</code>). Kamino and Jupiter both use user-signed transactions, so no funded server wallet is required.
                       </p>
                     </div>
                   </ShadowCard>
@@ -522,10 +522,12 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                       <ul className="space-y-2 text-xs text-shadow-400">
                         <li>• Reserve vault: USD1 only; balance from ShadowWire PDA</li>
                         <li>• Transfer API: real deposit/withdraw USD1 (with real ShadowWire)</li>
+                        <li>• Manual invest: choose vaults + amount; enforces mainnet minimums</li>
                         <li>• Rebalance: real USD1 moves between vault PDAs</li>
-                        <li>• Growth vault: real USD1 → SOL, WETH, WBTC, RADR via Jupiter</li>
-                        <li>• Degen vault: real USD1 → SOL, BONK, RADR, JIM, POKI via Jupiter</li>
+                        <li>• Growth vault: real USD1 → SOL/RADR/ORE/ANON via Jupiter</li>
+                        <li>• Degen vault: real USD1 → BONK/RADR/JIM/POKI via Jupiter</li>
                         <li>• Yield vault: real Kamino lend/redeem via user-signed transactions (no server wallet required)</li>
+                        <li>• Position persistence: on-chain memos (no DB)</li>
                         <li>• Non-logging policy: no wallets, amounts, or tx hashes in logs</li>
                       </ul>
                     </ShadowCard>
@@ -534,9 +536,9 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         <AlertCircle className="w-4 h-4 text-amber-500" /> Caveats (accept before going live)
                       </h4>
                       <ul className="space-y-2 text-xs text-shadow-400">
-                        <li>• <strong>Growth/Degen withdraw</strong>: token→USD1 is simulated only; no Jupiter sell yet</li>
-                        <li>• <strong>Position persistence</strong>: Growth/Degen/Yield positions are now written on-chain via Memo transactions (no DB)</li>
-                        <li>• <strong>Rate limit</strong>: in-memory; use Redis for multiple backend instances</li>
+                        <li>• <strong>RPC rate limits</strong>: public RPC can 429; use a dedicated RPC provider</li>
+                        <li>• <strong>ShadowWire minimum</strong>: internal transfers must be ≥ 5 USD1 on mainnet</li>
+                        <li>• <strong>Gemini quota</strong>: rate limits fall back to rule-based allocator</li>
                         <li>• <strong>Token mints</strong>: set real ORE, ANON, JIM, POKI mints or fallbacks may be wrong</li>
                       </ul>
                     </ShadowCard>
@@ -552,27 +554,27 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
-                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Growth / Degen withdraw</h5>
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Dedicated RPC</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
-                          Wire token→USD1 via Jupiter: compute sell amount in token smallest units, call <code className="text-[10px]">executeSwap</code> for token→USDC/USD1, then update ShadowWire balance. Remove simulated-withdraw path once live.
+                          Replace public Solana RPC with a paid endpoint (Helius/QuickNode) to eliminate 429 delays during memo reconstruction and price fetches.
                         </p>
                       </ShadowCard>
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
-                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Position persistence</h5>
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Gemini quota</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
-                          Positions are now persisted on-chain via Memo transactions (Growth/Degen/Yield). This removes the need for a database while keeping vault state portable across devices and server restarts.
+                          Move Gemini to paid tier or add a fallback LLM provider to avoid strategy generation throttling.
                         </p>
                       </ShadowCard>
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
-                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Yield vault signing</h5>
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Memo cache (multi-instance)</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
-                          Kamino deposits/withdrawals are returned as unsigned transactions and signed by the user wallet in the frontend. This removes the per-deployment funded Kamino wallet requirement.
+                          The memo cache is in-memory today. Use Redis if you run multiple backend instances so cache hits are shared.
                         </p>
                       </ShadowCard>
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50">
-                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">Rate limit (multi-instance)</h5>
+                        <h5 className="text-[10px] font-bold text-[#FF7A00] uppercase tracking-widest mb-2">ShadowWire minimum UX</h5>
                         <p className="text-xs text-shadow-400 leading-relaxed">
-                          Replace in-memory rate limiter with a shared store (e.g. Redis). Wire <code className="text-[10px]">checkRateLimit</code> to Redis increments and TTLs so all backend instances share the same limits.
+                          Ensure UI surfaces the 5 USD1 minimum per vault and suggests manual invest when allocations are too small.
                         </p>
                       </ShadowCard>
                       <ShadowCard className="p-8 border-[#FF7A00]/10 bg-shadow-black/50 md:col-span-2">

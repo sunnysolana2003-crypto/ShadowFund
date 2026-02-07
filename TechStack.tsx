@@ -42,7 +42,7 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
       title: "Backend & API",
       icon: <Server className="w-6 h-6 text-[#FF7A00]" />,
       items: [
-        { name: "Next.js 14", desc: "Serverless API routes and optimized backend logic." },
+        { name: "Vercel Functions", desc: "Serverless API routes powering treasury, rebalance, and invest flows." },
         { name: "TypeScript", desc: "Strict typing across the full stack for maximum reliability." },
         { name: "Node.js", desc: "High-performance runtime for strategy orchestration." },
         { name: "REST API", desc: "Stateless communication between frontend and treasury engine." }
@@ -54,17 +54,17 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
       items: [
         { name: "ShadowWire SDK", desc: "The core ZK-privacy layer for shielded transactions." },
         { name: "@solana/web3.js", desc: "Official Solana library for on-chain interactions." },
-        { name: "Jupiter SDK", desc: "DEX aggregation for best-price swap execution." },
-        { name: "Kamino SDK", desc: "Lending protocol integration for automated yield." }
+        { name: "Jupiter API", desc: "Best-price quotes + user-signed swaps for growth/degen vaults." },
+        { name: "Kamino SDK", desc: "User-signed lending transactions for the yield vault." }
       ]
     },
     {
       title: "AI & Intelligence",
       icon: <Cpu className="w-6 h-6 text-[#FF7A00]" />,
       items: [
-        { name: "Gemini 3 Flash", desc: "Google's high-speed LLM for real-time market analysis." },
-        { name: "Market Signals", desc: "Custom data ingestion from CoinGecko and DexScreener." },
-        { name: "Strategy Engine", desc: "Rule-based and AI-driven portfolio rebalancing logic." }
+        { name: "Gemini 3 Flash", desc: "LLM strategy engine with rule-based fallback on rate limits." },
+        { name: "Market Signals", desc: "Jupiter pricing + on-chain signals for allocation inputs." },
+        { name: "Strategy Engine", desc: "AI + deterministic allocation, plus manual invest mode." }
       ]
     }
   ];
@@ -134,8 +134,8 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
                   <ShadowTypography variant="h3" className="text-white uppercase tracking-widest">System Flow</ShadowTypography>
                 </div>
                 <p className="text-sm text-shadow-400 leading-relaxed">
-                  Data flows from public market oracles into our stateless backend, where Gemini AI processes the signals against your risk profile. 
-                  The resulting strategy is executed via ShadowWire's ZK-relayer, ensuring your financial footprint is never logged or exposed.
+                  Data flows from public market signals into our stateless backend, where Gemini AI (or the rule-based fallback) generates allocations. 
+                  Users can override with manual invest. Execution uses ShadowWire for private USD1 transfers and user-signed Jupiter/Kamino transactions.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {['Stateless', 'ZK-Encrypted', 'Non-Custodial', 'AI-Orchestrated'].map(tag => (
@@ -149,7 +149,7 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
               <div className="flex-shrink-0 grid grid-cols-2 gap-4">
                 <TechBox icon={<Braces className="w-5 h-5" />} label="TypeScript" />
                 <TechBox icon={<Box className="w-5 h-5" />} label="Solana" />
-                <TechBox icon={<Terminal className="w-5 h-5" />} label="Next.js" />
+                <TechBox icon={<Terminal className="w-5 h-5" />} label="Vercel" />
                 <TechBox icon={<Cloud className="w-5 h-5" />} label="Gemini" />
               </div>
             </div>
