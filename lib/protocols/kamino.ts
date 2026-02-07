@@ -179,9 +179,14 @@ export async function deposit(
 
         // Build transaction
         const transaction = new Transaction();
-        transaction.add(...depositAction.setupIxs);
-        transaction.add(...depositAction.lendingIxs);
-        transaction.add(...depositAction.cleanupIxs);
+        const setupIxs = (((depositAction as any)?.setupIxs ?? (depositAction as any)?.setupInstructions) ?? []) as any[];
+        const lendingIxs = (((depositAction as any)?.lendingIxs ?? (depositAction as any)?.lendingInstructions) ?? []) as any[];
+        const cleanupIxs = (((depositAction as any)?.cleanupIxs ?? (depositAction as any)?.cleanupInstructions) ?? []) as any[];
+        const allIxs = [...setupIxs, ...lendingIxs, ...cleanupIxs].filter(Boolean);
+        if (allIxs.length === 0) {
+            throw new Error("Kamino SDK returned no deposit instructions");
+        }
+        transaction.add(...allIxs);
 
 
         // Get recent blockhash
@@ -332,9 +337,14 @@ export async function withdraw(
 
         // Build transaction
         const transaction = new Transaction();
-        transaction.add(...withdrawAction.setupIxs);
-        transaction.add(...withdrawAction.lendingIxs);
-        transaction.add(...withdrawAction.cleanupIxs);
+        const setupIxs = (((withdrawAction as any)?.setupIxs ?? (withdrawAction as any)?.setupInstructions) ?? []) as any[];
+        const lendingIxs = (((withdrawAction as any)?.lendingIxs ?? (withdrawAction as any)?.lendingInstructions) ?? []) as any[];
+        const cleanupIxs = (((withdrawAction as any)?.cleanupIxs ?? (withdrawAction as any)?.cleanupInstructions) ?? []) as any[];
+        const allIxs = [...setupIxs, ...lendingIxs, ...cleanupIxs].filter(Boolean);
+        if (allIxs.length === 0) {
+            throw new Error("Kamino SDK returned no withdraw instructions");
+        }
+        transaction.add(...allIxs);
 
         // Get recent blockhash
         const { blockhash } = await connection.getLatestBlockhash();

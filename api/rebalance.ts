@@ -58,6 +58,10 @@ export default async function handler(
             }
 
             const riskLevel = risk || "medium";
+            const runtimeMode = getRuntimeMode();
+            const envMin = Number(process.env.SHADOWWIRE_MIN_INTERNAL_TRANSFER_USD1);
+            const realInternalMin =
+                Number.isFinite(envMin) && envMin > 0 ? envMin : 5;
 
             log("STEP 3", "Loading treasury state");
             const treasury = await loadTreasury(wallet, riskLevel);
@@ -84,7 +88,32 @@ export default async function handler(
             // 2) Run multi-layer AI engine to get target allocation
             log("STEP 4", "Calling AI strategy");
             const strategyResult = await getAIStrategy(riskLevel);
-            const { allocation, signals, mood } = strategyResult;
+            const { signals, mood } = strategyResult;
+            let { allocation } = strategyResult;
+
+            // ShadowWire internal transfers have a minimum size on mainnet (anti-spam).
+            // For small portfolios, adjust allocation so we don't target impossible (< min) vault moves.
+            if (runtimeMode === "real" && treasury.totalUSD1 > 0) {
+                const adjusted = { ...allocation };
+                const vaultIds = ["yield", "growth", "degen"] as const;
+                let shifted = 0;
+
+                for (const id of vaultIds) {
+                    const target = (adjusted[id] / 100) * treasury.totalUSD1;
+                    if (target > 0 && target < realInternalMin) {
+                        shifted += adjusted[id];
+                        adjusted[id] = 0;
+                    }
+                }
+
+                adjusted.reserve = Math.min(100, adjusted.reserve + shifted);
+                const sum = adjusted.reserve + adjusted.yield + adjusted.growth + adjusted.degen;
+                if (sum !== 100) {
+                    adjusted.reserve += 100 - sum;
+                }
+
+                allocation = adjusted;
+            }
 
             log("STEP 4", "Target allocation set");
 
@@ -93,8 +122,9 @@ export default async function handler(
             const reserveVault = await getVaultAddress(wallet, "reserve");
             const transfers = [];
             const usd1Errors = [];
+            const usd1Skipped: Array<{ vault: string; reason: string }> = [];
             const feeInfo = getUSD1Fees();
-            const runtimeMode = getRuntimeMode();
+            const internalMin = runtimeMode === "real" ? realInternalMin : feeInfo.minimumAmount;
 
             for (const vault of treasury.vaults) {
                 if (vault.id === "reserve") {
@@ -105,7 +135,20 @@ export default async function handler(
                 const target = (targetPercent / 100) * treasury.totalUSD1;
                 const diff = target - vault.balance;
 
-                if (Math.abs(diff) > feeInfo.minimumAmount) {
+                const absDiff = Math.abs(diff);
+                if (absDiff < internalMin) {
+                    // Skip dust allocations that ShadowWire would reject (anti-spam minimum).
+                    // We keep the funds in the reserve vault until the portfolio is large enough.
+                    if (absDiff > 0) {
+                        usd1Skipped.push({
+                            vault: vault.id,
+                            reason: `below_minimum_${internalMin.toFixed(2)}`
+                        });
+                    }
+                    continue;
+                }
+
+                if (absDiff > feeInfo.minimumAmount) {
                     // Use vault PDA addresses for ShadowWire (real pubkeys required)
                     const vaultPda = await getVaultAddress(wallet, vault.id as "reserve" | "yield" | "growth" | "degen");
                     let from = diff > 0 ? reserveVault : vaultPda;
@@ -114,7 +157,7 @@ export default async function handler(
 
                     // SPECIAL LOGIC: If funding needs to happen (diff > 0) and Reserve is empty but Wallet has funds, use Wallet as source
                     // This handles the "Initial Deposit" scenario where funds sit in Wallet before allocation
-                    if (diff > 0 && treasury.walletBalance > 0 && vault.id !== 'reserve') {
+                    if (diff > 0 && treasury.walletBalance > 0) {
                         from = wallet;
                     }
 
@@ -124,10 +167,26 @@ export default async function handler(
 
                     let result;
                     try {
-                        result = await moveUSD1(from, to, Math.abs(diff));
+                        result = await moveUSD1(from, to, absDiff);
 
                         if (!result.success) {
-                            throw new Error(result.error || 'Transfer failed');
+                            const errMsg = result.error || 'Transfer failed';
+                            const lower = errMsg.toLowerCase();
+                            const isMinimum =
+                                lower.includes("below minimum") ||
+                                lower.includes("anti-spam") ||
+                                lower.includes("minimum");
+
+                            if (isMinimum) {
+                                usd1Skipped.push({
+                                    vault: vault.id,
+                                    reason: "shadowwire_minimum"
+                                });
+                                continue;
+                            }
+
+                            usd1Errors.push({ vault: vault.id, error: errMsg });
+                            continue;
                         }
                     } catch (moveError: any) {
                         if (runtimeMode === "demo") {
@@ -138,7 +197,11 @@ export default async function handler(
                                 demo: true,
                             };
                         } else {
-                            throw moveError;
+                            usd1Errors.push({
+                                vault: vault.id,
+                                error: moveError instanceof Error ? moveError.message : String(moveError)
+                            });
+                            continue;
                         }
                     }
 
@@ -191,6 +254,8 @@ export default async function handler(
                 },
                 execution: {
                     usd1Transfers: transfers,
+                    usd1Skipped,
+                    usd1Errors: usd1Errors.length > 0 ? usd1Errors : undefined,
                     unsignedTxs,
                     strategyResults: {
                         reserve: {

@@ -11,8 +11,10 @@ import {
     TokenUtils
 } from "./shadowwire.js";
 import { logger } from "./logger.js";
+import { getRuntimeMode } from "./runtimeMode.js";
 
 const DECIMALS = 6; // USD1 has 6 decimals
+const DEFAULT_REAL_INTERNAL_MIN = 5; // ShadowWire anti-spam: 5 USDC min per internal transfer
 
 /**
  * Get USD1 balance for a vault address
@@ -58,8 +60,13 @@ export async function moveUSD1(
             };
         }
 
-        // Use the minimum amount check
-        let minimum = USD1Utils.getMinimum();
+        // ShadowWire internal transfers have an anti-spam minimum on mainnet.
+        // Treat USD1 as 1:1 with USDC for minimum enforcement.
+        const runtimeMode = getRuntimeMode();
+        const envMin = Number(process.env.SHADOWWIRE_MIN_INTERNAL_TRANSFER_USD1);
+        const realMin =
+            Number.isFinite(envMin) && envMin > 0 ? envMin : DEFAULT_REAL_INTERNAL_MIN;
+        let minimum = runtimeMode === "real" ? realMin : USD1Utils.getMinimum();
 
         // OVERRIDE: On Devnet OR Testing Mode, allow small transfers
         if (process.env.SOLANA_RPC_URL?.includes('devnet') || process.env.TESTING_MODE === 'true') {
@@ -73,8 +80,6 @@ export async function moveUSD1(
             };
         }
 
-        const feeBreakdown = USD1Utils.calculateFee(amount);
-
         // Execute private transfer with ZK proofs
         const result = await privateTransfer({
             sender: from,
@@ -83,9 +88,23 @@ export async function moveUSD1(
             wallet
         });
 
+        const ok = (result as any)?.success !== false;
+        const txHash =
+            (result as any)?.tx_signature ||
+            (result as any)?.txSignature ||
+            (result as any)?.tx_signature_base58 ||
+            undefined;
+
+        if (!ok) {
+            return {
+                success: false,
+                error: (result as any)?.error || "ShadowWire transfer failed"
+            };
+        }
+
         return {
             success: true,
-            txHash: (result as any)?.tx_signature || "pending"
+            txHash: txHash || "pending"
         };
     } catch (err) {
         logger.error("Error moving USD1", "USD1");

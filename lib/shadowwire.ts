@@ -142,7 +142,9 @@ async function getShadowwireClient(): Promise<any> {
             return new sdk.ShadowWireClient({
                 // @ts-ignore - SDK network enum is not typed for all values
                 network: shadowwireNetwork(),
-                debug: process.env.NODE_ENV === "development"
+                // ShadowWire debug logs can include sensitive request bodies (proof bytes, addresses).
+                // Only enable when explicitly requested.
+                debug: process.env.SHADOWWIRE_SDK_DEBUG === "true"
             });
         })();
     }

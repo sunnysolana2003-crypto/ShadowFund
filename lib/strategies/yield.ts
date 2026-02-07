@@ -118,6 +118,9 @@ export async function executeYieldStrategy(
             // Need to deposit more
             log("Depositing");
             const depositResult = await yieldStrategy.deposit(walletAddress, difference);
+            if (!depositResult.success) {
+                throw new Error(depositResult.error || "Kamino deposit failed");
+            }
             if (depositResult.txSignature) {
                 txSignatures.push(depositResult.txSignature);
             }
@@ -128,6 +131,9 @@ export async function executeYieldStrategy(
             // Need to withdraw
             log("Withdrawing");
             const withdrawResult = await yieldStrategy.withdraw(walletAddress, Math.abs(difference));
+            if (!withdrawResult.success) {
+                throw new Error(withdrawResult.error || "Kamino withdraw failed");
+            }
             if (withdrawResult.txSignature) {
                 txSignatures.push(withdrawResult.txSignature);
             }
