@@ -57,13 +57,15 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     reserve: false,
     yield: true,
     growth: false,
-    degen: false
+    degen: false,
+    rwa: false
   });
   const [manualPercents, setManualPercents] = useState<Record<VaultId, string>>({
     reserve: '',
     yield: '',
     growth: '',
-    degen: ''
+    degen: '',
+    rwa: ''
   });
   const [manualError, setManualError] = useState<string | null>(null);
   const {
@@ -100,17 +102,18 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   const publicBalance = treasury.data?.publicBalance ?? 0;
   const vaultsData = treasury.data?.vaults ?? [];
 
-  type VaultId = 'reserve' | 'yield' | 'growth' | 'degen';
+  type VaultId = 'reserve' | 'yield' | 'growth' | 'degen' | 'rwa';
 
   const vaultDisplayInfo: Record<string, { color: string; icon: React.ReactNode }> = {
     'reserve': { color: 'shadow-green', icon: <Shield className="w-4 h-4" /> },
     'yield': { color: 'shadow-gold', icon: <Zap className="w-4 h-4" /> },
     'growth': { color: 'white', icon: <TrendingUp className="w-4 h-4" /> },
     'degen': { color: 'shadow-error', icon: <Activity className="w-4 h-4" /> },
+    'rwa': { color: 'shadow-purple', icon: <LockKeyhole className="w-4 h-4" /> },
   };
 
-  // Always render all 4 vaults (even if backend returns partial data).
-  const vaultOrder: VaultId[] = ['reserve', 'yield', 'growth', 'degen'];
+  // Always render all 5 vaults (even if backend returns partial data).
+  const vaultOrder: VaultId[] = ['reserve', 'yield', 'growth', 'rwa', 'degen'];
   const vaultById = new Map(vaultsData.map(v => [v.id, v]));
 
   const vaults = vaultOrder.map((id) => {
@@ -147,7 +150,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
     }
   };
 
-  const handleVaultWithdraw = async (vaultId: 'reserve' | 'yield' | 'growth' | 'degen', vaultBalance: number) => {
+  const handleVaultWithdraw = async (vaultId: 'reserve' | 'yield' | 'growth' | 'degen' | 'rwa', vaultBalance: number) => {
     const amountStr = vaultWithdrawAmounts[vaultId] || '';
     const amount = amountStr ? parseFloat(amountStr) : vaultBalance;
     if (amount > 0 && amount <= vaultBalance) {
@@ -452,7 +455,17 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                           </div>
                           <div>
                             <ShadowTypography variant="h4" className="text-white">{vault.name}</ShadowTypography>
-                            <p className="text-[10px] text-shadow-500 uppercase tracking-wide">{vault.id === 'yield' ? 'Kamino Lending' : vault.id === 'growth' ? 'Jupiter Aggregator' : vault.id === 'degen' ? 'DexScreener + Jupiter' : 'ShadowWire Reserve'}</p>
+                            <p className="text-[10px] text-shadow-500 uppercase tracking-wide">{
+                              vault.id === 'yield'
+                                ? 'Kamino Lending'
+                                : vault.id === 'growth'
+                                  ? 'Jupiter Aggregator'
+                                  : vault.id === 'degen'
+                                    ? 'DexScreener + Jupiter'
+                                    : vault.id === 'rwa'
+                                      ? 'Remora Markets'
+                                      : 'ShadowWire Reserve'
+                            }</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -537,6 +550,57 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                                 <span>SOL 50%</span>
                                 <span>BTC 20%</span>
                                 <span>ETH 30%</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* RWA VAULT: Holdings */}
+                          {vault.id === 'rwa' && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="text-shadow-400">RWA Holdings</span>
+                                <span className="text-shadow-purple text-[10px] uppercase">Private Pools</span>
+                              </div>
+                              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                {(vaultStats.data?.rwa?.positions?.length ? vaultStats.data.rwa.positions : [
+                                  { token: { symbol: 'GLDr' }, pnlPercent: 0.8 },
+                                  { token: { symbol: 'SLVr' }, pnlPercent: 0.4 }
+                                ]).map((pos: any, i: number) => (
+                                  <div key={i} className="flex items-center gap-1.5 bg-white/5 rounded px-2 py-1 shrink-0 border border-white/5">
+                                    <span className="text-[10px] font-bold text-white">{pos.token.symbol}</span>
+                                    <span className={`text-[9px] font-mono ${pos.pnlPercent >= 0 ? 'text-shadow-green' : 'text-shadow-error'}`}>
+                                      {pos.pnlPercent > 0 ? '+' : ''}{pos.pnlPercent.toFixed?.(1) ?? pos.pnlPercent}%
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-2 rounded-lg border border-white/10 bg-black/30 px-2 py-2">
+                                <div className="text-[9px] font-bold uppercase tracking-widest text-shadow-500 mb-2">
+                                  Remora Pools (GLDr / SLVr / CPERr)
+                                </div>
+                                <div className="space-y-2 text-[10px] text-shadow-400">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-white">GLDr</span>
+                                    <span className="font-mono text-shadow-500">0.02 min | 0.5% fee</span>
+                                  </div>
+                                  <div className="font-mono text-[9px] text-shadow-600 break-all">
+                                    AEv6xLECJ2KKmwFGX85mHb9S2c2BQE7dqE5midyrXHBb
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-white">SLVr</span>
+                                    <span className="font-mono text-shadow-500">0.05 min | 0.5% fee</span>
+                                  </div>
+                                  <div className="font-mono text-[9px] text-shadow-600 break-all">
+                                    7C56WnJ94iEP7YeH2iKiYpvsS5zkcpP9rJBBEBoUGdzj
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-white">CPERr</span>
+                                    <span className="font-mono text-shadow-500">0.1 min | 0.5% fee</span>
+                                  </div>
+                                  <div className="font-mono text-[9px] text-shadow-600 break-all">
+                                    C3VLBJB2FhEb47s1WEgroyn3BnSYXaezqtBuu5WNmUGw
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -714,7 +778,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
                         Select Vaults
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {(['yield', 'growth', 'degen'] as VaultId[]).map((id) => (
+                        {(['yield', 'growth', 'rwa', 'degen'] as VaultId[]).map((id) => (
                           <button
                             key={id}
                             type="button"

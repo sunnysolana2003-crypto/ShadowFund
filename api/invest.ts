@@ -3,15 +3,15 @@ import { verifySignature } from "../utils/verifySignature.js";
 import { loadTreasury } from "../lib/treasury.js";
 import { getVaultAddress } from "../lib/vaults.js";
 import { moveUSD1, getUSD1Fees } from "../lib/usd1.js";
-import { executeYieldStrategy, executeGrowthStrategy, executeDegenStrategy, getVaultStats, getAllTransactions } from "../lib/strategies/index.js";
+import { executeYieldStrategy, executeGrowthStrategy, executeDegenStrategy, executeRwaStrategy, getVaultStats, getAllTransactions } from "../lib/strategies/index.js";
 import { applyCors } from "../lib/cors.js";
 import { logger } from "../lib/logger.js";
 import { getRuntimeMode, withRuntimeMode } from "../lib/runtimeMode.js";
 
-type VaultId = "reserve" | "yield" | "growth" | "degen";
+type VaultId = "reserve" | "yield" | "growth" | "degen" | "rwa";
 type AllocationInput = Partial<Record<VaultId, number>>;
 
-const INVESTABLE_VAULTS: VaultId[] = ["yield", "growth", "degen"];
+const INVESTABLE_VAULTS: VaultId[] = ["yield", "growth", "degen", "rwa"];
 
 function log(step: string, message: string) {
     logger.info(message, "INVEST", { step });
@@ -30,7 +30,8 @@ function parseAllocations(
         reserve: 0,
         yield: 0,
         growth: 0,
-        degen: 0
+        degen: 0,
+        rwa: 0
     };
 
     if (rawSelected.length > 0) {
@@ -143,7 +144,8 @@ export default async function handler(
                 reserve: 0,
                 yield: 0,
                 growth: 0,
-                degen: 0
+                degen: 0,
+                rwa: 0
             };
 
             for (const v of selected) {
@@ -242,6 +244,11 @@ export default async function handler(
                         if (strategyResults.degen?.unsignedTxs) {
                             unsignedTxs.push(...strategyResults.degen.unsignedTxs);
                         }
+                    } else if (vaultId === "rwa") {
+                        strategyResults.rwa = await executeRwaStrategy(wallet, targetAmount);
+                        if (strategyResults.rwa?.unsignedTxs) {
+                            unsignedTxs.push(...strategyResults.rwa.unsignedTxs);
+                        }
                     }
                 } catch (error) {
                     strategyErrors.push(
@@ -264,7 +271,8 @@ export default async function handler(
                         : 0,
                     yield: treasury.totalUSD1 > 0 ? (perVaultAmounts.yield / treasury.totalUSD1) * 100 : 0,
                     growth: treasury.totalUSD1 > 0 ? (perVaultAmounts.growth / treasury.totalUSD1) * 100 : 0,
-                    degen: treasury.totalUSD1 > 0 ? (perVaultAmounts.degen / treasury.totalUSD1) * 100 : 0
+                    degen: treasury.totalUSD1 > 0 ? (perVaultAmounts.degen / treasury.totalUSD1) * 100 : 0,
+                    rwa: treasury.totalUSD1 > 0 ? (perVaultAmounts.rwa / treasury.totalUSD1) * 100 : 0
                 },
                 execution: {
                     investAmount,

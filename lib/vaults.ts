@@ -67,7 +67,7 @@ export async function getVaultAddress(wallet: string, id: VaultId): Promise<stri
  * Get all vault addresses for a wallet
  */
 export async function getAllVaultAddresses(wallet: string): Promise<Record<VaultId, string>> {
-    const vaultIds: VaultId[] = ["reserve", "yield", "growth", "degen"];
+    const vaultIds: VaultId[] = ["reserve", "yield", "growth", "degen", "rwa"];
     const addresses: Record<string, string> = {};
 
     for (const id of vaultIds) {
@@ -88,4 +88,3 @@ export function isValidVaultAddress(address: string): boolean {
         return false;
     }
 }
-

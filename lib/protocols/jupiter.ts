@@ -55,6 +55,9 @@ export async function getTokenPrice(mint: string): Promise<number> {
     if (m === TOKENS.ANON?.toLowerCase()) return 0.01;
     if (m === TOKENS.JIM?.toLowerCase()) return 0.005;
     if (m === TOKENS.POKI?.toLowerCase()) return 0.001;
+    if (m === TOKENS.GLDR?.toLowerCase()) return 2300;
+    if (m === TOKENS.SLVR?.toLowerCase()) return 30;
+    if (m === TOKENS.CPER?.toLowerCase()) return 4.5;
 
     return 0;
 }
@@ -92,6 +95,9 @@ export async function getTokenPrices(mints: string[]): Promise<Record<string, nu
             else if (TOKENS.ANON && m === TOKENS.ANON.toLowerCase()) prices[mint] = 0.01;
             else if (TOKENS.JIM && m === TOKENS.JIM.toLowerCase()) prices[mint] = 0.005;
             else if (TOKENS.POKI && m === TOKENS.POKI.toLowerCase()) prices[mint] = 0.001;
+            else if (TOKENS.GLDR && m === TOKENS.GLDR.toLowerCase()) prices[mint] = 2300;
+            else if (TOKENS.SLVR && m === TOKENS.SLVR.toLowerCase()) prices[mint] = 30;
+            else if (TOKENS.CPER && m === TOKENS.CPER.toLowerCase()) prices[mint] = 4.5;
             else prices[mint] = 0;
         }
     }

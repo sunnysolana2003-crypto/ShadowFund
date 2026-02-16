@@ -1,4 +1,4 @@
-export type VaultId = "reserve" | "yield" | "growth" | "degen";
+export type VaultId = "reserve" | "yield" | "growth" | "degen" | "rwa";
 
 export interface Vault {
     id: VaultId;

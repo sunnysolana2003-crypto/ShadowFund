@@ -48,9 +48,9 @@ interface ShadowFundContextType {
     isDepositing: boolean;
     withdraw: (amount: number) => Promise<boolean>;
     isWithdrawing: boolean;
-    withdrawFromVault: (vault: "reserve" | "yield" | "growth" | "degen", amount: number) => Promise<boolean>;
+    withdrawFromVault: (vault: "reserve" | "yield" | "growth" | "degen" | "rwa", amount: number) => Promise<boolean>;
     isWithdrawingFromVault: string | null;
-    manualInvest: (amount: number, allocations: Partial<Record<"reserve" | "yield" | "growth" | "degen", number>>) => Promise<boolean>;
+    manualInvest: (amount: number, allocations: Partial<Record<"reserve" | "yield" | "growth" | "degen" | "rwa", number>>) => Promise<boolean>;
     isInvesting: boolean;
     signMessage: (message: string) => Promise<{ signature: string; timestamp: number } | null>;
 }
@@ -318,7 +318,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
     }, [wallet.address, signMessage, fetchTreasury, sendUnsignedTransaction]);
 
     const withdrawFromVault = useCallback(async (
-        vault: "reserve" | "yield" | "growth" | "degen",
+        vault: "reserve" | "yield" | "growth" | "degen" | "rwa",
         amount: number
     ): Promise<boolean> => {
         if (!wallet.address || !sendTransaction) return false;
@@ -345,7 +345,7 @@ export function ShadowFundProvider({ children }: { children: ReactNode }) {
 
     const manualInvest = useCallback(async (
         amount: number,
-        allocations: Partial<Record<"reserve" | "yield" | "growth" | "degen", number>>
+        allocations: Partial<Record<"reserve" | "yield" | "growth" | "degen" | "rwa", number>>
     ): Promise<boolean> => {
         if (!wallet.address) return false;
         setIsInvesting(true);

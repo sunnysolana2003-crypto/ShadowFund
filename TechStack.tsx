@@ -55,7 +55,8 @@ const TechStack: React.FC<{ onNavigate: (v: string) => void; currentView: string
         { name: "ShadowWire SDK", desc: "The core ZK-privacy layer for shielded transactions." },
         { name: "@solana/web3.js", desc: "Official Solana library for on-chain interactions." },
         { name: "Jupiter API", desc: "Best-price quotes + user-signed swaps for growth/degen vaults." },
-        { name: "Kamino SDK", desc: "User-signed lending transactions for the yield vault." }
+        { name: "Kamino SDK", desc: "User-signed lending transactions for the yield vault." },
+        { name: "Remora Markets", desc: "Private RWA pools for GLDr/SLVr/CPERr tokenized metals." }
       ]
     },
     {

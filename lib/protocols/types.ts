@@ -82,6 +82,9 @@ export const RADR_SUPPORTED_TOKENS: ReadonlyArray<{ symbol: string; decimals: nu
     { symbol: "SOL", decimals: 9, feePercent: 0.5 },
     { symbol: "RADR", decimals: 9, feePercent: 0.3 },
     { symbol: "USDC", decimals: 6, feePercent: 1 },
+    { symbol: "GLDr", decimals: 6, feePercent: 0.5 },
+    { symbol: "SLVr", decimals: 6, feePercent: 0.5 },
+    { symbol: "CPERr", decimals: 6, feePercent: 0.5 },
     { symbol: "ORE", decimals: 11, feePercent: 0.3 },
     { symbol: "BONK", decimals: 5, feePercent: 1 },
     { symbol: "JIM", decimals: 9, feePercent: 1 },
@@ -113,6 +116,9 @@ const SOL_MINT = "So11111111111111111111111111111111111111112";
 const USDC_MINT = IS_DEVNET ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const USD1_MINT = IS_DEVNET ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" : "USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB";
 const BONK_MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
+const GLDR_MINT = process.env.GLDR_MINT || "AEv6xLECJ2KKmwFGX85mHb9S2c2BQE7dqE5midyrXHBb";
+const SLVR_MINT = process.env.SLVR_MINT || "7C56WnJ94iEP7YeH2iKiYpvsS5zkcpP9rJBBEBoUGdzj";
+const CPER_MINT = process.env.CPER_MINT || "C3VLBJB2FhEb47s1WEgroyn3BnSYXaezqtBuu5WNmUGw";
 
 export const TOKENS = {
     USD1: USD1_MINT,
@@ -122,6 +128,9 @@ export const TOKENS = {
     WETH: process.env.WETH_MINT || "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs",
     WBTC: process.env.WBTC_MINT || "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh",
     BONK: BONK_MINT,
+    GLDR: GLDR_MINT,
+    SLVR: SLVR_MINT,
+    CPER: CPER_MINT,
     RADR: process.env.RADR_MINT || SOL_MINT,
     ORE: process.env.ORE_MINT || SOL_MINT,
     ANON: process.env.ANON_MINT || SOL_MINT,
@@ -152,3 +161,10 @@ export const GROWTH_ALLOCATION = {
 
 /** Degen vault: RADR-shielded meme/ecosystem tokens */
 export const DEGEN_TOKENS = ["SOL", "BONK", "RADR", "JIM", "POKI"] as const;
+
+/** RWA vault: tokenized precious metals via Remora Markets */
+export const RWA_TOKENS = [
+    { symbol: "GLDr", token: TOKENS.GLDR, min: 0.02, feePercent: 0.5, decimals: 6 },
+    { symbol: "SLVr", token: TOKENS.SLVR, min: 0.05, feePercent: 0.5, decimals: 6 },
+    { symbol: "CPERr", token: TOKENS.CPER, min: 0.1, feePercent: 0.5, decimals: 6 }
+] as const;

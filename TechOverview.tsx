@@ -81,6 +81,12 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       icon: <Zap className="w-6 h-6 text-shadow-gold" />, 
       desc: 'Automated yield optimization for the Yield vault.',
       details: 'Uses user-signed Kamino transactions (no funded server wallet required), generating passive APY for shielded holdings.'
+    },
+    { 
+      name: 'Remora Markets', 
+      icon: <Lock className="w-6 h-6 text-[#A855F7]" />, 
+      desc: 'Private RWA pools for tokenized precious metals.',
+      details: 'GLDr / SLVr / CPERr privacy pools with 0.5% fee. Minimums: GLDr 0.02, SLVr 0.05, CPERr 0.1.'
     }
   ];
 
@@ -110,6 +116,15 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
       color: '#60A5FA',
       tech: 'Jupiter + RADR Ecosystem',
       logic: 'Shielded exposure to SOL/RADR/ORE/ANON. Swaps executed via user-signed Jupiter transactions.',
+      animation: 'float'
+    },
+    {
+      id: 'rwa',
+      name: 'RWA Vault',
+      icon: <Lock className="w-8 h-8" />,
+      color: '#A855F7',
+      tech: 'Remora Markets',
+      logic: 'Private GLDr/SLVr/CPERr pools. 0.5% fee. Minimums: 0.02 / 0.05 / 0.1.',
       animation: 'float'
     },
     {
@@ -219,7 +234,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
               <p className="text-shadow-500 uppercase tracking-[0.3em] text-[10px] font-bold">How the AI manages your shielded assets</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
               {vaults.map((vault, i) => (
                 <motion.div
                   key={vault.id}
@@ -526,6 +541,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         <li>• Rebalance: real USD1 moves between vault PDAs</li>
                         <li>• Growth vault: real USD1 → SOL/RADR/ORE/ANON via Jupiter</li>
                         <li>• Degen vault: real USD1 → BONK/RADR/JIM/POKI via Jupiter</li>
+                        <li>• RWA vault: Remora GLDr/SLVr/CPERr privacy pools (0.5% fee; mins 0.02 / 0.05 / 0.1)</li>
                         <li>• Yield vault: real Kamino lend/redeem via user-signed transactions (no server wallet required)</li>
                         <li>• Position persistence: on-chain memos (no DB)</li>
                         <li>• Non-logging policy: no wallets, amounts, or tx hashes in logs</li>
@@ -540,6 +556,7 @@ const TechOverview: React.FC<{ onNavigate: (v: string) => void; currentView: str
                         <li>• <strong>ShadowWire minimum</strong>: internal transfers must be ≥ 5 USD1 on mainnet</li>
                         <li>• <strong>Gemini quota</strong>: rate limits fall back to rule-based allocator</li>
                         <li>• <strong>Token mints</strong>: set real ORE, ANON, JIM, POKI mints or fallbacks may be wrong</li>
+                        <li>• <strong>RWA mints</strong>: confirm GLDR_MINT / SLVR_MINT / CPER_MINT for Remora pools</li>
                       </ul>
                     </ShadowCard>
                   </div>

@@ -60,6 +60,11 @@ export interface DegenStrategy extends VaultStrategy {
     setStopLoss(walletAddress: string, tokenAddress: string, percent: number): Promise<void>;
 }
 
+// RWA vault (tokenized precious metals)
+export interface RwaStrategy extends VaultStrategy {
+    getPositions(walletAddress: string): Promise<Position[]>;
+}
+
 // Strategy execution result
 export interface StrategyExecutionResult {
     vaultId: string;
@@ -95,6 +100,12 @@ export interface VaultStats {
         balance: number;
         percentage: number;
         positions: DegenPosition[];
+        pnl: number;
+    };
+    rwa: {
+        balance: number;
+        percentage: number;
+        positions: Position[];
         pnl: number;
     };
     total: number;

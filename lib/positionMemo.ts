@@ -27,7 +27,7 @@ const memoCache: Map<string, MemoCacheEntry> = new Map();
 
 // Position data stored in memo
 export interface PositionMemo {
-    vault: 'growth' | 'degen' | 'yield';
+    vault: 'growth' | 'degen' | 'yield' | 'rwa';
     action: 'open' | 'close' | 'add' | 'reduce';
     tokenSymbol: string;
     tokenMint: string;
@@ -262,7 +262,7 @@ async function fetchAllPositionMemos(
 export async function queryPositionMemos(
     connection: Connection,
     wallet: string,
-    vault?: 'growth' | 'degen' | 'yield',
+    vault?: 'growth' | 'degen' | 'yield' | 'rwa',
     limit: number = DEFAULT_MEMO_SIGNATURE_LIMIT
 ): Promise<PositionMemo[]> {
     try {
@@ -287,7 +287,7 @@ export async function queryPositionMemos(
 export async function reconstructPositions(
     connection: Connection,
     wallet: string,
-    vault: 'growth' | 'degen' | 'yield'
+    vault: 'growth' | 'degen' | 'yield' | 'rwa'
 ): Promise<ReconstructedPosition[]> {
     log(`Reconstructing ${vault} positions from on-chain memos`);
 

@@ -20,6 +20,8 @@ Your role is to analyze market conditions and recommend optimal allocation perce
 - **Growth**: Balanced market exposure (blue-chip tokens, medium risk)
 - **Degen**: High-risk delta neutral strategies (meme coins, highest risk)
 
+Note: The RWA vault (tokenized precious metals) is manual-first and should be excluded from AI allocation.
+
 You must always return a JSON response with this exact structure:
 {
   "allocation": {
@@ -127,6 +129,7 @@ Return your response as valid JSON only, no markdown formatting.`;
         allocation.yield = Math.min(allocation.yield, limits.yield);
         allocation.growth = Math.min(allocation.growth, limits.growth);
         allocation.degen = Math.min(allocation.degen, limits.degen);
+        allocation.rwa = 0;
 
         const duration = Date.now() - startTime;
 

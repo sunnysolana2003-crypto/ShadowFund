@@ -5,14 +5,15 @@ export interface RiskLimits {
     yield: number;
     growth: number;
     degen: number;
+    rwa: number;
 }
 
 export function getRiskLimits(risk: RiskProfile): RiskLimits {
     if (risk === "low") {
-        return { reserve: 70, yield: 30, growth: 20, degen: 0 };
+        return { reserve: 70, yield: 30, growth: 20, degen: 0, rwa: 0 };
     }
     if (risk === "medium") {
-        return { reserve: 50, yield: 40, growth: 30, degen: 10 };
+        return { reserve: 50, yield: 40, growth: 30, degen: 10, rwa: 0 };
     }
-    return { reserve: 30, yield: 40, growth: 40, degen: 30 };
+    return { reserve: 30, yield: 40, growth: 40, degen: 30, rwa: 0 };
 }

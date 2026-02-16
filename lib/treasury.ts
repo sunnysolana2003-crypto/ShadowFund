@@ -21,6 +21,7 @@ export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<T
         yield: stats.yield.balance,
         growth: stats.growth.balance,
         degen: stats.degen.balance,
+        rwa: stats.rwa.balance,
     };
 
     const runtimeMode = getRuntimeMode();
@@ -36,16 +37,17 @@ export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<T
         // RiskProfile is "low" | "medium" | "high" across the entire codebase.
         const allocations =
             risk === "high"
-                ? { reserve: 0.10, yield: 0.30, growth: 0.40, degen: 0.20 }
+                ? { reserve: 0.10, yield: 0.30, growth: 0.40, degen: 0.20, rwa: 0.0 }
                 : risk === "low"
-                    ? { reserve: 0.40, yield: 0.40, growth: 0.15, degen: 0.05 }
-                    : { reserve: 0.20, yield: 0.40, growth: 0.30, degen: 0.10 }; // medium
+                    ? { reserve: 0.40, yield: 0.40, growth: 0.15, degen: 0.05, rwa: 0.0 }
+                    : { reserve: 0.20, yield: 0.40, growth: 0.30, degen: 0.10, rwa: 0.0 }; // medium
 
         vaultBalances = {
             reserve: publicBalance * allocations.reserve,
             yield: publicBalance * allocations.yield,
             growth: publicBalance * allocations.growth,
             degen: publicBalance * allocations.degen,
+            rwa: publicBalance * allocations.rwa,
         };
 
     }
@@ -58,7 +60,8 @@ export async function loadTreasury(wallet: string, risk: RiskProfile): Promise<T
             { id: "reserve", address: "Reserve", balance: vaultBalances.reserve },
             { id: "yield", address: "Yield", balance: vaultBalances.yield },
             { id: "growth", address: "Growth", balance: vaultBalances.growth },
-            { id: "degen", address: "Degen", balance: vaultBalances.degen }
+            { id: "degen", address: "Degen", balance: vaultBalances.degen },
+            { id: "rwa", address: "RWA", balance: vaultBalances.rwa }
         ],
         risk
     };

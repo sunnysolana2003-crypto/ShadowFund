@@ -10,6 +10,7 @@ import { reserveStrategy } from '../lib/strategies/reserve.js';
 import { yieldStrategy } from '../lib/strategies/yield.js';
 import { growthStrategy } from '../lib/strategies/growth.js';
 import { degenStrategy } from '../lib/strategies/degen.js';
+import { rwaStrategy } from '../lib/strategies/rwa.js';
 import { logger } from '../lib/logger.js';
 import { withRuntimeMode } from "../lib/runtimeMode.js";
 
@@ -17,7 +18,7 @@ const log = (msg: string) => logger.info(msg, 'API:VaultWithdraw');
 
 interface VaultWithdrawRequest {
     wallet: string;
-    vault: 'reserve' | 'yield' | 'growth' | 'degen';
+    vault: 'reserve' | 'yield' | 'growth' | 'degen' | 'rwa';
     amount: number;
     timestamp?: number;
     signature?: string;
@@ -47,9 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         }
 
-        if (!['reserve', 'yield', 'growth', 'degen'].includes(vault)) {
+        if (!['reserve', 'yield', 'growth', 'degen', 'rwa'].includes(vault)) {
             return res.status(400).json({
-                error: 'Invalid vault. Must be: reserve, yield, growth, or degen'
+                error: 'Invalid vault. Must be: reserve, yield, growth, degen, or rwa'
             });
         }
 
@@ -59,7 +60,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             reserve: reserveStrategy,
             yield: yieldStrategy,
             growth: growthStrategy,
-            degen: degenStrategy
+            degen: degenStrategy,
+            rwa: rwaStrategy
         };
 
         const strategy = strategies[vault];

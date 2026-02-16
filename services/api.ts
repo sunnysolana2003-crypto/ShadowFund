@@ -7,12 +7,12 @@
 const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || "";
 
 export interface Vault {
-    id: "reserve" | "yield" | "growth" | "degen";
+    id: "reserve" | "yield" | "growth" | "degen" | "rwa";
     address: string;
     balance: number;
 }
 
-type VaultId = "reserve" | "yield" | "growth" | "degen";
+type VaultId = "reserve" | "yield" | "growth" | "degen" | "rwa";
 
 export interface Treasury {
     totalUSD1: number;
@@ -27,6 +27,7 @@ export interface Allocation {
     yield: number;
     growth: number;
     degen: number;
+    rwa: number;
 }
 
 export interface MarketSignals {
@@ -90,6 +91,12 @@ export interface VaultStats {
         positions: TokenPosition[];
         pnl: number;
     };
+    rwa: {
+        balance: number;
+        percentage: number;
+        positions: TokenPosition[];
+        pnl: number;
+    };
     total: number;
 }
 
@@ -117,6 +124,7 @@ export interface RebalanceResult {
             yield: { success: boolean; apy: number; earned: number; transactions: number };
             growth: { success: boolean; positions: number; pnl: number; transactions: number };
             degen: { success: boolean; positions: number; pnl: number; transactions: number };
+            rwa: { success: boolean; positions: number; pnl: number; transactions: number };
         };
         totalTransactions: number;
     };
@@ -395,7 +403,7 @@ class ShadowFundAPI {
      */
     async withdrawFromVault(
         wallet: string,
-        vault: "reserve" | "yield" | "growth" | "degen",
+        vault: "reserve" | "yield" | "growth" | "degen" | "rwa",
         amount: number,
         signature?: { timestamp: number; signature: string }
     ): Promise<{

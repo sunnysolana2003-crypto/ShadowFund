@@ -91,10 +91,33 @@ export default async function handler(
             const { signals, mood } = strategyResult;
             let { allocation } = strategyResult;
 
+            const rwaBalance = treasury.vaults.find(v => v.id === "rwa")?.balance || 0;
+            const rwaPercent =
+                treasury.totalUSD1 > 0 ? (rwaBalance / treasury.totalUSD1) * 100 : 0;
+            const nonRwaBudget = Math.max(0, 100 - rwaPercent);
+
+            // Keep RWA vault manual-only by freezing its percentage, then scale AI allocations to the remaining budget.
+            const adjusted = { ...allocation };
+            const baseSum = adjusted.reserve + adjusted.yield + adjusted.growth + adjusted.degen;
+
+            if (baseSum > 0) {
+                const scale = nonRwaBudget / baseSum;
+                adjusted.reserve *= scale;
+                adjusted.yield *= scale;
+                adjusted.growth *= scale;
+                adjusted.degen *= scale;
+            } else {
+                adjusted.reserve = nonRwaBudget;
+                adjusted.yield = 0;
+                adjusted.growth = 0;
+                adjusted.degen = 0;
+            }
+
+            adjusted.rwa = rwaPercent;
+
             // ShadowWire internal transfers have a minimum size on mainnet (anti-spam).
             // For small portfolios, adjust allocation so we don't target impossible (< min) vault moves.
             if (runtimeMode === "real" && treasury.totalUSD1 > 0) {
-                const adjusted = { ...allocation };
                 const vaultIds = ["yield", "growth", "degen"] as const;
                 let shifted = 0;
 
@@ -106,14 +129,29 @@ export default async function handler(
                     }
                 }
 
-                adjusted.reserve = Math.min(100, adjusted.reserve + shifted);
-                const sum = adjusted.reserve + adjusted.yield + adjusted.growth + adjusted.degen;
-                if (sum !== 100) {
-                    adjusted.reserve += 100 - sum;
+                adjusted.reserve += shifted;
+
+                const nonRwaSum = adjusted.reserve + adjusted.yield + adjusted.growth + adjusted.degen;
+                if (nonRwaSum > 0 && Math.abs(nonRwaSum - nonRwaBudget) > 0.0001) {
+                    const scale = nonRwaBudget / nonRwaSum;
+                    adjusted.reserve *= scale;
+                    adjusted.yield *= scale;
+                    adjusted.growth *= scale;
+                    adjusted.degen *= scale;
+                } else if (nonRwaSum === 0) {
+                    adjusted.reserve = nonRwaBudget;
                 }
 
-                allocation = adjusted;
+                adjusted.rwa = rwaPercent;
             }
+
+            const totalAllocation =
+                adjusted.reserve + adjusted.yield + adjusted.growth + adjusted.degen + adjusted.rwa;
+            if (totalAllocation > 0 && Math.abs(totalAllocation - 100) > 0.0001) {
+                adjusted.reserve += 100 - totalAllocation;
+            }
+
+            allocation = adjusted;
 
             log("STEP 4", "Target allocation set");
 
@@ -127,7 +165,7 @@ export default async function handler(
             const internalMin = runtimeMode === "real" ? realInternalMin : feeInfo.minimumAmount;
 
             for (const vault of treasury.vaults) {
-                if (vault.id === "reserve") {
+                if (vault.id === "reserve" || vault.id === "rwa") {
                     continue;
                 }
                 const targetPercent = allocation[vault.id as keyof typeof allocation];
@@ -150,7 +188,7 @@ export default async function handler(
 
                 if (absDiff > feeInfo.minimumAmount) {
                     // Use vault PDA addresses for ShadowWire (real pubkeys required)
-                    const vaultPda = await getVaultAddress(wallet, vault.id as "reserve" | "yield" | "growth" | "degen");
+                    const vaultPda = await getVaultAddress(wallet, vault.id);
                     let from = diff > 0 ? reserveVault : vaultPda;
                     let to = diff > 0 ? vaultPda : reserveVault;
                     const direction = diff > 0 ? "in" : "out";
@@ -279,6 +317,12 @@ export default async function handler(
                             positions: vaultStats.degen.positions?.length || 0,
                             pnl: vaultStats.degen.pnl,
                             transactions: strategyExecution.results.degen?.txSignatures?.length || 0
+                        },
+                        rwa: {
+                            success: strategyExecution.results.rwa?.success,
+                            positions: vaultStats.rwa.positions?.length || 0,
+                            pnl: vaultStats.rwa.pnl,
+                            transactions: strategyExecution.results.rwa?.txSignatures?.length || 0
                         }
                     },
                     totalTransactions: allTransactions.length
@@ -305,6 +349,12 @@ export default async function handler(
                         percentage: vaultStats.degen.percentage,
                         positions: vaultStats.degen.positions,
                         pnl: vaultStats.degen.pnl
+                    },
+                    rwa: {
+                        balance: vaultStats.rwa.balance,
+                        percentage: vaultStats.rwa.percentage,
+                        positions: vaultStats.rwa.positions,
+                        pnl: vaultStats.rwa.pnl
                     },
                     total: vaultStats.total
                 },

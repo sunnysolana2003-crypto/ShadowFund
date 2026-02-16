@@ -5,6 +5,7 @@ export interface RiskLimits {
     yield: number;
     growth: number;
     degen: number;
+    rwa: number;
 }
 
 export interface Allocation {
@@ -12,6 +13,7 @@ export interface Allocation {
     yield: number;
     growth: number;
     degen: number;
+    rwa: number;
 }
 
 export function buildStrategy(signals: MarketSignals, limits: RiskLimits, mood: string): Allocation {
@@ -19,6 +21,7 @@ export function buildStrategy(signals: MarketSignals, limits: RiskLimits, mood: 
     let yieldV = 30;
     let growth = 20;
     let degen = 10;
+    let rwa = 0;
 
     // Macro regime
     if (mood === "risk-on") {
@@ -50,13 +53,15 @@ export function buildStrategy(signals: MarketSignals, limits: RiskLimits, mood: 
     yieldV = Math.min(Math.max(yieldV, 0), limits.yield);
     growth = Math.min(Math.max(growth, 0), limits.growth);
     degen = Math.min(Math.max(degen, 0), limits.degen);
+    rwa = Math.min(Math.max(rwa, 0), limits.rwa);
 
-    const total = reserve + yieldV + growth + degen;
+    const total = reserve + yieldV + growth + degen + rwa;
 
     return {
         reserve: (reserve / total) * 100,
         yield: (yieldV / total) * 100,
         growth: (growth / total) * 100,
-        degen: (degen / total) * 100
+        degen: (degen / total) * 100,
+        rwa: (rwa / total) * 100
     };
 }

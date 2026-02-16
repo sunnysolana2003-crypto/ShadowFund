@@ -11,11 +11,13 @@ export { reserveStrategy, executeReserveStrategy } from "./reserve.js";
 export { yieldStrategy, executeYieldStrategy, getYieldAnalytics } from "./yield.js";
 export { growthStrategy, executeGrowthStrategy } from "./growth.js";
 export { degenStrategy, executeDegenStrategy } from "./degen.js";
+export { rwaStrategy, executeRwaStrategy } from "./rwa.js";
 
 import { reserveStrategy } from "./reserve.js";
 import { yieldStrategy, getYieldAnalytics } from "./yield.js";
 import { growthStrategy } from "./growth.js";
 import { degenStrategy } from "./degen.js";
+import { rwaStrategy } from "./rwa.js";
 import { VaultStats, StrategyExecutionResult } from "./types.js";
 import { logger } from "../logger.js";
 
@@ -32,6 +34,7 @@ export async function executeAllStrategies(
         yield: number;
         growth: number;
         degen: number;
+        rwa: number;
     },
     signals: {
         memeHype: "high" | "medium" | "low";
@@ -52,6 +55,7 @@ export async function executeAllStrategies(
         yield: totalValue * (allocation.yield / 100),
         growth: totalValue * (allocation.growth / 100),
         degen: totalValue * (allocation.degen / 100),
+        rwa: totalValue * (allocation.rwa / 100),
     };
 
     log("Targets set");
@@ -93,6 +97,15 @@ export async function executeAllStrategies(
         errors.push(`Degen: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
 
+    try {
+        // 5. RWA Strategy
+        log("RWA vault");
+        const { executeRwaStrategy } = await import("./rwa.js");
+        results.rwa = await executeRwaStrategy(walletAddress, targets.rwa);
+    } catch (error) {
+        errors.push(`RWA: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+
     log("Execution complete");
 
     return {
@@ -112,12 +125,14 @@ export async function getVaultStats(walletAddress: string): Promise<VaultStats> 
     const yieldStatus = await yieldStrategy.getStatus(walletAddress);
     const growthStatus = await growthStrategy.getStatus(walletAddress);
     const degenStatus = await degenStrategy.getStatus(walletAddress);
+    const rwaStatus = await rwaStrategy.getStatus(walletAddress);
 
     const total =
         reserveStatus.currentValue +
         yieldStatus.currentValue +
         growthStatus.currentValue +
-        degenStatus.currentValue;
+        degenStatus.currentValue +
+        rwaStatus.currentValue;
 
     const yieldAnalytics = await getYieldAnalytics(walletAddress);
 
@@ -143,6 +158,12 @@ export async function getVaultStats(walletAddress: string): Promise<VaultStats> 
             percentage: total > 0 ? (degenStatus.currentValue / total) * 100 : 0,
             positions: degenStatus.positions,
             pnl: degenStatus.pnl
+        },
+        rwa: {
+            balance: rwaStatus.currentValue,
+            percentage: total > 0 ? (rwaStatus.currentValue / total) * 100 : 0,
+            positions: rwaStatus.positions,
+            pnl: rwaStatus.pnl
         },
         total
     };
