@@ -296,7 +296,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
             {/* Primary Balance Area */}
             <div className="lg:col-span-8 space-y-8">
               {/* Two-Column Balance Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 {/* Public USD1 Balance - Left Card */}
                 <ShadowCard className="p-8 bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-shadow-gold/20 overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-shadow-gold/5 to-transparent pointer-events-none" />
