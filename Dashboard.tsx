@@ -101,6 +101,8 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   const totalBalance = treasury.data?.totalUSD1 ?? 0;
   const publicBalance = treasury.data?.publicBalance ?? 0;
   const vaultsData = treasury.data?.vaults ?? [];
+  const isLoadingPortfolio = wallet.connected && (treasury.loading || strategy.loading);
+  const showInitialLoading = isLoadingPortfolio && !treasury.data;
 
   type VaultId = 'reserve' | 'yield' | 'growth' | 'degen' | 'rwa';
 
@@ -253,6 +255,19 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
         )}
 
         <div className="p-8 md:p-12 space-y-8 max-w-7xl mx-auto w-full">
+          {showInitialLoading && (
+            <ShadowCard className="p-6 border-white/10 bg-shadow-gray-900/40">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-lg bg-white/5">
+                  <Loader2 className="w-5 h-5 text-shadow-gold animate-spin" />
+                </div>
+                <div>
+                  <p className="text-sm text-white font-medium">Loading your shielded portfolio…</p>
+                  <p className="text-xs text-shadow-500">Fetching balances and strategy signals.</p>
+                </div>
+              </div>
+            </ShadowCard>
+          )}
           {/* Header */}
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div>
@@ -296,7 +311,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
             {/* Primary Balance Area */}
             <div className="lg:col-span-8 space-y-8">
               {/* Two-Column Balance Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Public USD1 Balance - Left Card */}
                 <ShadowCard className="p-8 bg-gradient-to-br from-shadow-gray-900 to-shadow-black border-shadow-gold/20 overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-shadow-gold/5 to-transparent pointer-events-none" />
