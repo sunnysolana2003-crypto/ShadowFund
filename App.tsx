@@ -19,6 +19,7 @@ const AppContent: React.FC = () => {
 
   const handleWalletConnect = useCallback(async (walletAddress: string) => {
     connectWallet(walletAddress);
+    setView('dashboard');
     try {
       await Promise.all([
         fetchTreasury(walletAddress),
@@ -27,7 +28,6 @@ const AppContent: React.FC = () => {
     } catch (_) {
       // Dashboard will refetch on mount if needed
     }
-    setView('dashboard');
   }, [connectWallet, fetchTreasury, fetchStrategy]);
 
   // Auto-connect removed for production

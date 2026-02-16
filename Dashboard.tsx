@@ -102,7 +102,7 @@ const Dashboard: React.FC<{ onNavigate: (v: string) => void; currentView: string
   const publicBalance = treasury.data?.publicBalance ?? 0;
   const vaultsData = treasury.data?.vaults ?? [];
   const isLoadingPortfolio = wallet.connected && (treasury.loading || strategy.loading);
-  const showInitialLoading = isLoadingPortfolio && !treasury.data;
+  const showInitialLoading = wallet.connected && (!treasury.data || !strategy.data);
 
   type VaultId = 'reserve' | 'yield' | 'growth' | 'degen' | 'rwa';
 
